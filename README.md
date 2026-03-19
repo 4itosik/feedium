@@ -23,7 +23,7 @@ make
 
 ### Инструменты через `mise`
 
-Из `mise.toml` ставятся: `direnv`, `gh`, `himalaya`, `gitleaks`, `jq`, `node`, `ruby`, `tmux`, `yarn`, `zellij`.
+Из `mise.toml` ставятся: `direnv`, `gh`, `himalaya`, `gitleaks`, `jq`, `node`, `port-selector`, `ruby`, `tmux`, `yarn`, `zellij`.
 
 ### Кодинговые агенты
 
@@ -38,6 +38,7 @@ make
 | --- | --- | --- |
 | [@playwright/cli](https://github.com/microsoft/playwright-cli) | Автоматизация работы с сайтами и тестирование веба | Попросить агента зайти на сайт и сделать скриншот |
 | [gh](https://github.com/cli/cli) | Работа с GitHub API за пределами `git`: просмотр и создание issue, pull request, projects | Попросить агента посмотреть или создать issue в репозитории |
+| [port-selector](https://github.com/dapi/port-selector) | Автоматический выбор свободного порта из диапазона для локальных dev-серверов и e2e при параллельной работе агентов | Выполнить `port-selector` и убедиться, что команда возвращает номер свободного порта |
 
 Желательные:
 
@@ -82,3 +83,6 @@ make
 - `googleworkspace/cli`: подключить Google Workspace
 - `himalaya`: настроить почтовый аккаунт и доступ к IMAP/SMTP
 
+## direnv
+
+В проекте использууется direnv, настройте интеграцию с вашей shell https://direnv.net/docs/hook.html
