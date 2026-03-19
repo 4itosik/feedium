@@ -2,7 +2,7 @@
 
 BLUE := \033[0;34m
 NC := \033[0m
-UNAME := $(shell uname)
+PATH := $(HOME)/.local/bin:/usr/local/bin:/opt/homebrew/bin:$(PATH)
 
 NPM ?= mise exec -- npm
 CLAUDE ?= mise exec -- claude
@@ -27,19 +27,30 @@ ai: bootstrap
 bootstrap: mise-package mise-install
 
 mise-package:
-ifeq ($(UNAME),Darwin)
-	@if command -v mise > /dev/null 2>&1; then \
+	@set -e; \
+	if command -v mise > /dev/null 2>&1; then \
 		echo "Install mise - already exists"; \
+	elif command -v brew > /dev/null 2>&1; then \
+		brew install mise; \
+		echo "Install mise - installed via brew"; \
+	elif command -v curl > /dev/null 2>&1; then \
+		if [ -w /usr/local/bin ]; then \
+			MISE_INSTALL_PATH=/usr/local/bin/mise; \
+			SUDO=""; \
+		elif command -v sudo > /dev/null 2>&1; then \
+			MISE_INSTALL_PATH=/usr/local/bin/mise; \
+			SUDO="sudo"; \
+		else \
+			mkdir -p "$(HOME)/.local/bin"; \
+			MISE_INSTALL_PATH="$(HOME)/.local/bin/mise"; \
+			SUDO=""; \
+		fi; \
+		curl -fsSL https://mise.run | $$SUDO env MISE_INSTALL_PATH="$$MISE_INSTALL_PATH" sh; \
+		echo "Install mise - installed via mise.run to $$MISE_INSTALL_PATH"; \
 	else \
-		brew install mise && echo "Install mise - installed"; \
+		echo "Install mise - failed: need either brew or curl to install mise"; \
+		exit 1; \
 	fi
-else
-	@if command -v mise > /dev/null 2>&1; then \
-		echo "Install mise - already exists"; \
-	else \
-		sudo apt-get install -y mise && echo "Install mise - installed"; \
-	fi
-endif
 
 mise-install: mise-package
 	@echo "Install mise tools"
@@ -101,7 +112,7 @@ CLAUDE_PLUGINS_MARKETPLACES = lackeyjb/playwright-skill dapi/claude-code-marketp
 
 CLAUDE_PLUGINS = \
 	playwright-skill@playwright-skill \
-	pr-review-fix-loop@dapi
+	pr-review-fix-loop@dapi \
 	spec-reviewer@dapi \
 	zellij-workflow@dapi \
 	himalaya@dapi \

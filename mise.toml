@@ -1,6 +1,7 @@
 [tools]
 direnv = "latest"
 fzf = "latest"
+gh = "latest"
 gitleaks = "latest"
 jq = "latest"
 kubectl = "latest"
