@@ -32,7 +32,8 @@ make check
 - обязательный toolchain из локального setup;
 - установку agent CLI;
 - обязательные проверки авторизации для `claude`, `codex` и `gh`;
-- опциональные интеграции вроде `tgcli`, `googleworkspace/cli`, `himalaya`, curated skills и Claude plugins.
+- установку вспомогательных CLI для агентов: `playwright-cli`, `tgcli`, `googleworkspace/cli` (`gws`) и `himalaya`;
+- опциональные проверки настройки `tgcli`, `googleworkspace/cli`, `himalaya`, curated skills и Claude plugins.
 
 Команда завершается с ошибкой только на обязательных проверках. Для опциональных интеграций она оставляет `WARN`, чтобы было видно, что еще не настроено, но базовая установка уже пригодна к работе.
 
@@ -56,14 +57,11 @@ make check
 | [@playwright/cli](https://github.com/microsoft/playwright-cli) | Автоматизация работы с сайтами и тестирование веба | Попросить агента зайти на сайт и сделать скриншот |
 | [gh](https://github.com/cli/cli) | Работа с GitHub API за пределами `git`: просмотр и создание issue, pull request, projects | Попросить агента посмотреть или создать issue в репозитории |
 | [port-selector](https://github.com/dapi/port-selector) | Автоматический выбор свободного порта из диапазона для локальных dev-серверов и e2e при параллельной работе агентов | Выполнить `port-selector` и убедиться, что команда возвращает номер свободного порта |
-
-Желательные:
-
-| Утилита | Для чего | Как проверить |
-| --- | --- | --- |
 | [tgcli](https://github.com/dapi/tgcli) | Сбор требований из переписки | Попросить агента найти что-то в личной переписке в Telegram или закинуть пост в Избранное |
 | [googleworkspace/cli](https://github.com/googleworkspace/cli) (`gws-docs`, `gws-docs-write`, `gws-drive`, `gws-sheets`) | Сбор требований и формирование проектной документации | Дать агенту ссылку на закрытый Google Doc и попросить прочитать его и дать выдержку |
 | [himalaya](https://github.com/pimalaya/himalaya) | Работа с почтой через IMAP/SMTP из CLI | Попросить агента прочитать письмо или найти письмо по теме после настройки почтового аккаунта |
+
+Сами CLI ставятся автоматически и их наличие проверяется через `make check`. При этом доступ к конкретным аккаунтам и системам для `tgcli`, `googleworkspace/cli` и `himalaya` остается опциональной настройкой: если вы ими пока не пользуетесь, `make check` покажет `WARN`, а не завершится ошибкой.
 
 Что не ставится автоматически, но желательно поставить:
 
@@ -91,10 +89,22 @@ make check
 
 `himalaya@dapi`, `pr-review-fix-loop@dapi`, `spec-reviewer@dapi`, `zellij-workflow@dapi`.
 
+Если нужно ставить Claude plugins из вашего marketplace, это можно переопределить при запуске `make`, например:
+
+```bash
+make agents-claude-plugins \
+  CLAUDE_PLUGINS_MARKETPLACES=your-org/claude-code-marketplace \
+  CLAUDE_MARKETPLACE_NAMES=your-org \
+  CLAUDE_PLUGIN_NAMESPACE=your-org \
+  CLAUDE_PLUGINS='zellij-workflow@your-org'
+```
+
 ## Что нужно настроить руками после установки
 
 Установка инструмента, skill или plugin еще не означает, что агент уже сможет работать с конкретной системой. После `make` обычно нужно отдельно пройти авторизацию и базовую настройку:
 
+- `claude`: выполнить `claude auth login`
+- `codex`: выполнить `codex login`
 - `gh`: выполнить `gh auth login`
 - `tgcli`: подключить Telegram-аккаунт
 - `googleworkspace/cli`: подключить Google Workspace
@@ -104,4 +114,11 @@ make check
 
 ## direnv
 
-В проекте использууется direnv, настройте интеграцию с вашей shell https://direnv.net/docs/hook.html
+В проекте используется `direnv`:
+
+1. настройте интеграцию с вашей shell: https://direnv.net/docs/hook.html
+2. разрешите локальный `.envrc` в корне проекта:
+
+```bash
+direnv allow
+```
