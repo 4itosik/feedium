@@ -1,0 +1,110 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link [ref=e8] [cursor=pointer]:
+            - /url: https://mail.google.com/mail/&ogbl
+            - text: Почта
+          - link [ref=e10] [cursor=pointer]:
+            - /url: https://www.google.com/imghp?hl=ru&ogbl
+            - text: Картинки
+        - button [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - link [ref=e18] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?hl=ru&passive=true&continue=https://www.google.com/&ec=futura_exp_og_so_72776762_e
+          - text: Войти
+    - img [ref=e21]
+    - search [ref=e24]:
+      - generic [ref=e26]:
+        - generic [ref=e28]:
+          - img [ref=e32]
+          - combobox [ref=e35]
+          - generic [ref=e37]:
+            - button [ref=e38] [cursor=pointer]:
+              - img [ref=e40]
+            - button [ref=e42] [cursor=pointer]:
+              - img [ref=e43]
+            - button [ref=e45] [cursor=pointer]:
+              - img [ref=e46]
+        - generic [ref=e49]:
+          - button [ref=e50] [cursor=pointer]: Поиск в Google
+          - button [ref=e51] [cursor=pointer]: Мне повезёт!
+    - generic [ref=e54]:
+      - text: "Сервисы Google доступны на этих языках:"
+      - link [ref=e55] [cursor=pointer]:
+        - /url: https://www.google.com/setprefs?sig=0_ssR9G9jXlvDQM67DZR3M4AWakrs%3D&hl=nl&source=homepage&sa=X&ved=0ahUKEwiq2YOpvsCTAxW3wAIHHTmUMaAQ2ZgBCBU
+        - text: Nederlands
+      - link [ref=e56] [cursor=pointer]:
+        - /url: https://www.google.com/setprefs?sig=0_ssR9G9jXlvDQM67DZR3M4AWakrs%3D&hl=fy&source=homepage&sa=X&ved=0ahUKEwiq2YOpvsCTAxW3wAIHHTmUMaAQ2ZgBCBY
+        - text: Frysk
+    - contentinfo [ref=e58]:
+      - generic [ref=e59]: Нидерланды
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - link [ref=e62] [cursor=pointer]:
+            - /url: https://about.google/?utm_source=google-NL&utm_medium=referral&utm_campaign=hp-footer&fg=1
+            - text: Всё о Google
+          - link [ref=e63] [cursor=pointer]:
+            - /url: https://www.google.com/intl/ru_nl/ads/?subid=ww-ww-et-g-awa-a-g_hpafoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpafooter&fg=1
+            - text: Реклама
+          - link [ref=e64] [cursor=pointer]:
+            - /url: https://www.google.com/services/?subid=ww-ww-et-g-awa-a-g_hpbfoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpbfooter&fg=1
+            - text: Для бизнеса
+          - link [ref=e65] [cursor=pointer]:
+            - /url: https://google.com/search/howsearchworks/?fg=1
+            - text: Как работает Google Поиск
+        - generic [ref=e66]:
+          - link [ref=e67] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=ru-NL&fg=1
+            - text: Конфиденциальность
+          - link [ref=e68] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=ru-NL&fg=1
+            - text: Условия
+          - button [ref=e72] [cursor=pointer]:
+            - generic [ref=e73]: Настройки
+  - generic:
+    - dialog "Прежде чем перейти к Google Поиску":
+      - generic [ref=e80]:
+        - generic [ref=e82]:
+          - img "Google" [ref=e83]
+          - generic [ref=e84]:
+            - 'button "Язык: ‪Русский‬" [active] [ref=e86] [cursor=pointer]':
+              - generic [ref=e87]:
+                - img
+                - generic [ref=e88]: ru
+            - link "Войти в аккаунт" [ref=e89] [cursor=pointer]
+        - generic [ref=e90]:
+          - heading "Прежде чем перейти к Google" [level=1] [ref=e91]
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - text: Мы используем
+              - link "файлы cookie" [ref=e94] [cursor=pointer]:
+                - /url: https://policies.google.com/technologies/cookies?utm_source=ucbs&hl=ru-NL
+              - text: "и данные, чтобы:"
+              - list [ref=e95]:
+                - listitem [ref=e96]: Предоставлять сервисы Google и обеспечивать их работу.
+                - listitem [ref=e97]: Отслеживать сбои и обеспечивать защиту от спама, мошенничества и злоупотреблений.
+                - listitem [ref=e98]: Анализировать вовлеченность аудитории и статистику сайтов, чтобы узнавать, как пользуются нашими сервисами, и улучшать их.
+            - generic [ref=e99]:
+              - text: "Если вы выберете \"Принять все\", мы также будем использовать файлы cookie и данные, чтобы:"
+              - list [ref=e100]:
+                - listitem [ref=e101]: Разрабатывать и улучшать новые сервисы.
+                - listitem [ref=e102]: Показывать рекламу и оценивать ее эффективность.
+                - listitem [ref=e103]: Показывать персонализированный контент (в зависимости от выбранных вами настроек).
+                - listitem [ref=e104]: Показывать персонализированную рекламу (в зависимости от выбранных вами настроек).
+              - generic [ref=e105]: Если вы выберете "Отклонить все", мы не будем использовать файлы cookie для этих целей.
+            - generic [ref=e106]: Неперсонализированные материалы подбираются с учетом таких факторов, как контент, который вы просматриваете в данный момент, ваши действия в текущем сеансе поиска и ваше местоположение. Неперсонализированная реклама подбирается с учетом контента, который вы просматриваете в данный момент, и вашего местоположения. Персонализированные материалы и реклама также могут включать более актуальные результаты, рекомендации и объявления, подобранные с учетом истории ваших действий в текущем браузере, например поисковых запросов в Google. Если это необходимо, мы также используем файлы cookie и данные, чтобы показывать материалы в соответствии с возрастом пользователей.
+            - generic [ref=e107]: Выберите "Другие варианты", чтобы получить дополнительную информацию, в том числе об управлении настройками конфиденциальности. Вы также можете в любое время перейти на страницу g.co/privacytools.
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - button "Отклонить все" [ref=e110] [cursor=pointer]
+            - button "Принять все" [ref=e111] [cursor=pointer]
+          - link "Дополнительные настройки персонализации и файлов cookie" [ref=e113] [cursor=pointer]:
+            - generic "Дополнительные настройки персонализации и файлов cookie" [ref=e114]: Другие варианты
+        - generic [ref=e115]:
+          - link "Конфиденциальность" [ref=e116] [cursor=pointer]:
+            - /url: https://policies.google.com/privacy?hl=ru-NL&fg=1&utm_source=ucbs
+          - generic [ref=e117]: ·
+          - link "Условия использования" [ref=e118] [cursor=pointer]:
+            - /url: https://policies.google.com/terms?hl=ru-NL&fg=1&utm_source=ucbs
