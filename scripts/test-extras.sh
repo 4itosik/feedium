@@ -10,7 +10,7 @@ warnings=0
 REQUIRED_SKILLS=(
 	"tgcli"
 	"playwright-cli"
-	"prompt-engeneering"
+	"prompt-engineering"
 	"gws-docs"
 	"gws-docs-write"
 	"gws-drive"
