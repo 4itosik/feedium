@@ -13,7 +13,7 @@ warnings=0
 
 # --- Expected items (override via env vars) ---
 
-EXPECTED_SKILLS="${EXPECTED_SKILLS:-docmost fpf-simple gws-calendar gws-calendar-agenda gws-calendar-insert gws-docs gws-docs-write gws-drive gws-drive-upload gws-gmail gws-gmail-forward gws-gmail-reply gws-gmail-reply-all gws-gmail-send gws-gmail-triage gws-meet gws-sheets gws-tasks playwright-cli prompt-engeneering tgcli}"
+EXPECTED_SKILLS="${EXPECTED_SKILLS:-docmost fpf-problem-solving gws-calendar gws-calendar-agenda gws-calendar-insert gws-docs gws-docs-write gws-drive gws-drive-upload gws-gmail gws-gmail-forward gws-gmail-reply gws-gmail-reply-all gws-gmail-send gws-gmail-triage gws-meet gws-sheets gws-tasks playwright-cli prompt-engineering tgcli}"
 
 # Optional items — allowed but not required (present = OK, absent = OK)
 OPTIONAL_SKILLS="${OPTIONAL_SKILLS:-ccbox ccbox-insights}"

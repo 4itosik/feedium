@@ -70,10 +70,10 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Bootstrap toolchain
-        run: make bootstrap
+        run: make -f .ai-setup/Makefile bootstrap
 
       - name: Install agent CLIs and helper tools
-        run: make agents agents-cli
+        run: make -f .ai-setup/Makefile agents agents-cli
 
       - name: Run CI smoke checks
         run: ./scripts/test-ci.sh
