@@ -94,15 +94,35 @@ type sourceRow struct {
 	UpdatedAt time.Time       `gorm:"type:timestamptz;not null;autoUpdateTime"`
 }
 
+func (sourceRow) TableName() string {
+	return "sources"
+}
+
 func fromDomain(src *source.Source) sourceRow {
 	cfg, _ := json.Marshal(src.Config)
-	return sourceRow{ID: src.ID, Type: string(src.Type), Name: src.Name, URL: src.URL, Config: cfg, CreatedAt: src.CreatedAt, UpdatedAt: src.UpdatedAt}
+	return sourceRow{
+		ID:        src.ID,
+		Type:      string(src.Type),
+		Name:      src.Name,
+		URL:       src.URL,
+		Config:    cfg,
+		CreatedAt: src.CreatedAt,
+		UpdatedAt: src.UpdatedAt,
+	}
 }
 
 func toDomain(row *sourceRow) source.Source {
 	var cfg map[string]any
 	_ = json.Unmarshal(row.Config, &cfg)
-	return source.Source{ID: row.ID, Type: source.Type(row.Type), Name: row.Name, URL: row.URL, Config: cfg, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
+	return source.Source{
+		ID:        row.ID,
+		Type:      source.Type(row.Type),
+		Name:      row.Name,
+		URL:       row.URL,
+		Config:    cfg,
+		CreatedAt: row.CreatedAt,
+		UpdatedAt: row.UpdatedAt,
+	}
 }
 
 func applyRow(dst *source.Source, row *sourceRow) {

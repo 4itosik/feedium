@@ -14,6 +14,11 @@ type Service struct {
 	log  *slog.Logger
 }
 
+const (
+	defaultPageSize = 50
+	maxPageSize     = 100
+)
+
 func NewService(repo Repository, log *slog.Logger) *Service { return &Service{repo: repo, log: log} }
 
 func (s *Service) Create(ctx context.Context, src *Source) (*Source, error) {
@@ -53,10 +58,10 @@ func (s *Service) List(ctx context.Context, filter ListFilter) ([]Source, int, e
 
 func normalizePageSize(v int) int {
 	if v <= 0 {
-		return 50
+		return defaultPageSize
 	}
-	if v > 100 {
-		return 100
+	if v > maxPageSize {
+		return maxPageSize
 	}
 	return v
 }

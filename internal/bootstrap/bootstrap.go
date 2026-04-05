@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -36,11 +37,11 @@ func Run(ctx context.Context, log *slog.Logger) error {
 
 	// Step 3: Create ServeMux and register health endpoint
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", healthHandler)
+	mux.HandleFunc("GET /healthz", HealthHandler)
 
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		return fmt.Errorf("DATABASE_URL is required")
+		return errors.New("DATABASE_URL is required")
 	}
 	db, err := postgres.Open(dsn)
 	if err != nil {

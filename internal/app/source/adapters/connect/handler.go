@@ -3,11 +3,11 @@ package connect
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+	"math"
 	"strings"
 
-	"feedium/api/source/v1"
+	sourcev1 "feedium/api/source/v1"
 	sourcev1connect "feedium/api/source/v1/sourcev1connect"
 	"feedium/internal/app/source"
 
@@ -25,9 +25,12 @@ func New(svc *source.Service, log *slog.Logger) *Handler { return &Handler{svc: 
 
 var _ sourcev1connect.SourceServiceHandler = (*Handler)(nil)
 
-func (h *Handler) CreateSource(ctx context.Context, req *connect.Request[sourcev1.CreateSourceRequest]) (*connect.Response[sourcev1.CreateSourceResponse], error) {
+func (h *Handler) CreateSource(
+	ctx context.Context,
+	req *connect.Request[sourcev1.CreateSourceRequest],
+) (*connect.Response[sourcev1.CreateSourceResponse], error) {
 	if !isKnownType(req.Msg.GetType()) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source type"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid source type"))
 	}
 	src, err := h.svc.Create(ctx, fromCreateRequest(req.Msg))
 	if err != nil {
@@ -36,7 +39,10 @@ func (h *Handler) CreateSource(ctx context.Context, req *connect.Request[sourcev
 	return connect.NewResponse(&sourcev1.CreateSourceResponse{Source: toProto(src)}), nil
 }
 
-func (h *Handler) GetSource(ctx context.Context, req *connect.Request[sourcev1.GetSourceRequest]) (*connect.Response[sourcev1.GetSourceResponse], error) {
+func (h *Handler) GetSource(
+	ctx context.Context,
+	req *connect.Request[sourcev1.GetSourceRequest],
+) (*connect.Response[sourcev1.GetSourceResponse], error) {
 	id, err := uuid.Parse(strings.TrimSpace(req.Msg.GetId()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -48,9 +54,12 @@ func (h *Handler) GetSource(ctx context.Context, req *connect.Request[sourcev1.G
 	return connect.NewResponse(&sourcev1.GetSourceResponse{Source: toProto(src)}), nil
 }
 
-func (h *Handler) UpdateSource(ctx context.Context, req *connect.Request[sourcev1.UpdateSourceRequest]) (*connect.Response[sourcev1.UpdateSourceResponse], error) {
+func (h *Handler) UpdateSource(
+	ctx context.Context,
+	req *connect.Request[sourcev1.UpdateSourceRequest],
+) (*connect.Response[sourcev1.UpdateSourceResponse], error) {
 	if !isKnownType(req.Msg.GetType()) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source type"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid source type"))
 	}
 	src := fromUpdateRequest(req.Msg)
 	id, err := uuid.Parse(strings.TrimSpace(req.Msg.GetId()))
@@ -65,22 +74,36 @@ func (h *Handler) UpdateSource(ctx context.Context, req *connect.Request[sourcev
 	return connect.NewResponse(&sourcev1.UpdateSourceResponse{Source: toProto(updated)}), nil
 }
 
-func (h *Handler) DeleteSource(ctx context.Context, req *connect.Request[sourcev1.DeleteSourceRequest]) (*connect.Response[sourcev1.DeleteSourceResponse], error) {
+func (h *Handler) DeleteSource(
+	ctx context.Context,
+	req *connect.Request[sourcev1.DeleteSourceRequest],
+) (*connect.Response[sourcev1.DeleteSourceResponse], error) {
 	id, err := uuid.Parse(strings.TrimSpace(req.Msg.GetId()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if err := h.svc.Delete(ctx, id); err != nil {
-		return nil, h.mapError(err)
+	deleteErr := h.svc.Delete(ctx, id)
+	if deleteErr != nil {
+		return nil, h.mapError(deleteErr)
 	}
 	return connect.NewResponse(&sourcev1.DeleteSourceResponse{}), nil
 }
 
-func (h *Handler) ListSources(ctx context.Context, req *connect.Request[sourcev1.ListSourcesRequest]) (*connect.Response[sourcev1.ListSourcesResponse], error) {
+func (h *Handler) ListSources(
+	ctx context.Context,
+	req *connect.Request[sourcev1.ListSourcesRequest],
+) (*connect.Response[sourcev1.ListSourcesResponse], error) {
 	if req.Msg.GetTypeFilter() != sourcev1.SourceType_SOURCE_TYPE_UNSPECIFIED && !isKnownType(req.Msg.GetTypeFilter()) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source type filter"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("invalid source type filter"))
 	}
-	srcs, total, err := h.svc.List(ctx, source.ListFilter{Type: fromProtoType(req.Msg.GetTypeFilter()), PageSize: int(req.Msg.GetPageSize()), Page: int(req.Msg.GetPage())})
+	srcs, total, err := h.svc.List(
+		ctx,
+		source.ListFilter{
+			Type:     fromProtoType(req.Msg.GetTypeFilter()),
+			PageSize: int(req.Msg.GetPageSize()),
+			Page:     int(req.Msg.GetPage()),
+		},
+	)
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -89,7 +112,16 @@ func (h *Handler) ListSources(ctx context.Context, req *connect.Request[sourcev1
 		s := srcs[i]
 		out = append(out, toProto(&s))
 	}
-	return connect.NewResponse(&sourcev1.ListSourcesResponse{Sources: out, TotalCount: int32(total)}), nil
+	var totalCount int32
+	if total > math.MaxInt32 {
+		totalCount = math.MaxInt32
+	} else {
+		totalCount = int32(total) //nolint:gosec // total is range-checked against MaxInt32 above.
+	}
+	return connect.NewResponse(&sourcev1.ListSourcesResponse{
+		Sources:    out,
+		TotalCount: totalCount,
+	}), nil
 }
 
 func (h *Handler) mapError(err error) error {
@@ -104,7 +136,7 @@ func (h *Handler) mapError(err error) error {
 		if h.log != nil {
 			h.log.Error("source handler error", "error", err)
 		}
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("internal error"))
+		return connect.NewError(connect.CodeInternal, errors.New("internal error"))
 	}
 }
 
@@ -114,15 +146,27 @@ func isValidationErr(err error) bool {
 }
 
 func fromCreateRequest(req *sourcev1.CreateSourceRequest) *source.Source {
-	return &source.Source{Type: fromProtoType(req.GetType()), Name: req.GetName(), URL: req.GetUrl(), Config: fromProtoConfig(req.GetType(), req.GetConfig())}
+	return &source.Source{
+		Type:   fromProtoType(req.GetType()),
+		Name:   req.GetName(),
+		URL:    req.GetUrl(),
+		Config: fromProtoConfig(req.GetType(), req.GetConfig()),
+	}
 }
 
 func fromUpdateRequest(req *sourcev1.UpdateSourceRequest) *source.Source {
-	return &source.Source{Type: fromProtoType(req.GetType()), Name: req.GetName(), URL: req.GetUrl(), Config: fromProtoConfig(req.GetType(), req.GetConfig())}
+	return &source.Source{
+		Type:   fromProtoType(req.GetType()),
+		Name:   req.GetName(),
+		URL:    req.GetUrl(),
+		Config: fromProtoConfig(req.GetType(), req.GetConfig()),
+	}
 }
 
 func fromProtoType(t sourcev1.SourceType) source.Type {
 	switch t {
+	case sourcev1.SourceType_SOURCE_TYPE_UNSPECIFIED:
+		return ""
 	case sourcev1.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL:
 		return source.TypeTelegramChannel
 	case sourcev1.SourceType_SOURCE_TYPE_TELEGRAM_GROUP:
@@ -138,7 +182,11 @@ func fromProtoType(t sourcev1.SourceType) source.Type {
 
 func isKnownType(t sourcev1.SourceType) bool {
 	switch t {
-	case sourcev1.SourceType_SOURCE_TYPE_UNSPECIFIED, sourcev1.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL, sourcev1.SourceType_SOURCE_TYPE_TELEGRAM_GROUP, sourcev1.SourceType_SOURCE_TYPE_RSS, sourcev1.SourceType_SOURCE_TYPE_WEB_SCRAPING:
+	case sourcev1.SourceType_SOURCE_TYPE_UNSPECIFIED,
+		sourcev1.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL,
+		sourcev1.SourceType_SOURCE_TYPE_TELEGRAM_GROUP,
+		sourcev1.SourceType_SOURCE_TYPE_RSS,
+		sourcev1.SourceType_SOURCE_TYPE_WEB_SCRAPING:
 		return true
 	default:
 		return false
@@ -211,13 +259,27 @@ func toProtoConfig(t source.Type, cfg map[string]any) *sourcev1.SourceConfig {
 	}
 	switch t {
 	case source.TypeTelegramChannel:
-		return &sourcev1.SourceConfig{Config: &sourcev1.SourceConfig_TelegramChannel{TelegramChannel: &sourcev1.TelegramChannelConfig{ChannelId: str(cfg["channel_id"])}}}
+		return &sourcev1.SourceConfig{
+			Config: &sourcev1.SourceConfig_TelegramChannel{
+				TelegramChannel: &sourcev1.TelegramChannelConfig{ChannelId: str(cfg["channel_id"])},
+			},
+		}
 	case source.TypeTelegramGroup:
-		return &sourcev1.SourceConfig{Config: &sourcev1.SourceConfig_TelegramGroup{TelegramGroup: &sourcev1.TelegramGroupConfig{GroupId: str(cfg["group_id"])}}}
+		return &sourcev1.SourceConfig{
+			Config: &sourcev1.SourceConfig_TelegramGroup{
+				TelegramGroup: &sourcev1.TelegramGroupConfig{GroupId: str(cfg["group_id"])},
+			},
+		}
 	case source.TypeRSS:
-		return &sourcev1.SourceConfig{Config: &sourcev1.SourceConfig_Rss{Rss: &sourcev1.RssConfig{FeedUrl: str(cfg["feed_url"])}}}
+		return &sourcev1.SourceConfig{
+			Config: &sourcev1.SourceConfig_Rss{Rss: &sourcev1.RssConfig{FeedUrl: str(cfg["feed_url"])}},
+		}
 	case source.TypeWebScraping:
-		return &sourcev1.SourceConfig{Config: &sourcev1.SourceConfig_WebScraping{WebScraping: &sourcev1.WebScrapingConfig{Selector: str(cfg["selector"])}}}
+		return &sourcev1.SourceConfig{
+			Config: &sourcev1.SourceConfig_WebScraping{
+				WebScraping: &sourcev1.WebScrapingConfig{Selector: str(cfg["selector"])},
+			},
+		}
 	default:
 		return nil
 	}

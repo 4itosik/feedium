@@ -34,7 +34,19 @@ func TestHandlerMappings(t *testing.T) {
 			return err
 		}, connect.CodeInvalidArgument},
 		{"invalid_enum", func() error {
-			_, err := h.CreateSource(ctx, connect.NewRequest(&sourcev1.CreateSourceRequest{Type: sourcev1.SourceType(99), Name: "n", Url: "https://x", Config: &sourcev1.SourceConfig{Config: &sourcev1.SourceConfig_Rss{Rss: &sourcev1.RssConfig{FeedUrl: "https://f"}}}}))
+			_, err := h.CreateSource(
+				ctx,
+				connect.NewRequest(
+					&sourcev1.CreateSourceRequest{
+						Type: sourcev1.SourceType(99),
+						Name: "n",
+						Url:  "https://x",
+						Config: &sourcev1.SourceConfig{
+							Config: &sourcev1.SourceConfig_Rss{Rss: &sourcev1.RssConfig{FeedUrl: "https://f"}},
+						},
+					},
+				),
+			)
 			return err
 		}, connect.CodeInvalidArgument},
 		{"not_found", func() error {
@@ -48,7 +60,10 @@ func TestHandlerMappings(t *testing.T) {
 			return err
 		}, connect.CodeInternal},
 		{"list_invalid_enum", func() error {
-			_, err := h.ListSources(ctx, connect.NewRequest(&sourcev1.ListSourcesRequest{TypeFilter: sourcev1.SourceType(42)}))
+			_, err := h.ListSources(
+				ctx,
+				connect.NewRequest(&sourcev1.ListSourcesRequest{TypeFilter: sourcev1.SourceType(42)}),
+			)
 			return err
 		}, connect.CodeInvalidArgument},
 	}

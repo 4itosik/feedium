@@ -24,11 +24,64 @@ func TestServiceCreate(t *testing.T) {
 		src  *source.Source
 		ok   bool
 	}{
-		{"telegram_channel", &source.Source{Type: source.TypeTelegramChannel, Name: "n", URL: "https://x", Config: map[string]any{"channel_id": "1"}, CreatedAt: now, UpdatedAt: now}, true},
-		{"telegram_group", &source.Source{Type: source.TypeTelegramGroup, Name: "n", URL: "https://x", Config: map[string]any{"group_id": "1"}, CreatedAt: now, UpdatedAt: now}, true},
-		{"rss", &source.Source{Type: source.TypeRSS, Name: "n", URL: "https://x", Config: map[string]any{"feed_url": "https://feed"}, CreatedAt: now, UpdatedAt: now}, true},
-		{"web", &source.Source{Type: source.TypeWebScraping, Name: "n", URL: "https://x", Config: map[string]any{"selector": ".post"}, CreatedAt: now, UpdatedAt: now}, true},
-		{"invalid_name", &source.Source{Type: source.TypeRSS, Name: " ", URL: "https://x", Config: map[string]any{"feed_url": "https://feed"}}, false},
+		{
+			"telegram_channel",
+			&source.Source{
+				Type:      source.TypeTelegramChannel,
+				Name:      "n",
+				URL:       "https://x",
+				Config:    map[string]any{"channel_id": "1"},
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			true,
+		},
+		{
+			"telegram_group",
+			&source.Source{
+				Type:      source.TypeTelegramGroup,
+				Name:      "n",
+				URL:       "https://x",
+				Config:    map[string]any{"group_id": "1"},
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			true,
+		},
+		{
+			"rss",
+			&source.Source{
+				Type:      source.TypeRSS,
+				Name:      "n",
+				URL:       "https://x",
+				Config:    map[string]any{"feed_url": "https://feed"},
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			true,
+		},
+		{
+			"web",
+			&source.Source{
+				Type:      source.TypeWebScraping,
+				Name:      "n",
+				URL:       "https://x",
+				Config:    map[string]any{"selector": ".post"},
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			true,
+		},
+		{
+			"invalid_name",
+			&source.Source{
+				Type:   source.TypeRSS,
+				Name:   " ",
+				URL:    "https://x",
+				Config: map[string]any{"feed_url": "https://feed"},
+			},
+			false,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -80,7 +133,13 @@ func TestServiceUpdate(t *testing.T) {
 	svc := source.NewService(repo, nil)
 	ctx := context.Background()
 	id := uuid.New()
-	src := &source.Source{ID: id, Type: source.TypeRSS, Name: "n", URL: "https://x", Config: map[string]any{"feed_url": "https://feed"}}
+	src := &source.Source{
+		ID:     id,
+		Type:   source.TypeRSS,
+		Name:   "n",
+		URL:    "https://x",
+		Config: map[string]any{"feed_url": "https://feed"},
+	}
 	repo.EXPECT().GetByID(ctx, id).Return(&source.Source{ID: id}, nil)
 	repo.EXPECT().Update(ctx, src).Return(nil)
 	if out, err := svc.Update(ctx, src); err != nil || out != src {
@@ -90,7 +149,13 @@ func TestServiceUpdate(t *testing.T) {
 	if _, err := svc.Update(ctx, src); !errors.Is(err, source.ErrNotFound) {
 		t.Fatalf("expected not found")
 	}
-	bad := &source.Source{ID: id, Type: source.TypeRSS, Name: " ", URL: "https://x", Config: map[string]any{"feed_url": "https://feed"}}
+	bad := &source.Source{
+		ID:     id,
+		Type:   source.TypeRSS,
+		Name:   " ",
+		URL:    "https://x",
+		Config: map[string]any{"feed_url": "https://feed"},
+	}
 	if _, err := svc.Update(ctx, bad); err == nil {
 		t.Fatalf("expected validation error")
 	}
@@ -126,7 +191,9 @@ func TestServiceList(t *testing.T) {
 	if _, _, err := svc.List(ctx, source.ListFilter{}); err != nil {
 		t.Fatal(err)
 	}
-	repo.EXPECT().List(ctx, source.ListFilter{Type: source.TypeRSS, PageSize: 100, Page: 2}).Return([]source.Source{{}}, 1, nil)
+	repo.EXPECT().
+		List(ctx, source.ListFilter{Type: source.TypeRSS, PageSize: 100, Page: 2}).
+		Return([]source.Source{{}}, 1, nil)
 	if _, _, err := svc.List(ctx, source.ListFilter{Type: source.TypeRSS, PageSize: 101, Page: 2}); err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate mockgen -source=repository.go -destination=mocks/repository_mock.go -package=mocks
+
 type Repository interface {
 	Create(context.Context, *Source) error
 	GetByID(context.Context, uuid.UUID) (*Source, error)
