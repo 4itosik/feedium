@@ -8,72 +8,54 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build
+        run: go build ./...
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: go test -race -count=1 ./...
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@v4
 
-      - name: Validate GitHub Actions
-        run: |
-          set -euo pipefail
-          version="$(curl -fsSL https://api.github.com/repos/rhysd/actionlint/releases/latest | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')"
-          curl -fsSL -o /tmp/actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/${version}/actionlint_${version#v}_linux_amd64.tar.gz"
-          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
-          /tmp/actionlint -color
-
-      - name: Install shell linters
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck shfmt
-
-      - name: Check shell formatting
-        run: shfmt -d init.sh scripts/*.sh
-
-      - name: Lint shell scripts
-        run: shellcheck init.sh scripts/*.sh
-
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - uses: actions/setup-go@v5
         with:
-          node-version: 22
+          go-version-file: go.mod
+          cache: false
 
-      - name: Lint Markdown
-        run: npx --yes markdownlint-cli2 "**/*.md"
-
-  smoke-bootstrap:
-    name: Smoke (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
-    env:
-      GITHUB_TOKEN: ${{ github.token }}
-      AQUA_GITHUB_TOKEN: ${{ github.token }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-
-      - name: Bootstrap toolchain
-        run: make -f .ai-setup/Makefile bootstrap
-
-      - name: Install agent CLIs and helper tools
-        run: make -f .ai-setup/Makefile agents agents-cli
-
-      - name: Run CI smoke checks
-        run: ./scripts/test-ci.sh
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.11.4
+          args: run ./... -c .golangci.yml

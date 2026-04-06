@@ -9,9 +9,9 @@ import (
 )
 
 type Service struct {
-	repo           Repository
-	log            *slog.Logger
-	outboxBuilder  func(*Post) (any, error)
+	repo          Repository
+	log           *slog.Logger
+	outboxBuilder func(*Post) (any, error)
 }
 
 const (
@@ -35,7 +35,7 @@ func (s *Service) Create(ctx context.Context, post *Post) (*Post, error) {
 
 	if s.outboxBuilder != nil {
 		// Use CreateWithOutbox if outboxBuilder is registered
-		if err := s.repo.CreateWithOutbox(ctx, post, func(postID uuid.UUID) (interface{}, error) {
+		if err := s.repo.CreateWithOutbox(ctx, post, func(postID uuid.UUID) (any, error) {
 			// Create a copy of the post with the ID for the builder
 			postCopy := *post
 			postCopy.ID = postID

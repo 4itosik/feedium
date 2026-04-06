@@ -31,12 +31,14 @@ func TestRepositoryMappingHelpers(t *testing.T) {
 	}
 
 	row := fromDomain(p)
-	if row.ID != p.ID || row.SourceID != p.SourceID || row.Title != p.Title || row.Content != p.Content || row.Author != p.Author {
+	if row.ID != p.ID || row.SourceID != p.SourceID || row.Title != p.Title || row.Content != p.Content ||
+		row.Author != p.Author {
 		t.Fatalf("fromDomain basic fields mismatch: %+v", row)
 	}
 
 	back := toDomain(&row)
-	if back.ID != p.ID || back.SourceID != p.SourceID || back.Title != p.Title || back.Content != p.Content || back.Author != p.Author {
+	if back.ID != p.ID || back.SourceID != p.SourceID || back.Title != p.Title || back.Content != p.Content ||
+		back.Author != p.Author {
 		t.Fatalf("toDomain basic fields mismatch: %+v", back)
 	}
 
@@ -196,6 +198,16 @@ func TestRepositoryDelete(t *testing.T) {
 	})
 }
 
+func assertListResult(t *testing.T, err error, total, wantTotal int, out []post.Post, wantLen int) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if total != wantTotal || len(out) != wantLen {
+		t.Fatalf("unexpected list result: total=%d len=%d", total, len(out))
+	}
+}
+
 func TestRepositoryList(t *testing.T) {
 	repo := newMockRepo(t)
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -231,12 +243,7 @@ func TestRepositoryList(t *testing.T) {
 		})
 
 		out, total, err := repo.List(context.Background(), post.ListFilter{PageSize: 50, Page: 1})
-		if err != nil {
-			t.Fatalf("List failed: %v", err)
-		}
-		if total != 2 || len(out) != 2 {
-			t.Fatalf("unexpected list result: total=%d len=%d", total, len(out))
-		}
+		assertListResult(t, err, total, 2, out, 2)
 	})
 
 	t.Run("success_with_published_after", func(t *testing.T) {
@@ -263,12 +270,7 @@ func TestRepositoryList(t *testing.T) {
 			PageSize:       50,
 			Page:           1,
 		})
-		if err != nil {
-			t.Fatalf("List with published_after failed: %v", err)
-		}
-		if total != 1 || len(out) != 1 {
-			t.Fatalf("unexpected filtered list: total=%d out=%+v", total, out)
-		}
+		assertListResult(t, err, total, 1, out, 1)
 	})
 
 	t.Run("success_with_published_before", func(t *testing.T) {
@@ -295,12 +297,7 @@ func TestRepositoryList(t *testing.T) {
 			PageSize:        50,
 			Page:            1,
 		})
-		if err != nil {
-			t.Fatalf("List with published_before failed: %v", err)
-		}
-		if total != 1 || len(out) != 1 {
-			t.Fatalf("unexpected filtered list: total=%d out=%+v", total, out)
-		}
+		assertListResult(t, err, total, 1, out, 1)
 	})
 
 	t.Run("success_with_both_filters", func(t *testing.T) {
@@ -329,12 +326,7 @@ func TestRepositoryList(t *testing.T) {
 			PageSize:        50,
 			Page:            1,
 		})
-		if err != nil {
-			t.Fatalf("List with both filters failed: %v", err)
-		}
-		if total != 1 || len(out) != 1 {
-			t.Fatalf("unexpected filtered list: total=%d out=%+v", total, out)
-		}
+		assertListResult(t, err, total, 1, out, 1)
 	})
 
 	t.Run("empty_result", func(t *testing.T) {
@@ -345,12 +337,7 @@ func TestRepositoryList(t *testing.T) {
 		mocket.Catcher.NewMock().WithQuery(`FROM "posts"`).WithReply([]map[string]any{})
 
 		out, total, err := repo.List(context.Background(), post.ListFilter{PageSize: 50, Page: 1})
-		if err != nil {
-			t.Fatalf("List failed: %v", err)
-		}
-		if total != 0 || len(out) != 0 {
-			t.Fatalf("expected empty result: total=%d len=%d", total, len(out))
-		}
+		assertListResult(t, err, total, 0, out, 0)
 	})
 
 	t.Run("count_error", func(t *testing.T) {
@@ -382,7 +369,9 @@ func TestMapError(t *testing.T) {
 	})
 
 	t.Run("fk_violation", func(t *testing.T) {
-		err := mapError(errors.New("ERROR: insert or update on table \"posts\" violates foreign key constraint (SQLSTATE 23503)"))
+		err := mapError(
+			errors.New("ERROR: insert or update on table \"posts\" violates foreign key constraint (SQLSTATE 23503)"),
+		)
 		var v post.ValidationError
 		if !errors.As(err, &v) {
 			t.Fatalf("expected ValidationError, got: %v", err)
@@ -392,7 +381,7 @@ func TestMapError(t *testing.T) {
 	t.Run("other_error", func(t *testing.T) {
 		original := errors.New("some error")
 		err := mapError(original)
-		if err != original {
+		if !errors.Is(err, original) {
 			t.Fatalf("expected original error, got: %v", err)
 		}
 	})

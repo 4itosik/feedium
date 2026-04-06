@@ -30,8 +30,8 @@ type OutboxEventRepository interface {
 	CreateScheduledForType(ctx context.Context, sourceType source.Type, scheduledAt time.Time) (int, error)
 }
 
-// SummaryRepository defines operations for summaries.
-type SummaryRepository interface {
+// Repository defines operations for summaries.
+type Repository interface {
 	// Create creates a new summary and associates it with the given posts in a single transaction.
 	Create(ctx context.Context, summary *Summary, postIDs []uuid.UUID) error
 }

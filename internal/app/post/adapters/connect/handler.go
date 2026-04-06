@@ -120,7 +120,7 @@ func (h *Handler) DeletePost(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	if err := h.svc.Delete(ctx, id); err != nil {
+	if err = h.svc.Delete(ctx, id); err != nil {
 		return nil, h.mapError(err)
 	}
 

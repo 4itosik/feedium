@@ -3,13 +3,13 @@ package summary
 import "errors"
 
 var (
-	// ErrPostNotFound is returned when a post cannot be found (permanent error, no retry increment)
+	// ErrPostNotFound is returned when a post cannot be found (permanent error, no retry increment).
 	ErrPostNotFound = errors.New("post not found")
 
-	// ErrUnknownSourceType is returned when source type is not recognized (permanent error, no retry increment)
+	// ErrUnknownSourceType is returned when source type is not recognized (permanent error, no retry increment).
 	ErrUnknownSourceType = errors.New("unknown source type")
 
-	// ErrSourceNotFound is returned when a source cannot be found (permanent error, no retry increment)
+	// ErrSourceNotFound is returned when a source cannot be found (permanent error, no retry increment).
 	ErrSourceNotFound = errors.New("source not found")
 )
 

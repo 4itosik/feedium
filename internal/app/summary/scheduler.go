@@ -60,6 +60,8 @@ func (s *Scheduler) Start(ctx context.Context) {
 	}()
 }
 
+const hoursPerDay = 24
+
 // nextScheduleTime returns the next scheduled time (00:00 or 12:00 UTC).
 func nextScheduleTime(now time.Time) time.Time {
 	// Convert to UTC if not already
@@ -70,7 +72,7 @@ func nextScheduleTime(now time.Time) time.Time {
 	noon := time.Date(now.Year(), now.Month(), now.Day(), 12, 0, 0, 0, time.UTC)
 
 	// Check if next midnight is closer than noon
-	nextMidnight := midnight.Add(24 * time.Hour)
+	nextMidnight := midnight.Add(hoursPerDay * time.Hour)
 
 	if now.Before(midnight) {
 		return midnight

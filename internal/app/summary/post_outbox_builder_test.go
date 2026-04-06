@@ -6,6 +6,7 @@ import (
 
 	"feedium/internal/app/post"
 	"feedium/internal/app/summary"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,4 +35,3 @@ func TestNewOutboxBuilder_CreatesEventForAnySource(t *testing.T) {
 	assert.Equal(t, summary.EventTypeImmediate, outboxEvent.EventType)
 	assert.Equal(t, summary.EventStatusPending, outboxEvent.Status)
 }
-

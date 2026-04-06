@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,7 +45,7 @@ func (r *OutboxEventRepository) FetchAndLockPending(ctx context.Context) (*summa
 	result := tx.Raw(query, summary.EventStatusPending, time.Now()).Scan(&event)
 	if result.Error != nil {
 		tx.Rollback()
-		if result.Error == gorm.ErrRecordNotFound {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, time.Time{}, nil
 		}
 		return nil, time.Time{}, result.Error
@@ -71,13 +72,18 @@ func (r *OutboxEventRepository) FetchAndLockPending(ctx context.Context) (*summa
 }
 
 // UpdateStatus updates the event status and optionally increments retry count.
-func (r *OutboxEventRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status summary.EventStatus, incrementRetry bool) error {
+func (r *OutboxEventRepository) UpdateStatus(
+	ctx context.Context,
+	id uuid.UUID,
+	status summary.EventStatus,
+	incrementRetry bool,
+) error {
 	if incrementRetry {
 		// Use raw SQL to increment retry_count atomically
 		return r.db.WithContext(ctx).
 			Model(&summary.OutboxEvent{}).
 			Where("id = ?", id).
-			Updates(map[string]interface{}{
+			Updates(map[string]any{
 				"status":      status,
 				"retry_count": gorm.Expr("retry_count + ?", 1),
 			}).Error
@@ -101,7 +107,11 @@ func (r *OutboxEventRepository) Create(ctx context.Context, event *summary.Outbo
 }
 
 // CreateScheduledForType creates scheduled outbox events for all sources of a given type.
-func (r *OutboxEventRepository) CreateScheduledForType(ctx context.Context, sourceType source.Type, scheduledAt time.Time) (int, error) {
+func (r *OutboxEventRepository) CreateScheduledForType(
+	ctx context.Context,
+	sourceType source.Type,
+	scheduledAt time.Time,
+) (int, error) {
 	const query = `
 		INSERT INTO outbox_events (id, source_id, post_id, event_type, status, scheduled_at, created_at)
 		SELECT gen_random_uuid(), id, NULL, $1, $2, $3, $4

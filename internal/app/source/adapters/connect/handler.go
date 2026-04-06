@@ -18,16 +18,21 @@ import (
 )
 
 type Handler struct {
-	svc                *source.Service
-	log                *slog.Logger
-	outboxEventRepo    summary.OutboxEventRepository
-	sourceQueryRepo    summary.SourceQueryRepository
+	svc             *source.Service
+	log             *slog.Logger
+	outboxEventRepo summary.OutboxEventRepository
+	sourceQueryRepo summary.SourceQueryRepository
 }
 
 func New(svc *source.Service, log *slog.Logger) *Handler { return &Handler{svc: svc, log: log} }
 
 // NewWithProcessing creates a new Handler with dependencies for ProcessSource.
-func NewWithProcessing(svc *source.Service, log *slog.Logger, outboxEventRepo summary.OutboxEventRepository, sourceQueryRepo summary.SourceQueryRepository) *Handler {
+func NewWithProcessing(
+	svc *source.Service,
+	log *slog.Logger,
+	outboxEventRepo summary.OutboxEventRepository,
+	sourceQueryRepo summary.SourceQueryRepository,
+) *Handler {
 	return &Handler{
 		svc:             svc,
 		log:             log,
@@ -148,7 +153,7 @@ func (h *Handler) ProcessSource(
 	}
 
 	// Check if source exists
-	if _, err := h.sourceQueryRepo.GetByID(ctx, id); err != nil {
+	if _, err = h.sourceQueryRepo.GetByID(ctx, id); err != nil {
 		if errors.Is(err, source.ErrNotFound) {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
@@ -164,7 +169,7 @@ func (h *Handler) ProcessSource(
 		Status:    summary.EventStatusPending,
 	}
 
-	if err := h.outboxEventRepo.Create(ctx, event); err != nil {
+	if err = h.outboxEventRepo.Create(ctx, event); err != nil {
 		if h.log != nil {
 			h.log.ErrorContext(ctx, "failed to create outbox event", "source_id", id, "error", err)
 		}

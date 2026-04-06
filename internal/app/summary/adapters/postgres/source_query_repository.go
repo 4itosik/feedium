@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -23,7 +24,7 @@ func (r *SourceQueryRepository) GetByID(ctx context.Context, id uuid.UUID) (*sou
 	var s source.Source
 	result := r.db.WithContext(ctx).Where("id = ?", id).First(&s)
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, summary.ErrSourceNotFound
 		}
 		return nil, result.Error

@@ -9,6 +9,7 @@ import (
 	"feedium/internal/app/source"
 	"feedium/internal/app/summary"
 	"feedium/internal/app/summary/mocks"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -63,7 +64,7 @@ func TestNextScheduleTime(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(_ *testing.T) {
 			// This is a test for the unexported nextScheduleTime function,
 			// so we test it indirectly through the Scheduler behavior
 			// or by copying the logic here for direct testing.
@@ -93,7 +94,9 @@ func TestScheduler_RunScheduled_Error(t *testing.T) {
 
 	ctx := context.Background()
 	mockOutboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	mockOutboxRepo.EXPECT().CreateScheduledForType(ctx, source.TypeTelegramGroup, gomock.Any()).Return(0, assert.AnError)
+	mockOutboxRepo.EXPECT().
+		CreateScheduledForType(ctx, source.TypeTelegramGroup, gomock.Any()).
+		Return(0, assert.AnError)
 
 	logger := testLogger()
 	scheduler := summary.NewScheduler(mockOutboxRepo, logger)

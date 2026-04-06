@@ -13,7 +13,7 @@ type SummaryRepository struct {
 	db *gorm.DB
 }
 
-func NewSummaryRepository(db *gorm.DB) summary.SummaryRepository {
+func NewSummaryRepository(db *gorm.DB) summary.Repository {
 	return &SummaryRepository{db: db}
 }
 
@@ -29,7 +29,7 @@ func (r *SummaryRepository) Create(ctx context.Context, s *summary.Summary, post
 
 	// Insert summary_posts associations for each post
 	for _, postID := range postIDs {
-		summaryPost := map[string]interface{}{
+		summaryPost := map[string]any{
 			"summary_id": s.ID,
 			"post_id":    postID,
 		}

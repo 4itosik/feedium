@@ -104,32 +104,32 @@ func (mr *MockOutboxEventRepositoryMockRecorder) UpdateStatus(ctx, id, status, i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockOutboxEventRepository)(nil).UpdateStatus), ctx, id, status, incrementRetry)
 }
 
-// MockSummaryRepository is a mock of SummaryRepository interface.
-type MockSummaryRepository struct {
+// MockRepository is a mock of Repository interface.
+type MockRepository struct {
 	ctrl     *gomock.Controller
-	recorder *MockSummaryRepositoryMockRecorder
+	recorder *MockRepositoryMockRecorder
 	isgomock struct{}
 }
 
-// MockSummaryRepositoryMockRecorder is the mock recorder for MockSummaryRepository.
-type MockSummaryRepositoryMockRecorder struct {
-	mock *MockSummaryRepository
+// MockRepositoryMockRecorder is the mock recorder for MockRepository.
+type MockRepositoryMockRecorder struct {
+	mock *MockRepository
 }
 
-// NewMockSummaryRepository creates a new mock instance.
-func NewMockSummaryRepository(ctrl *gomock.Controller) *MockSummaryRepository {
-	mock := &MockSummaryRepository{ctrl: ctrl}
-	mock.recorder = &MockSummaryRepositoryMockRecorder{mock}
+// NewMockRepository creates a new mock instance.
+func NewMockRepository(ctrl *gomock.Controller) *MockRepository {
+	mock := &MockRepository{ctrl: ctrl}
+	mock.recorder = &MockRepositoryMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockSummaryRepository) EXPECT() *MockSummaryRepositoryMockRecorder {
+func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
 // Create mocks base method.
-func (m *MockSummaryRepository) Create(ctx context.Context, arg1 *summary.Summary, postIDs []uuid.UUID) error {
+func (m *MockRepository) Create(ctx context.Context, arg1 *summary.Summary, postIDs []uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, arg1, postIDs)
 	ret0, _ := ret[0].(error)
@@ -137,9 +137,9 @@ func (m *MockSummaryRepository) Create(ctx context.Context, arg1 *summary.Summar
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockSummaryRepositoryMockRecorder) Create(ctx, arg1, postIDs any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Create(ctx, arg1, postIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSummaryRepository)(nil).Create), ctx, arg1, postIDs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), ctx, arg1, postIDs)
 }
 
 // MockPostQueryRepository is a mock of PostQueryRepository interface.

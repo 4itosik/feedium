@@ -22,7 +22,7 @@ type processResult struct {
 // Worker processes outbox events and creates summaries.
 type Worker struct {
 	outboxEventRepo OutboxEventRepository
-	summaryRepo     SummaryRepository
+	summaryRepo     Repository
 	postQueryRepo   PostQueryRepository
 	sourceQueryRepo SourceQueryRepository
 	processor       Processor
@@ -32,7 +32,7 @@ type Worker struct {
 // NewWorker creates a new Worker instance.
 func NewWorker(
 	outboxEventRepo OutboxEventRepository,
-	summaryRepo SummaryRepository,
+	summaryRepo Repository,
 	postQueryRepo PostQueryRepository,
 	sourceQueryRepo SourceQueryRepository,
 	processor Processor,
@@ -78,9 +78,18 @@ func (w *Worker) ProcessNext(ctx context.Context) (bool, error) {
 		}
 
 		// Update event status based on processing result
-		err := w.outboxEventRepo.UpdateStatus(ctx, event.ID, result.status, result.incrementRetry)
-		if err != nil {
-			l.ErrorContext(ctx, fmt.Sprintf("failed to update event status: status=%s, increment_retry=%v", result.status, result.incrementRetry), "error", err)
+		updateErr := w.outboxEventRepo.UpdateStatus(ctx, event.ID, result.status, result.incrementRetry)
+		if updateErr != nil {
+			l.ErrorContext(
+				ctx,
+				fmt.Sprintf(
+					"failed to update event status: status=%s, increment_retry=%v",
+					result.status,
+					result.incrementRetry,
+				),
+				"error",
+				updateErr,
+			)
 		}
 	}()
 
@@ -95,7 +104,12 @@ func (w *Worker) ProcessNext(ctx context.Context) (bool, error) {
 	// Determine processing mode
 	mode, err := ProcessingModeForSourceType(src.Type)
 	if err != nil {
-		l.ErrorContext(ctx, fmt.Sprintf("unknown source type: source_id=%s, type=%s", event.SourceID, src.Type), "error", err)
+		l.ErrorContext(
+			ctx,
+			fmt.Sprintf("unknown source type: source_id=%s, type=%s", event.SourceID, src.Type),
+			"error",
+			err,
+		)
 		result = &processResult{status: EventStatusFailed, incrementRetry: false}
 		return true, nil
 	}
@@ -121,7 +135,13 @@ func (w *Worker) ProcessNext(ctx context.Context) (bool, error) {
 		if IsPermanentError(result.err) {
 			level = slog.LevelWarn
 		}
-		l.Log(ctx, level, fmt.Sprintf("processing failed: increment_retry=%v", result.incrementRetry), "error", result.err)
+		l.Log(
+			ctx,
+			level,
+			fmt.Sprintf("processing failed: increment_retry=%v", result.incrementRetry),
+			"error",
+			result.err,
+		)
 	}
 
 	return true, nil

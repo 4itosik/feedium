@@ -26,7 +26,7 @@ func TestWorkerProcessNext_SelfContainedHappyPath(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -103,7 +103,7 @@ func TestWorkerProcessNext_CumulativeHappyPath(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -179,7 +179,7 @@ func TestWorkerProcessNext_CumulativeNoPosts(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -240,7 +240,7 @@ func TestWorkerProcessNext_PostNotFound(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -301,7 +301,7 @@ func TestWorkerProcessNext_ProcessorError_SelfContained(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -370,7 +370,7 @@ func TestWorkerProcessNext_UnknownSourceType(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -424,7 +424,7 @@ func TestWorkerProcessNext_SourceNotFound(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -471,7 +471,7 @@ func TestWorkerProcessNext_NoPendingEvents(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -505,7 +505,7 @@ func TestWorkerProcessNext_DBConstraintViolation(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)
@@ -580,7 +580,7 @@ func TestWorkerProcessNext_SkipImmediateForCumulative(t *testing.T) {
 
 	// Setup mocks
 	outboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
-	summaryRepo := mocks.NewMockSummaryRepository(ctrl)
+	summaryRepo := mocks.NewMockRepository(ctrl)
 	postRepo := mocks.NewMockPostQueryRepository(ctrl)
 	sourceRepo := mocks.NewMockSourceQueryRepository(ctrl)
 	processor := mocks.NewMockProcessor(ctrl)

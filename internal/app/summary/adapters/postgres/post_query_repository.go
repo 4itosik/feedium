@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,7 +25,7 @@ func (r *PostQueryRepository) GetByID(ctx context.Context, id uuid.UUID) (*post.
 	var p post.Post
 	result := r.db.WithContext(ctx).Where("id = ?", id).First(&p)
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, summary.ErrPostNotFound
 		}
 		return nil, result.Error
@@ -34,11 +35,16 @@ func (r *PostQueryRepository) GetByID(ctx context.Context, id uuid.UUID) (*post.
 
 // FindUnprocessedBySource finds all unprocessed posts for a source since a given time.
 // A post is considered unprocessed if it has no entry in summary_posts.
-func (r *PostQueryRepository) FindUnprocessedBySource(ctx context.Context, sourceID uuid.UUID, since time.Time) ([]post.Post, error) {
+func (r *PostQueryRepository) FindUnprocessedBySource(
+	ctx context.Context,
+	sourceID uuid.UUID,
+	since time.Time,
+) ([]post.Post, error) {
 	var posts []post.Post
 
 	const query = `
-		SELECT p.* FROM posts p
+		SELECT p.id, p.source_id, p.title, p.content, p.author, p.published_at, p.created_at, p.updated_at
+		FROM posts p
 		WHERE p.source_id = $1
 		  AND p.created_at >= $2
 		  AND NOT EXISTS (
