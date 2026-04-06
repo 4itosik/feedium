@@ -97,10 +97,19 @@ message ListSourcesResponse {
   int32 total_count = 2;
 }
 
+message ProcessSourceRequest {
+  string id = 1;
+}
+
+message ProcessSourceResponse {
+  string event_id = 1;
+}
+
 service SourceService {
   rpc CreateSource(CreateSourceRequest) returns (CreateSourceResponse);
   rpc GetSource(GetSourceRequest) returns (GetSourceResponse);
   rpc UpdateSource(UpdateSourceRequest) returns (UpdateSourceResponse);
   rpc DeleteSource(DeleteSourceRequest) returns (DeleteSourceResponse);
   rpc ListSources(ListSourcesRequest) returns (ListSourcesResponse);
+  rpc ProcessSource(ProcessSourceRequest) returns (ProcessSourceResponse);
 }

@@ -24,6 +24,43 @@ func (r *Repository) Create(ctx context.Context, p *post.Post) error {
 	return nil
 }
 
+// CreateWithOutbox creates a post and an outbox event in a single transaction.
+// createEventFn is a callback that receives the post ID after insertion.
+// If createEventFn returns nil, nil, no event is created.
+func (r *Repository) CreateWithOutbox(ctx context.Context, post *post.Post, createEventFn func(postID uuid.UUID) (interface{}, error)) error {
+	tx := r.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Create the post
+	row := fromDomain(post)
+	if err := tx.Create(&row).Error; err != nil {
+		tx.Rollback()
+		return mapError(err)
+	}
+	applyRow(post, &row)
+
+	// Call the callback to create the event (if needed)
+	if createEventFn != nil {
+		event, err := createEventFn(post.ID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		// Create the event if it's not nil
+		if event != nil {
+			if err := tx.Create(event).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	return tx.Commit().Error
+}
+
 func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*post.Post, error) {
 	var row postRow
 	if err := r.db.WithContext(ctx).First(&row, "id = ?", id).Error; err != nil {

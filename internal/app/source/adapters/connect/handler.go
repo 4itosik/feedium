@@ -10,6 +10,7 @@ import (
 	sourcev1 "feedium/api/source/v1"
 	sourcev1connect "feedium/api/source/v1/sourcev1connect"
 	"feedium/internal/app/source"
+	"feedium/internal/app/summary"
 
 	"connectrpc.com/connect"
 	"github.com/google/uuid"
@@ -17,11 +18,23 @@ import (
 )
 
 type Handler struct {
-	svc *source.Service
-	log *slog.Logger
+	svc                *source.Service
+	log                *slog.Logger
+	outboxEventRepo    summary.OutboxEventRepository
+	sourceQueryRepo    summary.SourceQueryRepository
 }
 
 func New(svc *source.Service, log *slog.Logger) *Handler { return &Handler{svc: svc, log: log} }
+
+// NewWithProcessing creates a new Handler with dependencies for ProcessSource.
+func NewWithProcessing(svc *source.Service, log *slog.Logger, outboxEventRepo summary.OutboxEventRepository, sourceQueryRepo summary.SourceQueryRepository) *Handler {
+	return &Handler{
+		svc:             svc,
+		log:             log,
+		outboxEventRepo: outboxEventRepo,
+		sourceQueryRepo: sourceQueryRepo,
+	}
+}
 
 var _ sourcev1connect.SourceServiceHandler = (*Handler)(nil)
 
@@ -121,6 +134,45 @@ func (h *Handler) ListSources(
 	return connect.NewResponse(&sourcev1.ListSourcesResponse{
 		Sources:    out,
 		TotalCount: totalCount,
+	}), nil
+}
+
+func (h *Handler) ProcessSource(
+	ctx context.Context,
+	req *connect.Request[sourcev1.ProcessSourceRequest],
+) (*connect.Response[sourcev1.ProcessSourceResponse], error) {
+	// Validate UUID
+	id, err := uuid.Parse(strings.TrimSpace(req.Msg.GetId()))
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
+	// Check if source exists
+	if _, err := h.sourceQueryRepo.GetByID(ctx, id); err != nil {
+		if errors.Is(err, source.ErrNotFound) {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		// For other errors, return internal error
+		return nil, connect.NewError(connect.CodeInternal, errors.New("failed to check source"))
+	}
+
+	// Create a MANUAL outbox event
+	event := &summary.OutboxEvent{
+		SourceID:  id,
+		PostID:    nil,
+		EventType: summary.EventTypeManual,
+		Status:    summary.EventStatusPending,
+	}
+
+	if err := h.outboxEventRepo.Create(ctx, event); err != nil {
+		if h.log != nil {
+			h.log.ErrorContext(ctx, "failed to create outbox event", "source_id", id, "error", err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, errors.New("failed to create event"))
+	}
+
+	return connect.NewResponse(&sourcev1.ProcessSourceResponse{
+		EventId: event.ID.String(),
 	}), nil
 }
 

@@ -18,6 +18,8 @@ import (
 	sourcesvc "feedium/internal/app/source"
 	sourceconnect "feedium/internal/app/source/adapters/connect"
 	sourcepg "feedium/internal/app/source/adapters/postgres"
+	summarysvc "feedium/internal/app/summary"
+	summarypg "feedium/internal/app/summary/adapters/postgres"
 	"feedium/internal/platform/postgres"
 )
 
@@ -51,17 +53,35 @@ func Run(ctx context.Context, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+
+	// Setup summary repositories first (needed for outbox builder and source handler)
+	outboxEventRepo := summarypg.NewOutboxEventRepository(db)
+	summaryRepo := summarypg.NewSummaryRepository(db)
+	postQueryRepo := summarypg.NewPostQueryRepository(db)
+	sourceQueryRepo := summarypg.NewSourceQueryRepository(db)
+
+	// Setup source service and handler
 	repo := sourcepg.New(db)
 	service := sourcesvc.NewService(repo, log)
-	handler := sourceconnect.New(service, log)
+	handler := sourceconnect.NewWithProcessing(service, log, outboxEventRepo, sourceQueryRepo)
 	path, h := sourcev1connect.NewSourceServiceHandler(handler)
 	mux.Handle(path, h)
 
+	// Setup post service with outbox builder
 	postRepo := postpg.New(db)
 	postService := postsvc.NewService(postRepo, log)
+	outboxBuilder := summarysvc.NewOutboxBuilder(sourceQueryRepo)
+	postService.SetOutboxBuilder(outboxBuilder)
 	postHandler := postconnect.New(postService, log)
 	postPath, postH := postv1connect.NewPostServiceHandler(postHandler)
 	mux.Handle(postPath, postH)
+
+	// Setup summary processing pipeline
+	processor := &stubProcessor{}
+	summaryWorker := summarysvc.NewWorker(outboxEventRepo, summaryRepo, postQueryRepo, sourceQueryRepo, processor, log)
+
+	// Setup scheduler for TELEGRAM_GROUP sources
+	scheduler := summarysvc.NewScheduler(outboxEventRepo, log)
 
 	// Step 4: Create HTTP server
 	server := &http.Server{
@@ -70,7 +90,14 @@ func Run(ctx context.Context, log *slog.Logger) error {
 		ReadHeaderTimeout: shutdownTimeout,
 	}
 
-	// Step 5: Start server in goroutine
+	// Step 5: Start scheduler in goroutine
+	scheduler.Start(ctx)
+
+	// Step 5b: Start worker in goroutine
+	workerErrCh := make(chan error, 1)
+	go startWorker(ctx, summaryWorker, log, workerErrCh)
+
+	// Step 6: Start server in goroutine
 	errCh := make(chan error, 1)
 	go func() {
 		serveErr := server.ListenAndServe()
@@ -79,20 +106,54 @@ func Run(ctx context.Context, log *slog.Logger) error {
 		}
 	}()
 
-	// Step 6: Log that we're listening
+	// Step 7: Log that we're listening
 	log.InfoContext(ctx, "listening", "port", port)
 
-	// Step 7: Wait for context cancellation or error
+	// Step 8: Wait for context cancellation or error
 	select {
 	case <-ctx.Done():
 	case serveErr := <-errCh:
 		return serveErr
+	case workerErr := <-workerErrCh:
+		return workerErr
 	}
 
-	// Step 8: Shutdown
+	// Step 9: Shutdown
 	log.InfoContext(ctx, "shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	return server.Shutdown(shutdownCtx)
+}
+
+// startWorker runs the summary processing worker with polling.
+func startWorker(ctx context.Context, worker *summarysvc.Worker, log *slog.Logger, errCh chan<- error) {
+	const pollInterval = 1 * time.Second
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			processed, err := worker.ProcessNext(ctx)
+			if err != nil {
+				log.ErrorContext(ctx, "worker error", "error", err)
+				errCh <- err
+				return
+			}
+			// If no event was processed, wait before next poll
+			if !processed {
+				continue
+			}
+		}
+	}
+}
+
+// stubProcessor is a temporary processor implementation.
+type stubProcessor struct{}
+
+func (s *stubProcessor) Process(ctx context.Context, posts []postsvc.Post) (string, error) {
+	return "stub: processing not implemented", nil
 }

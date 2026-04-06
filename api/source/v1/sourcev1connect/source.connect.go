@@ -47,6 +47,9 @@ const (
 	// SourceServiceListSourcesProcedure is the fully-qualified name of the SourceService's ListSources
 	// RPC.
 	SourceServiceListSourcesProcedure = "/source.v1.SourceService/ListSources"
+	// SourceServiceProcessSourceProcedure is the fully-qualified name of the SourceService's
+	// ProcessSource RPC.
+	SourceServiceProcessSourceProcedure = "/source.v1.SourceService/ProcessSource"
 )
 
 // SourceServiceClient is a client for the source.v1.SourceService service.
@@ -56,6 +59,7 @@ type SourceServiceClient interface {
 	UpdateSource(context.Context, *connect.Request[v1.UpdateSourceRequest]) (*connect.Response[v1.UpdateSourceResponse], error)
 	DeleteSource(context.Context, *connect.Request[v1.DeleteSourceRequest]) (*connect.Response[v1.DeleteSourceResponse], error)
 	ListSources(context.Context, *connect.Request[v1.ListSourcesRequest]) (*connect.Response[v1.ListSourcesResponse], error)
+	ProcessSource(context.Context, *connect.Request[v1.ProcessSourceRequest]) (*connect.Response[v1.ProcessSourceResponse], error)
 }
 
 // NewSourceServiceClient constructs a client for the source.v1.SourceService service. By default,
@@ -99,16 +103,23 @@ func NewSourceServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(sourceServiceMethods.ByName("ListSources")),
 			connect.WithClientOptions(opts...),
 		),
+		processSource: connect.NewClient[v1.ProcessSourceRequest, v1.ProcessSourceResponse](
+			httpClient,
+			baseURL+SourceServiceProcessSourceProcedure,
+			connect.WithSchema(sourceServiceMethods.ByName("ProcessSource")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // sourceServiceClient implements SourceServiceClient.
 type sourceServiceClient struct {
-	createSource *connect.Client[v1.CreateSourceRequest, v1.CreateSourceResponse]
-	getSource    *connect.Client[v1.GetSourceRequest, v1.GetSourceResponse]
-	updateSource *connect.Client[v1.UpdateSourceRequest, v1.UpdateSourceResponse]
-	deleteSource *connect.Client[v1.DeleteSourceRequest, v1.DeleteSourceResponse]
-	listSources  *connect.Client[v1.ListSourcesRequest, v1.ListSourcesResponse]
+	createSource  *connect.Client[v1.CreateSourceRequest, v1.CreateSourceResponse]
+	getSource     *connect.Client[v1.GetSourceRequest, v1.GetSourceResponse]
+	updateSource  *connect.Client[v1.UpdateSourceRequest, v1.UpdateSourceResponse]
+	deleteSource  *connect.Client[v1.DeleteSourceRequest, v1.DeleteSourceResponse]
+	listSources   *connect.Client[v1.ListSourcesRequest, v1.ListSourcesResponse]
+	processSource *connect.Client[v1.ProcessSourceRequest, v1.ProcessSourceResponse]
 }
 
 // CreateSource calls source.v1.SourceService.CreateSource.
@@ -136,6 +147,11 @@ func (c *sourceServiceClient) ListSources(ctx context.Context, req *connect.Requ
 	return c.listSources.CallUnary(ctx, req)
 }
 
+// ProcessSource calls source.v1.SourceService.ProcessSource.
+func (c *sourceServiceClient) ProcessSource(ctx context.Context, req *connect.Request[v1.ProcessSourceRequest]) (*connect.Response[v1.ProcessSourceResponse], error) {
+	return c.processSource.CallUnary(ctx, req)
+}
+
 // SourceServiceHandler is an implementation of the source.v1.SourceService service.
 type SourceServiceHandler interface {
 	CreateSource(context.Context, *connect.Request[v1.CreateSourceRequest]) (*connect.Response[v1.CreateSourceResponse], error)
@@ -143,6 +159,7 @@ type SourceServiceHandler interface {
 	UpdateSource(context.Context, *connect.Request[v1.UpdateSourceRequest]) (*connect.Response[v1.UpdateSourceResponse], error)
 	DeleteSource(context.Context, *connect.Request[v1.DeleteSourceRequest]) (*connect.Response[v1.DeleteSourceResponse], error)
 	ListSources(context.Context, *connect.Request[v1.ListSourcesRequest]) (*connect.Response[v1.ListSourcesResponse], error)
+	ProcessSource(context.Context, *connect.Request[v1.ProcessSourceRequest]) (*connect.Response[v1.ProcessSourceResponse], error)
 }
 
 // NewSourceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -182,6 +199,12 @@ func NewSourceServiceHandler(svc SourceServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(sourceServiceMethods.ByName("ListSources")),
 		connect.WithHandlerOptions(opts...),
 	)
+	sourceServiceProcessSourceHandler := connect.NewUnaryHandler(
+		SourceServiceProcessSourceProcedure,
+		svc.ProcessSource,
+		connect.WithSchema(sourceServiceMethods.ByName("ProcessSource")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/source.v1.SourceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SourceServiceCreateSourceProcedure:
@@ -194,6 +217,8 @@ func NewSourceServiceHandler(svc SourceServiceHandler, opts ...connect.HandlerOp
 			sourceServiceDeleteSourceHandler.ServeHTTP(w, r)
 		case SourceServiceListSourcesProcedure:
 			sourceServiceListSourcesHandler.ServeHTTP(w, r)
+		case SourceServiceProcessSourceProcedure:
+			sourceServiceProcessSourceHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -221,4 +246,8 @@ func (UnimplementedSourceServiceHandler) DeleteSource(context.Context, *connect.
 
 func (UnimplementedSourceServiceHandler) ListSources(context.Context, *connect.Request[v1.ListSourcesRequest]) (*connect.Response[v1.ListSourcesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("source.v1.SourceService.ListSources is not implemented"))
+}
+
+func (UnimplementedSourceServiceHandler) ProcessSource(context.Context, *connect.Request[v1.ProcessSourceRequest]) (*connect.Response[v1.ProcessSourceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("source.v1.SourceService.ProcessSource is not implemented"))
 }

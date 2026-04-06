@@ -10,6 +10,7 @@ import (
 
 type Repository interface {
 	Create(context.Context, *Post) error
+	CreateWithOutbox(ctx context.Context, post *Post, createEventFn func(postID uuid.UUID) (interface{}, error)) error
 	GetByID(context.Context, uuid.UUID) (*Post, error)
 	Update(context.Context, *Post) error
 	Delete(context.Context, uuid.UUID) error

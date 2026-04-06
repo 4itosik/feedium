@@ -56,6 +56,20 @@ func (mr *MockRepositoryMockRecorder) Create(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), arg0, arg1)
 }
 
+// CreateWithOutbox mocks base method.
+func (m *MockRepository) CreateWithOutbox(ctx context.Context, arg1 *post.Post, createEventFn func(uuid.UUID) (any, error)) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWithOutbox", ctx, arg1, createEventFn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateWithOutbox indicates an expected call of CreateWithOutbox.
+func (mr *MockRepositoryMockRecorder) CreateWithOutbox(ctx, arg1, createEventFn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWithOutbox", reflect.TypeOf((*MockRepository)(nil).CreateWithOutbox), ctx, arg1, createEventFn)
+}
+
 // Delete mocks base method.
 func (m *MockRepository) Delete(arg0 context.Context, arg1 uuid.UUID) error {
 	m.ctrl.T.Helper()

@@ -971,6 +971,94 @@ func (x *ListSourcesResponse) GetTotalCount() int32 {
 	return 0
 }
 
+type ProcessSourceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessSourceRequest) Reset() {
+	*x = ProcessSourceRequest{}
+	mi := &file_api_source_v1_source_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessSourceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessSourceRequest) ProtoMessage() {}
+
+func (x *ProcessSourceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_source_v1_source_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessSourceRequest.ProtoReflect.Descriptor instead.
+func (*ProcessSourceRequest) Descriptor() ([]byte, []int) {
+	return file_api_source_v1_source_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ProcessSourceRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ProcessSourceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EventId       string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProcessSourceResponse) Reset() {
+	*x = ProcessSourceResponse{}
+	mi := &file_api_source_v1_source_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessSourceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessSourceResponse) ProtoMessage() {}
+
+func (x *ProcessSourceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_source_v1_source_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessSourceResponse.ProtoReflect.Descriptor instead.
+func (*ProcessSourceResponse) Descriptor() ([]byte, []int) {
+	return file_api_source_v1_source_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ProcessSourceResponse) GetEventId() string {
+	if x != nil {
+		return x.EventId
+	}
+	return ""
+}
+
 var File_api_source_v1_source_proto protoreflect.FileDescriptor
 
 const file_api_source_v1_source_proto_rawDesc = "" +
@@ -1031,20 +1119,25 @@ const file_api_source_v1_source_proto_rawDesc = "" +
 	"\x13ListSourcesResponse\x12+\n" +
 	"\asources\x18\x01 \x03(\v2\x11.source.v1.SourceR\asources\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
-	"totalCount*\x9e\x01\n" +
+	"totalCount\"&\n" +
+	"\x14ProcessSourceRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"2\n" +
+	"\x15ProcessSourceResponse\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId*\x9e\x01\n" +
 	"\n" +
 	"SourceType\x12\x1b\n" +
 	"\x17SOURCE_TYPE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cSOURCE_TYPE_TELEGRAM_CHANNEL\x10\x01\x12\x1e\n" +
 	"\x1aSOURCE_TYPE_TELEGRAM_GROUP\x10\x02\x12\x13\n" +
 	"\x0fSOURCE_TYPE_RSS\x10\x03\x12\x1c\n" +
-	"\x18SOURCE_TYPE_WEB_SCRAPING\x10\x042\x98\x03\n" +
+	"\x18SOURCE_TYPE_WEB_SCRAPING\x10\x042\xec\x03\n" +
 	"\rSourceService\x12O\n" +
 	"\fCreateSource\x12\x1e.source.v1.CreateSourceRequest\x1a\x1f.source.v1.CreateSourceResponse\x12F\n" +
 	"\tGetSource\x12\x1b.source.v1.GetSourceRequest\x1a\x1c.source.v1.GetSourceResponse\x12O\n" +
 	"\fUpdateSource\x12\x1e.source.v1.UpdateSourceRequest\x1a\x1f.source.v1.UpdateSourceResponse\x12O\n" +
 	"\fDeleteSource\x12\x1e.source.v1.DeleteSourceRequest\x1a\x1f.source.v1.DeleteSourceResponse\x12L\n" +
-	"\vListSources\x12\x1d.source.v1.ListSourcesRequest\x1a\x1e.source.v1.ListSourcesResponseB Z\x1efeedium/api/source/v1;sourcev1b\x06proto3"
+	"\vListSources\x12\x1d.source.v1.ListSourcesRequest\x1a\x1e.source.v1.ListSourcesResponse\x12R\n" +
+	"\rProcessSource\x12\x1f.source.v1.ProcessSourceRequest\x1a .source.v1.ProcessSourceResponseB Z\x1efeedium/api/source/v1;sourcev1b\x06proto3"
 
 var (
 	file_api_source_v1_source_proto_rawDescOnce sync.Once
@@ -1059,7 +1152,7 @@ func file_api_source_v1_source_proto_rawDescGZIP() []byte {
 }
 
 var file_api_source_v1_source_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_source_v1_source_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_api_source_v1_source_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_api_source_v1_source_proto_goTypes = []any{
 	(SourceType)(0),               // 0: source.v1.SourceType
 	(*TelegramChannelConfig)(nil), // 1: source.v1.TelegramChannelConfig
@@ -1078,7 +1171,9 @@ var file_api_source_v1_source_proto_goTypes = []any{
 	(*DeleteSourceResponse)(nil),  // 14: source.v1.DeleteSourceResponse
 	(*ListSourcesRequest)(nil),    // 15: source.v1.ListSourcesRequest
 	(*ListSourcesResponse)(nil),   // 16: source.v1.ListSourcesResponse
-	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
+	(*ProcessSourceRequest)(nil),  // 17: source.v1.ProcessSourceRequest
+	(*ProcessSourceResponse)(nil), // 18: source.v1.ProcessSourceResponse
+	(*timestamppb.Timestamp)(nil), // 19: google.protobuf.Timestamp
 }
 var file_api_source_v1_source_proto_depIdxs = []int32{
 	1,  // 0: source.v1.SourceConfig.telegram_channel:type_name -> source.v1.TelegramChannelConfig
@@ -1087,8 +1182,8 @@ var file_api_source_v1_source_proto_depIdxs = []int32{
 	4,  // 3: source.v1.SourceConfig.web_scraping:type_name -> source.v1.WebScrapingConfig
 	0,  // 4: source.v1.Source.type:type_name -> source.v1.SourceType
 	5,  // 5: source.v1.Source.config:type_name -> source.v1.SourceConfig
-	17, // 6: source.v1.Source.created_at:type_name -> google.protobuf.Timestamp
-	17, // 7: source.v1.Source.updated_at:type_name -> google.protobuf.Timestamp
+	19, // 6: source.v1.Source.created_at:type_name -> google.protobuf.Timestamp
+	19, // 7: source.v1.Source.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 8: source.v1.CreateSourceRequest.type:type_name -> source.v1.SourceType
 	5,  // 9: source.v1.CreateSourceRequest.config:type_name -> source.v1.SourceConfig
 	6,  // 10: source.v1.CreateSourceResponse.source:type_name -> source.v1.Source
@@ -1103,13 +1198,15 @@ var file_api_source_v1_source_proto_depIdxs = []int32{
 	11, // 19: source.v1.SourceService.UpdateSource:input_type -> source.v1.UpdateSourceRequest
 	13, // 20: source.v1.SourceService.DeleteSource:input_type -> source.v1.DeleteSourceRequest
 	15, // 21: source.v1.SourceService.ListSources:input_type -> source.v1.ListSourcesRequest
-	8,  // 22: source.v1.SourceService.CreateSource:output_type -> source.v1.CreateSourceResponse
-	10, // 23: source.v1.SourceService.GetSource:output_type -> source.v1.GetSourceResponse
-	12, // 24: source.v1.SourceService.UpdateSource:output_type -> source.v1.UpdateSourceResponse
-	14, // 25: source.v1.SourceService.DeleteSource:output_type -> source.v1.DeleteSourceResponse
-	16, // 26: source.v1.SourceService.ListSources:output_type -> source.v1.ListSourcesResponse
-	22, // [22:27] is the sub-list for method output_type
-	17, // [17:22] is the sub-list for method input_type
+	17, // 22: source.v1.SourceService.ProcessSource:input_type -> source.v1.ProcessSourceRequest
+	8,  // 23: source.v1.SourceService.CreateSource:output_type -> source.v1.CreateSourceResponse
+	10, // 24: source.v1.SourceService.GetSource:output_type -> source.v1.GetSourceResponse
+	12, // 25: source.v1.SourceService.UpdateSource:output_type -> source.v1.UpdateSourceResponse
+	14, // 26: source.v1.SourceService.DeleteSource:output_type -> source.v1.DeleteSourceResponse
+	16, // 27: source.v1.SourceService.ListSources:output_type -> source.v1.ListSourcesResponse
+	18, // 28: source.v1.SourceService.ProcessSource:output_type -> source.v1.ProcessSourceResponse
+	23, // [23:29] is the sub-list for method output_type
+	17, // [17:23] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
 	17, // [17:17] is the sub-list for extension extendee
 	0,  // [0:17] is the sub-list for field type_name
@@ -1132,7 +1229,7 @@ func file_api_source_v1_source_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_source_v1_source_proto_rawDesc), len(file_api_source_v1_source_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
