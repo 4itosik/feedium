@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	post "feedium/internal/app/post"
+	summary "feedium/internal/app/summary"
 	reflect "reflect"
 
 	gomock "go.uber.org/mock/gomock"
@@ -42,16 +43,16 @@ func (m *MockProcessor) EXPECT() *MockProcessorMockRecorder {
 }
 
 // Process mocks base method.
-func (m *MockProcessor) Process(ctx context.Context, posts []post.Post) (string, error) {
+func (m *MockProcessor) Process(ctx context.Context, mode summary.ProcessingMode, posts []post.Post) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Process", ctx, posts)
+	ret := m.ctrl.Call(m, "Process", ctx, mode, posts)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Process indicates an expected call of Process.
-func (mr *MockProcessorMockRecorder) Process(ctx, posts any) *gomock.Call {
+func (mr *MockProcessorMockRecorder) Process(ctx, mode, posts any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockProcessor)(nil).Process), ctx, posts)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockProcessor)(nil).Process), ctx, mode, posts)
 }

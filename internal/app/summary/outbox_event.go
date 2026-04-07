@@ -23,6 +23,11 @@ const (
 	EventStatusFailed     EventStatus = "FAILED"
 )
 
+const (
+	// MaxRetries is the maximum number of retry attempts for transient errors.
+	MaxRetries = 3
+)
+
 type OutboxEvent struct {
 	ID          uuid.UUID
 	SourceID    uuid.UUID

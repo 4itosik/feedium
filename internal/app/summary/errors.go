@@ -11,6 +11,12 @@ var (
 
 	// ErrSourceNotFound is returned when a source cannot be found (permanent error, no retry increment).
 	ErrSourceNotFound = errors.New("source not found")
+
+	// ErrContentTooLarge is returned when the total content exceeds 32,000 characters (permanent error).
+	ErrContentTooLarge = errors.New("content too large")
+
+	// ErrEmptyLLMResponse is returned when LLM returns empty content (treated as transient error for retry).
+	ErrEmptyLLMResponse = errors.New("empty LLM response")
 )
 
 // IsPermanentError returns true if the error is a permanent error that should not increment retry_count.
@@ -20,5 +26,6 @@ func IsPermanentError(err error) bool {
 	}
 	return errors.Is(err, ErrPostNotFound) ||
 		errors.Is(err, ErrUnknownSourceType) ||
-		errors.Is(err, ErrSourceNotFound)
+		errors.Is(err, ErrSourceNotFound) ||
+		errors.Is(err, ErrContentTooLarge)
 }

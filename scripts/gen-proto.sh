@@ -66,4 +66,5 @@ protoc \
   --connect-go_out=. \
   --connect-go_opt=module=feedium \
   api/source/v1/source.proto \
-  api/post/v1/post.proto
+  api/post/v1/post.proto \
+  api/summary/v1/summary.proto

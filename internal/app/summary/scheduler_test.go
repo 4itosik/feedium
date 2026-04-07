@@ -104,3 +104,63 @@ func TestScheduler_RunScheduled_Error(t *testing.T) {
 	err := scheduler.RunScheduled(ctx)
 	require.Error(t, err)
 }
+
+func TestScheduler_Start_CreatesEvents(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOutboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
+	logger := testLogger()
+
+	scheduler := summary.NewScheduler(mockOutboxRepo, logger)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Expect CreateScheduledForType to be called for each source type
+	mockOutboxRepo.EXPECT().
+		CreateScheduledForType(gomock.Any(), source.TypeTelegramGroup, gomock.Any()).
+		Return(5, nil).
+		AnyTimes()
+
+	// Start scheduler
+	go scheduler.Start(ctx)
+
+	// Let it run for a bit
+	time.Sleep(100 * time.Millisecond)
+
+	// Cancel context
+	cancel()
+
+	// Wait a bit for graceful shutdown
+	time.Sleep(50 * time.Millisecond)
+}
+
+func TestScheduler_Start_HandlesErrors(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOutboxRepo := mocks.NewMockOutboxEventRepository(ctrl)
+	logger := testLogger()
+
+	scheduler := summary.NewScheduler(mockOutboxRepo, logger)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Expect errors
+	mockOutboxRepo.EXPECT().
+		CreateScheduledForType(gomock.Any(), source.TypeTelegramGroup, gomock.Any()).
+		Return(0, assert.AnError).
+		AnyTimes()
+
+	// Start scheduler
+	go scheduler.Start(ctx)
+
+	// Let it run for a bit
+	time.Sleep(100 * time.Millisecond)
+
+	// Cancel context
+	cancel()
+
+	// Wait a bit for graceful shutdown
+	time.Sleep(50 * time.Millisecond)
+}

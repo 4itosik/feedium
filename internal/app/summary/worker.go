@@ -55,7 +55,6 @@ func NewWorker(
 // Returns true if an event was processed, false if no events were available.
 // Returns error only for unexpected errors (should be logged and retried).
 func (w *Worker) ProcessNext(ctx context.Context) (bool, error) {
-	// Fetch the next pending event
 	event, lockTime, err := w.outboxEventRepo.FetchAndLockPending(ctx)
 	if err != nil {
 		w.logger.ErrorContext(ctx, "failed to fetch pending event", "error", err)
@@ -63,88 +62,111 @@ func (w *Worker) ProcessNext(ctx context.Context) (bool, error) {
 	}
 
 	if event == nil {
-		// No pending events available
 		return false, nil
 	}
 
-	// Create a logger with event_id context
 	l := w.logger.With("event_id", event.ID.String())
+	result := w.processEvent(ctx, l, event, lockTime)
+	w.handleProcessingResult(ctx, l, event, result)
+	w.logProcessingError(ctx, l, result)
 
-	// Setup defer to handle all status updates
-	var result *processResult
-	defer func() {
-		if result == nil {
-			return
-		}
+	return true, nil
+}
 
-		// Update event status based on processing result
-		updateErr := w.outboxEventRepo.UpdateStatus(ctx, event.ID, result.status, result.incrementRetry)
-		if updateErr != nil {
-			l.ErrorContext(
-				ctx,
-				fmt.Sprintf(
-					"failed to update event status: status=%s, increment_retry=%v",
-					result.status,
-					result.incrementRetry,
-				),
-				"error",
-				updateErr,
-			)
-		}
-	}()
-
-	// Get the source to determine processing mode
+// processEvent processes a single event and returns the result.
+func (w *Worker) processEvent(
+	ctx context.Context,
+	l *slog.Logger,
+	event *OutboxEvent,
+	lockTime time.Time,
+) *processResult {
 	src, err := w.sourceQueryRepo.GetByID(ctx, event.SourceID)
 	if err != nil {
 		l.ErrorContext(ctx, fmt.Sprintf("failed to get source: source_id=%s", event.SourceID), "error", err)
-		result = &processResult{status: EventStatusFailed, incrementRetry: false}
-		return true, nil
+		return &processResult{status: EventStatusFailed, incrementRetry: false}
 	}
 
-	// Determine processing mode
 	mode, err := ProcessingModeForSourceType(src.Type)
 	if err != nil {
 		l.ErrorContext(
 			ctx,
 			fmt.Sprintf("unknown source type: source_id=%s, type=%s", event.SourceID, src.Type),
-			"error",
-			err,
+			"error", err,
 		)
-		result = &processResult{status: EventStatusFailed, incrementRetry: false}
-		return true, nil
+		return &processResult{status: EventStatusFailed, incrementRetry: false}
 	}
 
-	// Skip IMMEDIATE events for cumulative sources (they are only processed via SCHEDULED/MANUAL events)
 	if mode == ModeCumulative && event.EventType == EventTypeImmediate {
 		l.DebugContext(ctx, "skipping immediate event for cumulative source", "source_id", event.SourceID.String())
-		result = &processResult{status: EventStatusCompleted, incrementRetry: false}
-		return true, nil
+		return &processResult{status: EventStatusCompleted, incrementRetry: false}
 	}
 
-	// Process based on mode
 	switch mode {
 	case ModeSelfContained:
-		result = w.processSelfContained(ctx, event, lockTime)
+		return w.processSelfContained(ctx, event, lockTime)
 	case ModeCumulative:
-		result = w.processCumulative(ctx, event, lockTime)
+		return w.processCumulative(ctx, event, lockTime)
 	}
 
-	// Log any processing errors
-	if result != nil && result.err != nil && result.status == EventStatusFailed {
-		level := slog.LevelError
-		if IsPermanentError(result.err) {
-			level = slog.LevelWarn
+	return nil
+}
+
+// handleProcessingResult handles status updates and retry logic after processing.
+func (w *Worker) handleProcessingResult(
+	ctx context.Context,
+	l *slog.Logger,
+	event *OutboxEvent,
+	result *processResult,
+) {
+	if result == nil {
+		return
+	}
+
+	if result.status == EventStatusFailed && result.err != nil && !IsPermanentError(result.err) {
+		if event.RetryCount < MaxRetries {
+			backoffDuration := time.Duration(1<<event.RetryCount) * time.Minute
+			scheduledAt := time.Now().Add(backoffDuration)
+
+			requeueErr := w.outboxEventRepo.Requeue(ctx, event.ID, scheduledAt)
+			if requeueErr != nil {
+				l.ErrorContext(ctx, "failed to requeue event", "error", requeueErr)
+			} else {
+				l.DebugContext(ctx, "event requeued for retry",
+					"retry_count", event.RetryCount+1,
+					"scheduled_at", scheduledAt,
+				)
+			}
+			return
 		}
-		l.Log(
-			ctx,
-			level,
-			fmt.Sprintf("processing failed: increment_retry=%v", result.incrementRetry),
-			"error",
-			result.err,
-		)
 	}
 
-	return true, nil
+	updateErr := w.outboxEventRepo.UpdateStatus(ctx, event.ID, result.status, result.incrementRetry)
+	if updateErr != nil {
+		msg := fmt.Sprintf(
+			"failed to update event status: status=%s, increment_retry=%v",
+			result.status,
+			result.incrementRetry,
+		)
+		l.ErrorContext(ctx, msg, "error", updateErr)
+	}
+}
+
+// logProcessingError logs processing errors with appropriate level.
+func (w *Worker) logProcessingError(
+	ctx context.Context,
+	l *slog.Logger,
+	result *processResult,
+) {
+	if result == nil || result.err == nil || result.status != EventStatusFailed {
+		return
+	}
+
+	level := slog.LevelError
+	if IsPermanentError(result.err) {
+		level = slog.LevelWarn
+	}
+
+	l.Log(ctx, level, fmt.Sprintf("processing failed: increment_retry=%v", result.incrementRetry), "error", result.err)
 }
 
 // processSelfContained processes a self-contained event (one post per summary).
@@ -170,11 +192,11 @@ func (w *Worker) processSelfContained(ctx context.Context, event *OutboxEvent, _
 	}
 
 	// Process the post
-	content, err := w.processor.Process(ctx, []post.Post{*p})
+	content, err := w.processor.Process(ctx, ModeSelfContained, []post.Post{*p})
 	if err != nil {
 		return &processResult{
 			status:         EventStatusFailed,
-			incrementRetry: true,
+			incrementRetry: !IsPermanentError(err),
 			err:            err,
 		}
 	}
@@ -227,11 +249,11 @@ func (w *Worker) processCumulative(ctx context.Context, event *OutboxEvent, lock
 	}
 
 	// Process the posts
-	content, err := w.processor.Process(ctx, posts)
+	content, err := w.processor.Process(ctx, ModeCumulative, posts)
 	if err != nil {
 		return &processResult{
 			status:         EventStatusFailed,
-			incrementRetry: true,
+			incrementRetry: !IsPermanentError(err),
 			err:            err,
 		}
 	}

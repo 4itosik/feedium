@@ -90,6 +90,20 @@ func (mr *MockOutboxEventRepositoryMockRecorder) FetchAndLockPending(ctx any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchAndLockPending", reflect.TypeOf((*MockOutboxEventRepository)(nil).FetchAndLockPending), ctx)
 }
 
+// Requeue mocks base method.
+func (m *MockOutboxEventRepository) Requeue(ctx context.Context, id uuid.UUID, scheduledAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Requeue", ctx, id, scheduledAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Requeue indicates an expected call of Requeue.
+func (mr *MockOutboxEventRepositoryMockRecorder) Requeue(ctx, id, scheduledAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Requeue", reflect.TypeOf((*MockOutboxEventRepository)(nil).Requeue), ctx, id, scheduledAt)
+}
+
 // UpdateStatus mocks base method.
 func (m *MockOutboxEventRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status summary.EventStatus, incrementRetry bool) error {
 	m.ctrl.T.Helper()
@@ -140,6 +154,37 @@ func (m *MockRepository) Create(ctx context.Context, arg1 *summary.Summary, post
 func (mr *MockRepositoryMockRecorder) Create(ctx, arg1, postIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepository)(nil).Create), ctx, arg1, postIDs)
+}
+
+// GetByPostID mocks base method.
+func (m *MockRepository) GetByPostID(ctx context.Context, postID uuid.UUID) (*summary.Summary, []uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByPostID", ctx, postID)
+	ret0, _ := ret[0].(*summary.Summary)
+	ret1, _ := ret[1].([]uuid.UUID)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetByPostID indicates an expected call of GetByPostID.
+func (mr *MockRepositoryMockRecorder) GetByPostID(ctx, postID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPostID", reflect.TypeOf((*MockRepository)(nil).GetByPostID), ctx, postID)
+}
+
+// ListSummaries mocks base method.
+func (m *MockRepository) ListSummaries(ctx context.Context, sourceID *uuid.UUID, limit int) ([]summary.WithPostIDs, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSummaries", ctx, sourceID, limit)
+	ret0, _ := ret[0].([]summary.WithPostIDs)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSummaries indicates an expected call of ListSummaries.
+func (mr *MockRepositoryMockRecorder) ListSummaries(ctx, sourceID, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSummaries", reflect.TypeOf((*MockRepository)(nil).ListSummaries), ctx, sourceID, limit)
 }
 
 // MockPostQueryRepository is a mock of PostQueryRepository interface.

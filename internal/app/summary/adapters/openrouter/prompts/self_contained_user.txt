@@ -1,0 +1,5 @@
+Summarize this post in 3-5 sentences.
+
+Title: {{ .Title }}
+
+{{ .Content }}

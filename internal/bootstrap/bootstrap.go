@@ -12,6 +12,7 @@ import (
 
 	postv1connect "feedium/api/post/v1/postv1connect"
 	sourcev1connect "feedium/api/source/v1/sourcev1connect"
+	summaryv1connect "feedium/api/summary/v1/summaryv1connect"
 	postsvc "feedium/internal/app/post"
 	postconnect "feedium/internal/app/post/adapters/connect"
 	postpg "feedium/internal/app/post/adapters/postgres"
@@ -19,7 +20,10 @@ import (
 	sourceconnect "feedium/internal/app/source/adapters/connect"
 	sourcepg "feedium/internal/app/source/adapters/postgres"
 	summarysvc "feedium/internal/app/summary"
+	summaryconnect "feedium/internal/app/summary/adapters/connect"
+	openrouter "feedium/internal/app/summary/adapters/openrouter"
 	summarypg "feedium/internal/app/summary/adapters/postgres"
+	componentsummary "feedium/internal/components/summary"
 	"feedium/internal/platform/postgres"
 
 	"gorm.io/gorm"
@@ -52,24 +56,33 @@ func Run(ctx context.Context, log *slog.Logger) error {
 		return err
 	}
 
-	// Step 3: Create ServeMux, register health endpoint and all service handlers
+	// Step 3: Read OpenRouter configuration
+	openRouterAPIKey := os.Getenv("OPENROUTER_API_KEY")
+	if openRouterAPIKey == "" {
+		return errors.New("OPENROUTER_API_KEY is required")
+	}
+	openRouterModel := os.Getenv("OPENROUTER_MODEL")
+	if openRouterModel == "" {
+		openRouterModel = openrouter.DefaultModel
+	}
+
+	// Step 4: Create ServeMux, register health endpoint and all service handlers
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", HealthHandler)
-	worker, scheduler := registerHandlers(mux, db, log)
+	_, scheduler, runner := registerHandlers(mux, db, log, openRouterAPIKey, openRouterModel)
 
-	// Step 4: Create HTTP server
+	// Step 5: Create HTTP server
 	server := &http.Server{
 		Addr:              ":" + portStr,
 		Handler:           mux,
 		ReadHeaderTimeout: shutdownTimeout,
 	}
 
-	// Step 5: Start scheduler and worker in goroutines
+	// Step 6: Start scheduler and worker runner in goroutines
 	scheduler.Start(ctx)
-	workerErrCh := make(chan error, 1)
-	go startWorker(ctx, worker, log, workerErrCh)
+	go runner.Start(ctx)
 
-	// Step 6: Start server in goroutine
+	// Step 7: Start server in goroutine
 	errCh := make(chan error, 1)
 	go func() {
 		serveErr := server.ListenAndServe()
@@ -80,16 +93,14 @@ func Run(ctx context.Context, log *slog.Logger) error {
 
 	log.InfoContext(ctx, "listening", "port", port)
 
-	// Step 7: Wait for context cancellation or error
+	// Step 8: Wait for context cancellation or error
 	select {
 	case <-ctx.Done():
 	case serveErr := <-errCh:
 		return serveErr
-	case workerErr := <-workerErrCh:
-		return workerErr
 	}
 
-	// Step 8: Shutdown
+	// Step 9: Shutdown
 	log.InfoContext(ctx, "shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
@@ -98,8 +109,14 @@ func Run(ctx context.Context, log *slog.Logger) error {
 }
 
 // registerHandlers sets up all repositories, services, and HTTP handlers on mux.
-// Returns the summary worker and scheduler for the caller to start.
-func registerHandlers(mux *http.ServeMux, db *gorm.DB, log *slog.Logger) (*summarysvc.Worker, *summarysvc.Scheduler) {
+// Returns the summary worker, scheduler, and worker runner for the caller to start.
+func registerHandlers(
+	mux *http.ServeMux,
+	db *gorm.DB,
+	log *slog.Logger,
+	openRouterAPIKey string,
+	openRouterModel string,
+) (*summarysvc.Worker, *summarysvc.Scheduler, *componentsummary.WorkerRunner) {
 	outboxEventRepo := summarypg.NewOutboxEventRepository(db)
 	summaryRepo := summarypg.NewSummaryRepository(db)
 	postQueryRepo := summarypg.NewPostQueryRepository(db)
@@ -118,34 +135,18 @@ func registerHandlers(mux *http.ServeMux, db *gorm.DB, log *slog.Logger) (*summa
 	postPath, postH := postv1connect.NewPostServiceHandler(postHandler)
 	mux.Handle(postPath, postH)
 
-	worker := summarysvc.NewWorker(outboxEventRepo, summaryRepo, postQueryRepo, sourceQueryRepo, &stubProcessor{}, log)
+	// Summary Connect handler
+	summaryHandler := summaryconnect.New(summaryRepo, log)
+	summaryPath, summaryH := summaryv1connect.NewSummaryServiceHandler(summaryHandler)
+	mux.Handle(summaryPath, summaryH)
+
+	// Create OpenRouter processor
+	processor := openrouter.NewProcessor(openRouterAPIKey, openRouterModel)
+
+	// Create worker and runner
+	worker := summarysvc.NewWorker(outboxEventRepo, summaryRepo, postQueryRepo, sourceQueryRepo, processor, log)
 	scheduler := summarysvc.NewScheduler(outboxEventRepo, log)
-	return worker, scheduler
-}
+	runner := componentsummary.NewWorkerRunner(worker, log)
 
-// startWorker runs the summary processing worker with polling.
-func startWorker(ctx context.Context, worker *summarysvc.Worker, log *slog.Logger, errCh chan<- error) {
-	const pollInterval = 1 * time.Second
-	ticker := time.NewTicker(pollInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			if _, err := worker.ProcessNext(ctx); err != nil {
-				log.ErrorContext(ctx, "worker error", "error", err)
-				errCh <- err
-				return
-			}
-		}
-	}
-}
-
-// stubProcessor is a temporary processor implementation.
-type stubProcessor struct{}
-
-func (s *stubProcessor) Process(_ context.Context, _ []postsvc.Post) (string, error) {
-	return "stub: processing not implemented", nil
+	return worker, scheduler, runner
 }

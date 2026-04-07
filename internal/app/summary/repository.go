@@ -22,6 +22,10 @@ type OutboxEventRepository interface {
 	// UpdateStatus updates the status of an event and optionally increments retry count.
 	UpdateStatus(ctx context.Context, id uuid.UUID, status EventStatus, incrementRetry bool) error
 
+	// Requeue returns an event to the queue with incremented retry count and new scheduled time.
+	// Used for retry logic with exponential backoff.
+	Requeue(ctx context.Context, id uuid.UUID, scheduledAt time.Time) error
+
 	// Create creates a single outbox event and returns the populated event with ID.
 	Create(ctx context.Context, event *OutboxEvent) error
 
@@ -30,10 +34,27 @@ type OutboxEventRepository interface {
 	CreateScheduledForType(ctx context.Context, sourceType source.Type, scheduledAt time.Time) (int, error)
 }
 
+// WithPostIDs combines a summary with its associated post IDs.
+type WithPostIDs struct {
+	Summary
+
+	PostIDs []uuid.UUID
+}
+
 // Repository defines operations for summaries.
 type Repository interface {
 	// Create creates a new summary and associates it with the given posts in a single transaction.
 	Create(ctx context.Context, summary *Summary, postIDs []uuid.UUID) error
+
+	// GetByPostID retrieves a summary by its associated post ID.
+	// Returns the summary and all associated post IDs.
+	// Returns nil, nil if not found.
+	GetByPostID(ctx context.Context, postID uuid.UUID) (*Summary, []uuid.UUID, error)
+
+	// ListSummaries retrieves summaries with their post IDs.
+	// If sourceID is nil, returns summaries from all sources.
+	// Results are ordered by created_at DESC.
+	ListSummaries(ctx context.Context, sourceID *uuid.UUID, limit int) ([]WithPostIDs, error)
 }
 
 // PostQueryRepository defines read operations for posts.

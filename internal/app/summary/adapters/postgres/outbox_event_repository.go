@@ -95,6 +95,23 @@ func (r *OutboxEventRepository) UpdateStatus(
 		Update("status", status).Error
 }
 
+// Requeue returns an event to the queue with incremented retry count and new scheduled time.
+// Sets status to PENDING and updates scheduled_at.
+func (r *OutboxEventRepository) Requeue(
+	ctx context.Context,
+	id uuid.UUID,
+	scheduledAt time.Time,
+) error {
+	return r.db.WithContext(ctx).
+		Model(&summary.OutboxEvent{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"status":       summary.EventStatusPending,
+			"retry_count":  gorm.Expr("retry_count + ?", 1),
+			"scheduled_at": scheduledAt,
+		}).Error
+}
+
 // Create creates a single outbox event.
 func (r *OutboxEventRepository) Create(ctx context.Context, event *summary.OutboxEvent) error {
 	if event.ID == uuid.Nil {

@@ -64,7 +64,7 @@ func TestWorkerProcessNext_SelfContainedHappyPath(t *testing.T) {
 		Times(1)
 
 	processor.EXPECT().
-		Process(ctx, []post.Post{*p}).
+		Process(gomock.Any(), gomock.Any(), []post.Post{*p}).
 		Return("test summary content", nil).
 		Times(1)
 
@@ -143,7 +143,7 @@ func TestWorkerProcessNext_CumulativeHappyPath(t *testing.T) {
 		Times(1)
 
 	processor.EXPECT().
-		Process(ctx, posts).
+		Process(gomock.Any(), gomock.Any(), posts).
 		Return("cumulative summary", nil).
 		Times(1)
 
@@ -339,12 +339,13 @@ func TestWorkerProcessNext_ProcessorError_SelfContained(t *testing.T) {
 		Times(1)
 
 	processor.EXPECT().
-		Process(ctx, []post.Post{*p}).
+		Process(gomock.Any(), gomock.Any(), []post.Post{*p}).
 		Return("", errors.New("processing failed")).
 		Times(1)
 
+	// Transient error with retry_count=0 triggers Requeue
 	outboxRepo.EXPECT().
-		UpdateStatus(ctx, eventID, summary.EventStatusFailed, true).
+		Requeue(ctx, eventID, gomock.Any()).
 		Return(nil).
 		Times(1)
 
@@ -543,7 +544,7 @@ func TestWorkerProcessNext_DBConstraintViolation(t *testing.T) {
 		Times(1)
 
 	processor.EXPECT().
-		Process(ctx, []post.Post{*p}).
+		Process(gomock.Any(), gomock.Any(), []post.Post{*p}).
 		Return("content", nil).
 		Times(1)
 
@@ -552,8 +553,9 @@ func TestWorkerProcessNext_DBConstraintViolation(t *testing.T) {
 		Return(errors.New("unique constraint violation")).
 		Times(1)
 
+	// Transient error with retry_count=0 triggers Requeue
 	outboxRepo.EXPECT().
-		UpdateStatus(ctx, eventID, summary.EventStatusFailed, true).
+		Requeue(ctx, eventID, gomock.Any()).
 		Return(nil).
 		Times(1)
 
