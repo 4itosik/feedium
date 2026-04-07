@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package source.v1;
+
+option go_package = "feedium/api/source/v1;sourcev1";
+
+import "google/protobuf/timestamp.proto";
+
+enum SourceType {
+  SOURCE_TYPE_UNSPECIFIED = 0;
+  SOURCE_TYPE_TELEGRAM_CHANNEL = 1;
+  SOURCE_TYPE_TELEGRAM_GROUP = 2;
+  SOURCE_TYPE_RSS = 3;
+  SOURCE_TYPE_WEB_SCRAPING = 4;
+}
+
+message TelegramChannelConfig {
+  string channel_id = 1;
+}
+
+message TelegramGroupConfig {
+  string group_id = 1;
+}
+
+message RssConfig {
+  string feed_url = 1;
+}
+
+message WebScrapingConfig {
+  string selector = 1;
+}
+
+message SourceConfig {
+  oneof config {
+    TelegramChannelConfig telegram_channel = 1;
+    TelegramGroupConfig telegram_group = 2;
+    RssConfig rss = 3;
+    WebScrapingConfig web_scraping = 4;
+  }
+}
+
+message Source {
+  string id = 1;
+  SourceType type = 2;
+  string name = 3;
+  string url = 4;
+  SourceConfig config = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message CreateSourceRequest {
+  SourceType type = 1;
+  string name = 2;
+  string url = 3;
+  SourceConfig config = 4;
+}
+
+message CreateSourceResponse {
+  Source source = 1;
+}
+
+message GetSourceRequest {
+  string id = 1;
+}
+
+message GetSourceResponse {
+  Source source = 1;
+}
+
+message UpdateSourceRequest {
+  string id = 1;
+  SourceType type = 2;
+  string name = 3;
+  string url = 4;
+  SourceConfig config = 5;
+}
+
+message UpdateSourceResponse {
+  Source source = 1;
+}
+
+message DeleteSourceRequest {
+  string id = 1;
+}
+
+message DeleteSourceResponse {}
+
+message ListSourcesRequest {
+  int32 page_size = 1;
+  int32 page = 2;
+  SourceType type_filter = 3;
+}
+
+message ListSourcesResponse {
+  repeated Source sources = 1;
+  int32 total_count = 2;
+}
+
+message ProcessSourceRequest {
+  string id = 1;
+}
+
+message ProcessSourceResponse {
+  string event_id = 1;
+}
+
+service SourceService {
+  rpc CreateSource(CreateSourceRequest) returns (CreateSourceResponse);
+  rpc GetSource(GetSourceRequest) returns (GetSourceResponse);
+  rpc UpdateSource(UpdateSourceRequest) returns (UpdateSourceResponse);
+  rpc DeleteSource(DeleteSourceRequest) returns (DeleteSourceResponse);
+  rpc ListSources(ListSourcesRequest) returns (ListSourcesResponse);
+  rpc ProcessSource(ProcessSourceRequest) returns (ProcessSourceResponse);
+}

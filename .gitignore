@@ -2,3 +2,11 @@
 .DS_Store
 
 .playwright-cli/
+
+.cache
+.idea
+
+data
+feedium
+
+coverage.out
