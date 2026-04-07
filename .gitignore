@@ -4,7 +4,7 @@
 .playwright-cli/
 
 .cache
-.idea
+.idea/
 
 data
 feedium
