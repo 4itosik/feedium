@@ -1,3 +1,12 @@
+---
+doc_kind: engineering
+doc_function: convention
+purpose: Правила proto-файлов: расположение, генерация, версионирование методов, HTTP annotations, структура типичного proto, error reasons.
+derived_from:
+  - ../dna/governance.md
+status: active
+---
+
 # API Contracts
 
 ## Proto-файлы

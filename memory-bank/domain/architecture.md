@@ -1,13 +1,10 @@
 ---
-title: Architecture Patterns
 doc_kind: domain
 doc_function: canonical
 purpose: Каноничное место для архитектурных границ Feedium. Читать при изменениях, затрагивающих модули, фоновые процессы, интеграции или конфигурацию.
 derived_from:
   - ../dna/governance.md
-  - ../../PROJECT.md
 status: active
-audience: humans_and_agents
 ---
 
 # Architecture Patterns
@@ -84,24 +81,4 @@ audience: humans_and_agents
 
 ## Configuration Ownership
 
-### Schema
-
-- YAML-файлы в `configs/` — canonical schema конфигурации.
-- Kratos config для парсинга.
-- Секреты — через переменные окружения, не в yaml.
-
-### Ownership
-
-| Owner | Отвечает за |
-| --- | --- |
-| `configs/*.yaml` | структура и defaults всех параметров |
-| `cmd/feedium/main.go` | загрузка конфигурации через kratos |
-| `internal/data/` | DSN, параметры подключения к БД |
-| `internal/task/` | интервалы воркеров, rate limits |
-| env vars | секреты (LLM API key, Telegram credentials) |
-
-### Workflow при изменении конфигурации
-
-1. Обновить YAML в `configs/`.
-2. Если новое поле — обновить kratos config struct.
-3. Если секрет — добавить env var, не коммитить в yaml.
+См. [Coding Style — Конфигурация](../engineering/coding-style.md#конфигурация).

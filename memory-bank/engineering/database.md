@@ -1,3 +1,12 @@
+---
+doc_kind: engineering
+doc_function: convention
+purpose: Правила работы с БД: Ent ORM (схемы, генерация), goose-миграции, PostgreSQL conventions, constraints.
+derived_from:
+  - ../dna/governance.md
+status: active
+---
+
 # Database
 
 ## ORM: ent
@@ -24,7 +33,7 @@ type postRepo struct {
     data *Data  // Data содержит ent.Client
 }
 
-func (r *postRepo) Save(ctx context.Context, post *biz.Post) error {
+func (r *postRepo) Save(ctx context.Context, post biz.Post) error {
     _, err := r.data.db.Post.Create().
         SetSourceID(post.SourceID).
         SetExternalID(post.ExternalID).

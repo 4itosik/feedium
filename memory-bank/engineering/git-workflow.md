@@ -1,12 +1,10 @@
 ---
-title: Git Workflow
 doc_kind: engineering
 doc_function: convention
-purpose: Шаблон git workflow документа. После копирования зафиксируй реальные branch names, commit rules и PR expectations проекта.
+purpose: Git workflow Feedium: Conventional Commits, squash merge, требования к PR.
 derived_from:
   - ../dna/governance.md
 status: active
-audience: humans_and_agents
 ---
 
 # Git Workflow
@@ -14,8 +12,6 @@ audience: humans_and_agents
 ## Default Branch
 
 Основной веткой является `main`
-
-## Commits
 
 ## Commits
 

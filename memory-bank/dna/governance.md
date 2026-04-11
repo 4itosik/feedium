@@ -13,7 +13,7 @@ status: active
 ## SSoT Implementation
 
 1. Authoritative только `active`-документы. `draft` не переопределяет `active`.
-2. Среди допустимых по status побеждает upstream: сначала `canonical_for`, затем dependency tree.
+2. Среди допустимых по status побеждает upstream по dependency tree.
 3. Публикационный статус (`status`) отделён от lifecycle сущности (`delivery_status`, `decision_status`).
 
 ## Source Dependency Tree
@@ -22,13 +22,13 @@ status: active
 2. Корневой документ — `principles.md`, не имеет `derived_from`. Для каждого `active` non-root документа `derived_from` обязательно.
 3. Циклические зависимости запрещены. Изменение upstream может потребовать обновления downstream.
 
-## Governance-specific Frontmatter Fields
+## Classification Fields
 
-Governance-документы (DNA, flows) используют дополнительные поля, не входящие в общую schema (`frontmatter.md`):
+Поля классификации, обязательные для всех governed-документов (дополняют общую schema из `frontmatter.md`):
 
 | Поле | Значения | Назначение |
 |-|-|-|
-| `doc_kind` | `governance`, `project` | Тип документа. Governance — meta-правила, project — domain/ops |
-| `doc_function` | `canonical`, `index`, `template` | Роль: canonical owner факта, навигационный индекс или шаблон |
+| `doc_kind` | `governance`, `domain`, `engineering`, `prd`, `adr` | Тип документа: governance — meta-правила, остальные — предметные |
+| `doc_function` | `canonical`, `index`, `template`, `convention` | Роль: canonical owner факта, навигационный индекс, шаблон или конвенция |
 
-Эти поля обязательны для governance-документов и не требуются в domain/ops/engineering документах.
+Эти поля обязательны для всех governed-документов в memory-bank.

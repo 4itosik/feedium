@@ -1,17 +1,10 @@
 ---
-title: Project Problem Statement
 doc_kind: domain
 doc_function: canonical
 purpose: Каноничное описание Feedium: продукт, проблемное пространство, core workflows и top-level outcomes.
 derived_from:
   - ../dna/governance.md
-  - ../../PROJECT.md
 status: active
-audience: humans_and_agents
-canonical_for:
-  - project_problem_statement
-  - product_context
-  - top_level_outcomes
 ---
 
 # Project Problem Statement
@@ -48,7 +41,7 @@ Feedium — персональный агрегатор контента для 
 | Metric ID | Metric | Baseline | Target | Measurement method |
 | --- | --- | --- | --- | --- |
 | `MET-01` | Доля дней, когда Feedium — единственная точка потребления | 0% | 80%+ | Субъективный трекинг |
-| `MET-02` | Количество ручных заходов в исходные источники после старта дня | 10+ в день | 0 в день | Субъективный трекинг |
+| `MET-02` | Количество ручных заходов в исходные источники после открытия ленты | 10+ в день | 0 в день | Субъективный трекинг |
 | `MET-03` | Задержка публикация → появление в ленте | N/A | < 5 минут | Таймстемпы ingest/publish |
 | `MET-04` | Доля релевантного контента в топ-20 | N/A | > 70% | Субъективная оценка качества |
 | `MET-05` | Время ознакомления с единицей контента | ~3 минуты на пост | сокращение в 2x | Сравнение self-reported времени |
@@ -64,5 +57,4 @@ Feedium — персональный агрегатор контента для 
 
 ## Source Documents
 
-- [`../../PROJECT.md`](../../PROJECT.md) — общий контекст проекта, стек, scope, roadmap.
 - [`../prd/PRD-001-mvp.md`](../prd/PRD-001-mvp.md) — текущий MVP scope, goals, risks и success metrics.

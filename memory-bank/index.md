@@ -1,10 +1,10 @@
 ---
-title: Documentation Index
-doc_kind: project
+doc_kind: governance
 doc_function: index
 purpose: Корневая навигация по memory-bank Feedium. Читать сначала, чтобы понять структуру и найти нужный документ.
+derived_from:
+  - dna/principles.md
 status: active
-audience: humans_and_agents
 ---
 
 # Feedium — Documentation Index
@@ -15,7 +15,7 @@ audience: humans_and_agents
 
 **Feedium** — персональный агрегатор контента для одного пользователя. Собирает посты из Telegram (userbot), веб-сайтов и RSS → ранжирует через AI (embeddings + интересы) → отдаёт в React UI и Telegram-бот OpenClaw.
 
-**Стек:** Go + go-kratos (Wire, lifecycle, HTTP/gRPC) · Protobuf · Ent + PostgreSQL 16 · goose (SQL-миграции) · React SPA (go:embed) · slog.
+**Стек:** Go + go-kratos (Wire, lifecycle, HTTP/gRPC) · Protobuf · Ent + PostgreSQL 18.3 · goose (SQL-миграции) · React SPA (go:embed) · slog.
 
 **Архитектура:** один процесс, kratos-layout. Коллекторы (task/) реализуют `transport.Server` — lifecycle управляется фреймворком. Доменная логика в biz/ без импорта инфраструктуры. Репозитории в data/ через Ent. Тонкий API-слой в service/ из proto-файлов.
 
@@ -38,6 +38,7 @@ audience: humans_and_agents
 - [Frontmatter Schema](dna/frontmatter.md) — Schema обязательных и условных полей YAML frontmatter (`status`, `derived_from`, `delivery_status`, `decision_status`). Читать при создании или обновлении любого документа.
 - [Document Lifecycle](dna/lifecycle.md) — Maintenance rules (upstream first, downstream sync, README sync) и sync checklist. Читать при изменениях в документации для проверки consistency.
 - [Cross-references](dna/cross-references.md) — Правила двусторонней навигации code ↔ docs: ссылки из кода на спеки, из документации на реализацию. Читать при расстановке ссылок между кодом и документацией.
+- [Dependency Tree](dna/dependency-tree.md) — Визуализация дерева зависимостей (derived_from) всех governed-документов. Читать, чтобы понять иерархию authority и порядок обновления при изменениях.
 
 ### [Domain — продуктовый контекст и архитектура](domain/index.md)
 

@@ -12,14 +12,17 @@ status: active
 
 | Поле | Тип | Описание |
 |---|---|---|
+| `doc_kind` | string | Тип документа: `governance`, `domain`, `engineering`, `prd`, `adr`, ... |
+| `doc_function` | enum | Роль: `canonical` / `index` / `template` / `convention` |
 | `status` | enum | `draft` / `active` / `archived` |
+| `purpose` | string | 1-2 предложения: зачем читать документ и когда. Агент использует для решения, загружать ли файл в контекст |
 
 ## Условно обязательные
 
 | Поле | Когда | Описание |
 |---|---|---|
 | `derived_from` | Есть upstream-документ | Прямые upstream-зависимости. Каждый элемент — строка (путь) или объект `{path, fit}`, где `fit` объясняет scope зависимости |
-| `delivery_status` | Feature-документы | `planned` / `in_progress` / `done` / `cancelled` |
+| `delivery_status` | `doc_kind: feature` | `planned` / `in_progress` / `done` / `cancelled` |
 | `decision_status` | ADR-документы | `proposed` / `accepted` / `superseded` / `rejected` |
 
 ## Дополнительные поля
@@ -46,3 +49,4 @@ derived_from:
 status: active
 ---
 ```
+

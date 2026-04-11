@@ -1,12 +1,10 @@
 ---
-title: Architecture Decision Records Index
 doc_kind: adr
 doc_function: index
 purpose: Навигация по ADR проекта. Читать, чтобы найти уже принятые решения или завести новый ADR по шаблону.
 derived_from:
   - ../dna/governance.md
 status: active
-audience: humans_and_agents
 ---
 
 # Architecture Decision Records Index
@@ -35,17 +33,13 @@ audience: humans_and_agents
 
 ````markdown
 ---
-title: "ADR-XXX: Short Decision Name"
 doc_kind: adr
 doc_function: template
 purpose: Governed wrapper-шаблон ADR. Читать, чтобы инстанцировать decision record без смешения metadata wrapper-документа и frontmatter будущего ADR.
 derived_from:
-  - ../../../dna/governance.md
-  - ../../../dna/frontmatter.md
+  - ../dna/governance.md
+  - ../dna/frontmatter.md
 status: active
-audience: humans_and_agents
-template_for: adr
-template_target_path: ../../../adr/ADR-XXX.md
 ---
 
 # ADR-XXX: Short Decision Name
@@ -59,19 +53,14 @@ template_target_path: ../../../adr/ADR-XXX.md
 ## Instantiated Frontmatter
 
 ```yaml
-title: "ADR-XXX: Short Decision Name"
 doc_kind: adr
 doc_function: canonical
 purpose: "Фиксирует архитектурное или инженерное решение, его текущий `decision_status` и последствия."
 derived_from:
-  - ../features/FT-XXX/spec.md
+  # - ../features/FT-XXX/spec.md  # раскомментировать когда появится feature package
 status: draft
 decision_status: proposed
 date: YYYY-MM-DD
-audience: humans_and_agents
-must_not_define:
-  - current_system_state
-  - implementation_plan
 ```
 
 ## Instantiated Body

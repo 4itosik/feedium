@@ -1,24 +1,10 @@
 ---
-title: Testing Policy
 doc_kind: engineering
 doc_function: canonical
 purpose: Описывает testing policy репозитория: обязательность test case design, требования к automated regression coverage и допустимые manual-only gaps.
 derived_from:
   - ../dna/governance.md
-  - ../flows/feature-flow.md
 status: active
-canonical_for:
-  - repository_testing_policy
-  - feature_test_case_inventory_rules
-  - automated_test_requirements
-  - sufficient_test_coverage_definition
-  - manual_only_verification_exceptions
-  - simplify_review_discipline
-  - verification_context_separation
-must_not_define:
-  - feature_acceptance_criteria
-  - feature_scope
-audience: humans_and_agents
 ---
 
 # Testing Policy
@@ -47,7 +33,7 @@ audience: humans_and_agents
 
 ## Feature Flow Expectations
 
-Canonical lifecycle gates живут в [../flows/feature-flow.md](../flows/feature-flow.md):
+Canonical lifecycle gates:
 
 - к `Design Ready` `spec.md` уже фиксирует test case inventory;
 - к `Plan Ready` `plan.md` содержит `Test Strategy` с planned automated coverage и manual-only gaps;
@@ -198,8 +184,8 @@ func TestPostUsecase_Save_CreatesEventForImmediateSource(t *testing.T) {
     eventRepo := mock.NewMockSummaryEventRepo(ctrl)
     uc := biz.NewPostUsecase(postRepo, eventRepo)
 
-    post := &biz.Post{Title: "test", SourceID: 1}
-    postRepo.EXPECT().Save(gomock.Any(), post).Return(nil)
+    post := biz.Post{Title: "test", SourceID: 1}
+    postRepo.EXPECT().Save(gomock.Any(), post).Return(biz.Post{ID: 1, Title: "test", SourceID: 1}, nil)
     eventRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
 
     // Act

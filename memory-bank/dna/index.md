@@ -16,3 +16,4 @@ DNA — конституция проектной документации. Оп
 - [Frontmatter Schema](frontmatter.md) — schema полей frontmatter.
 - [Document Lifecycle](lifecycle.md) — maintenance rules, sync checklist.
 - [Cross-references](cross-references.md) — правила двусторонней навигации code ↔ docs.
+- [Dependency Tree](dependency-tree.md) — визуализация дерева зависимостей (derived_from) всех governed-документов.

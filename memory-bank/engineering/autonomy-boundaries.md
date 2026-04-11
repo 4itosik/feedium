@@ -1,16 +1,10 @@
 ---
-title: Autonomy Boundaries
 doc_kind: engineering
 doc_function: canonical
 purpose: Границы автономии агента: что можно делать без подтверждения, где нужна супервизия, когда эскалировать.
 derived_from:
   - ../dna/governance.md
-canonical_for:
-  - agent_autonomy_rules
-  - escalation_triggers
-  - supervision_checkpoints
 status: active
-audience: humans_and_agents
 ---
 
 # Autonomy Boundaries

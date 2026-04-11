@@ -1,16 +1,10 @@
 ---
-title: "PRD-001: Feedium MVP"
 doc_kind: prd
 doc_function: canonical
 purpose: "Фиксирует продуктовую проблему, целевых пользователей, goals, scope и success metrics MVP Feedium — персонального агрегатора контента с AI-суммаризацией и ранжированием."
 derived_from:
   - ../domain/problem.md
-status: draft
-audience: humans_and_agents
-must_not_define:
-  - implementation_sequence
-  - architecture_decision
-  - feature_level_verify_contract
+status: active
 ---
 
 # PRD-001: Feedium MVP
@@ -88,13 +82,7 @@ must_not_define:
 
 ## Success Metrics
 
-| Metric ID | Metric | Baseline | Target | Measurement method |
-|---|---|---|---|---|
-| `MET-01` | Процент дней, когда Feedium — единственная точка потребления | 0% (хожу вручную) | 80%+ | Субъективный трекинг |
-| `MET-02` | Ручные заходы в источники после открытия ленты | 10+ в день | 0 в день | Субъективный трекинг |
-| `MET-03` | Задержка публикация → появление в ленте | N/A | < 5 минут | Замер по таймстемпам |
-| `MET-04` | Доля релевантного контента в топ-20 ленты | N/A | > 70% | Субъективная оценка |
-| `MET-05` | Время ознакомления с единицей контента (саммари vs полный текст) | ~3 мин на пост | Сокращение в 2x | Субъективный замер |
+Canonical-определения метрик MET-01..MET-05 — в [`../domain/problem.md` → Outcomes](../domain/problem.md#outcomes). PRD наследует их без переопределения.
 
 ## Risks And Open Questions
 

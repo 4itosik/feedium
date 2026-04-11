@@ -1,13 +1,10 @@
 ---
-title: Domain Documentation Index
 doc_kind: domain
 doc_function: index
 purpose: Навигация по domain-level документации Feedium. Читать для фиксации продуктового контекста, архитектурных границ и UI-слоя.
 derived_from:
   - ../dna/governance.md
-  - ../../PROJECT.md
 status: active
-audience: humans_and_agents
 ---
 
 # Domain Documentation Index

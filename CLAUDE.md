@@ -1,0 +1,1 @@
+Прочитай главный индекс Memory Bank: [memory-bank/index.md](memory-bank/index.md)

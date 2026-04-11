@@ -1,12 +1,10 @@
 ---
-title: Coding Style
 doc_kind: engineering
 doc_function: convention
-purpose: Шаблон coding style документа. После копирования зафиксируй здесь реальные project-specific соглашения по коду и tooling.
+purpose: Coding style Feedium: kratos layout, правила по слоям, именование, значения vs указатели, error handling, logging, DI.
 derived_from:
   - ../dna/governance.md
 status: active
-audience: humans_and_agents
 ---
 
 # Coding Style
@@ -173,9 +171,23 @@ func EnrichPost(post Post) Post {
 
 ## Конфигурация
 
-- YAML-файлы в `configs/`
-- Kratos config для парсинга
-- Секреты — через переменные окружения, не в yaml
+- Вся конфигурация, включая секреты, в YAML-файлах в `configs/`.
+- Kratos config для парсинга.
+- Конфиг с секретами не коммитить.
+
+### Ownership
+
+| Owner | Отвечает за |
+| --- | --- |
+| `configs/*.yaml` | структура, defaults и секреты (LLM API key, Telegram credentials) |
+| `cmd/feedium/main.go` | загрузка конфигурации через kratos |
+| `internal/data/` | DSN, параметры подключения к БД |
+| `internal/task/` | интервалы воркеров, rate limits |
+
+### Workflow при изменении конфигурации
+
+1. Обновить YAML в `configs/`.
+2. Если новое поле — обновить kratos config struct.
 
 ## Graceful Shutdown и Health Checks
 
