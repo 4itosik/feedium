@@ -1,6 +1,6 @@
 ---
 doc_kind: feature
-doc_function: canonical
+doc_function: brief
 purpose: "Feature brief: каркас Go-проекта Feedium. Читать перед реализацией структуры проекта."
 derived_from:
   - ../../prd/PRD-001-mvp.md

@@ -6,7 +6,8 @@ derived_from:
   - brief.md
   - ../../engineering/coding-style.md
   - ../../domain/architecture.md
-status: done
+status: active
+delivery_status: done
 ---
 
 # FT-001: Структура проекта Feedium

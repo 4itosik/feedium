@@ -36,7 +36,10 @@ principles.md                          ← ROOT, не имеет derived_from
 │   ├── adr/index.md
 │   ├── prd/index.md
 │   └── features/index.md
-│       └── features/FT-001-project-structure/brief.md  (derived_from: prd/PRD-001-mvp.md, engineering/coding-style.md, domain/architecture.md)
+│       └── features/FT-001-project-structure/
+│            ├── brief.md                (derived_from: prd/PRD-001-mvp.md, engineering/coding-style.md, domain/architecture.md)
+│            ├── spec.md                 (derived_from: brief.md, engineering/coding-style.md, domain/architecture.md)
+│            └── implementation-plan.md  (derived_from: spec.md)
 ├── dna/index.md
 └── cross-references.md
 ```
@@ -69,3 +72,5 @@ principles.md                          ← ROOT, не имеет derived_from
 | `adr/index.md` | `dna/governance.md` |
 | `features/index.md` | `dna/governance.md` |
 | `features/FT-001-project-structure/brief.md` | `prd/PRD-001-mvp.md`, `engineering/coding-style.md`, `domain/architecture.md` |
+| `features/FT-001-project-structure/spec.md` | `brief.md`, `engineering/coding-style.md`, `domain/architecture.md` |
+| `features/FT-001-project-structure/implementation-plan.md` | `spec.md` |

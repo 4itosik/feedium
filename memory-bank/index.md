@@ -61,7 +61,7 @@ status: active
 
 ### [Features — feature packages](features/index.md)
 
-- [FT-001: Структура проекта](features/FT-001-project-structure/brief.md) — каркас Go-проекта по kratos-layout: go.mod, cmd/, internal/, Wire, Makefile. Upstream: PRD-001.
+- [FT-001: Структура проекта](features/FT-001-project-structure/brief.md) — каркас Go-проекта по kratos-layout: go.mod, cmd/, internal/, Wire, Makefile. Артефакты: [brief](features/FT-001-project-structure/brief.md), [spec](features/FT-001-project-structure/spec.md), [implementation-plan](features/FT-001-project-structure/implementation-plan.md). Upstream: PRD-001. Delivery: done.
 
 ### [ADR — архитектурные решения](adr/index.md)
 

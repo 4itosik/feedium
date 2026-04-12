@@ -28,7 +28,7 @@ status: active
 
 | Поле | Значения | Назначение |
 |-|-|-|
-| `doc_kind` | `governance`, `domain`, `engineering`, `prd`, `adr` | Тип документа: governance — meta-правила, остальные — предметные |
-| `doc_function` | `canonical`, `index`, `template`, `convention` | Роль: canonical owner факта, навигационный индекс, шаблон или конвенция |
+| `doc_kind` | `governance`, `domain`, `engineering`, `prd`, `adr`, `feature` | Тип документа: governance — meta-правила, остальные — предметные |
+| `doc_function` | `canonical`, `index`, `template`, `convention`, `brief`, `spec`, `implementation-plan` | Роль: canonical owner факта, навигационный индекс, шаблон, конвенция или документ feature-package (brief / spec / implementation-plan) |
 
 Эти поля обязательны для всех governed-документов в memory-bank.

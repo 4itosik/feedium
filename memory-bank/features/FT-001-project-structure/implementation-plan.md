@@ -1,10 +1,11 @@
 ---
 doc_kind: feature
-doc_function: implement
+doc_function: implementation-plan
 purpose: "Пошаговый план реализации FT-001: исполняемый каркас Go-проекта Feedium."
 derived_from:
   - spec.md
-status: done
+status: active
+delivery_status: done
 ---
 
 # FT-001: Implementation Plan

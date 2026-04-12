@@ -12,8 +12,8 @@ status: active
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `doc_kind` | string | Тип документа: `governance`, `domain`, `engineering`, `prd`, `adr`, ... |
-| `doc_function` | enum | Роль: `canonical` / `index` / `template` / `convention` |
+| `doc_kind` | string | Тип документа: `governance`, `domain`, `engineering`, `prd`, `adr`, `feature`, ... |
+| `doc_function` | enum | Роль: `canonical` / `index` / `template` / `convention` / `brief` / `spec` / `implementation-plan` |
 | `status` | enum | `draft` / `active` / `archived` |
 | `purpose` | string | 1-2 предложения: зачем читать документ и когда. Агент использует для решения, загружать ли файл в контекст |
 
