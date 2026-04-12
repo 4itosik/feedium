@@ -59,6 +59,10 @@ status: active
 
 - [PRD-001: Feedium MVP](prd/PRD-001-mvp.md) — MVP initiative: проблема (10+ источников, 80%+ шум), goals (G-01..03), scope (источники, коллекторы, AI-суммаризация, скоринг, React UI, OpenClaw), business rules (BR-01..06), risks (RISK-01..05), downstream features (FT-001..011). Читать перед началом работы над любой фичей.
 
+### [Features — feature packages](features/index.md)
+
+- [FT-001: Структура проекта](features/FT-001-project-structure/brief.md) — каркас Go-проекта по kratos-layout: go.mod, cmd/, internal/, Wire, Makefile. Upstream: PRD-001.
+
 ### [ADR — архитектурные решения](adr/index.md)
 
 Индекс Architecture Decision Records: naming (ADR-XXX), statuses (proposed/accepted/superseded/rejected), полный шаблон ADR. Читать, чтобы найти принятое решение или завести новое ADR.

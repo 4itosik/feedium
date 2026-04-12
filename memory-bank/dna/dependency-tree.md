@@ -34,7 +34,9 @@ principles.md                          ← ROOT, не имеет derived_from
 │   ├── engineering/autonomy-boundaries.md
 │   ├── engineering/git-workflow.md
 │   ├── adr/index.md
-│   └── prd/index.md
+│   ├── prd/index.md
+│   └── features/index.md
+│       └── features/FT-001-project-structure/brief.md  (derived_from: prd/PRD-001-mvp.md, engineering/coding-style.md, domain/architecture.md)
 ├── dna/index.md
 └── cross-references.md
 ```
@@ -65,3 +67,5 @@ principles.md                          ← ROOT, не имеет derived_from
 | `prd/index.md` | `dna/governance.md` |
 | `prd/PRD-001-mvp.md` | `domain/problem.md` |
 | `adr/index.md` | `dna/governance.md` |
+| `features/index.md` | `dna/governance.md` |
+| `features/FT-001-project-structure/brief.md` | `prd/PRD-001-mvp.md`, `engineering/coding-style.md`, `domain/architecture.md` |
