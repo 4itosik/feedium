@@ -1,0 +1,446 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>source: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/4itosik/feedium/internal/service/source/source.go (88.7%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package source
+
+import (
+        "context"
+        "errors"
+        "fmt"
+
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
+        "google.golang.org/protobuf/types/known/timestamppb"
+
+        "github.com/4itosik/feedium/api/feedium"
+        "github.com/4itosik/feedium/internal/biz"
+)
+
+// SourceService implements the feedium.SourceServiceServer.
+//
+//nolint:revive // exported type name Source+Service is not a stutter
+type SourceService struct {
+        feedium.UnimplementedSourceServiceServer
+
+        uc *biz.SourceUsecase
+}
+
+// NewSourceService creates a new SourceService.
+func NewSourceService(uc *biz.SourceUsecase) *SourceService <span class="cov8" title="1">{
+        return &amp;SourceService{uc: uc}
+}</span>
+
+// V1CreateSource creates a new source.
+func (s *SourceService) V1CreateSource(
+        ctx context.Context,
+        req *feedium.V1CreateSourceRequest,
+) (*feedium.V1CreateSourceResponse, error) <span class="cov8" title="1">{
+        // Map proto type to domain type
+        sourceType := s.mapProtoTypeToDomain(req.GetType())
+
+        // Map proto config to domain config
+        domainConfig, err := s.mapProtoConfigToDomain(sourceType, req.GetConfig())
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, status.Error(codes.InvalidArgument, feedium.ErrorReason_ERROR_REASON_SOURCE_INVALID_CONFIG.String())
+        }</span>
+
+        // Call usecase
+        <span class="cov8" title="1">source, err := s.uc.Create(ctx, sourceType, domainConfig)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, s.mapDomainErrorToStatus(err)
+        }</span>
+
+        // Map domain to proto
+        <span class="cov8" title="1">protoSource, err := s.mapDomainToProto(source)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, status.Error(codes.Internal, "failed to map response")
+        }</span>
+
+        <span class="cov8" title="1">return &amp;feedium.V1CreateSourceResponse{Source: protoSource}, nil</span>
+}
+
+// V1UpdateSource updates an existing source.
+func (s *SourceService) V1UpdateSource(
+        ctx context.Context,
+        req *feedium.V1UpdateSourceRequest,
+) (*feedium.V1UpdateSourceResponse, error) <span class="cov8" title="1">{
+        // Map proto type to domain type
+        sourceType := s.mapProtoTypeToDomain(req.GetType())
+
+        // Map proto config to domain config
+        domainConfig, err := s.mapProtoConfigToDomain(sourceType, req.GetConfig())
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, status.Error(codes.InvalidArgument, feedium.ErrorReason_ERROR_REASON_SOURCE_INVALID_CONFIG.String())
+        }</span>
+
+        // Call usecase
+        <span class="cov8" title="1">source, err := s.uc.Update(ctx, req.GetId(), sourceType, domainConfig)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, s.mapDomainErrorToStatus(err)
+        }</span>
+
+        // Map domain to proto
+        <span class="cov8" title="1">protoSource, err := s.mapDomainToProto(source)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, status.Error(codes.Internal, "failed to map response")
+        }</span>
+
+        <span class="cov8" title="1">return &amp;feedium.V1UpdateSourceResponse{Source: protoSource}, nil</span>
+}
+
+// V1DeleteSource deletes a source.
+func (s *SourceService) V1DeleteSource(
+        ctx context.Context,
+        req *feedium.V1DeleteSourceRequest,
+) (*feedium.V1DeleteSourceResponse, error) <span class="cov8" title="1">{
+        err := s.uc.Delete(ctx, req.GetId())
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, s.mapDomainErrorToStatus(err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;feedium.V1DeleteSourceResponse{}, nil</span>
+}
+
+// V1GetSource retrieves a source by ID.
+func (s *SourceService) V1GetSource(
+        ctx context.Context,
+        req *feedium.V1GetSourceRequest,
+) (*feedium.V1GetSourceResponse, error) <span class="cov8" title="1">{
+        source, err := s.uc.Get(ctx, req.GetId())
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, s.mapDomainErrorToStatus(err)
+        }</span>
+
+        // Map domain to proto
+        <span class="cov8" title="1">protoSource, err := s.mapDomainToProto(source)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, status.Error(codes.Internal, "failed to map response")
+        }</span>
+
+        <span class="cov8" title="1">return &amp;feedium.V1GetSourceResponse{Source: protoSource}, nil</span>
+}
+
+// V1ListSources lists sources with pagination and filtering.
+func (s *SourceService) V1ListSources(
+        ctx context.Context,
+        req *feedium.V1ListSourcesRequest,
+) (*feedium.V1ListSourcesResponse, error) <span class="cov8" title="1">{
+        filter := biz.ListSourcesFilter{
+                PageSize:  int(req.GetPageSize()),
+                PageToken: req.GetPageToken(),
+        }
+
+        // Map proto type to domain type if provided
+        if reqType := req.GetType(); reqType != feedium.SourceType_SOURCE_TYPE_UNSPECIFIED </span><span class="cov8" title="1">{
+                filter.Type = s.mapProtoTypeToDomain(reqType)
+        }</span>
+
+        <span class="cov8" title="1">result, err := s.uc.List(ctx, filter)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, s.mapDomainErrorToStatus(err)
+        }</span>
+
+        // Map domain sources to proto
+        <span class="cov8" title="1">protoSources := make([]*feedium.Source, 0, len(result.Items))
+        for _, source := range result.Items </span><span class="cov8" title="1">{
+                protoSource, mapErr := s.mapDomainToProto(source)
+                if mapErr != nil </span><span class="cov0" title="0">{
+                        return nil, status.Error(codes.Internal, "failed to map response")
+                }</span>
+                <span class="cov8" title="1">protoSources = append(protoSources, protoSource)</span>
+        }
+
+        <span class="cov8" title="1">return &amp;feedium.V1ListSourcesResponse{
+                Items:         protoSources,
+                NextPageToken: result.NextPageToken,
+        }, nil</span>
+}
+
+// mapProtoConfigToDomain maps proto config oneof to domain config.
+func (s *SourceService) mapProtoConfigToDomain(
+        sourceType biz.SourceType,
+        protoConfig *feedium.SourceConfig,
+) (biz.SourceConfig, error) <span class="cov8" title="1">{
+        if protoConfig == nil </span><span class="cov8" title="1">{
+                return nil, errors.New("config is nil")
+        }</span>
+
+        <span class="cov8" title="1">switch sourceType </span>{
+        case biz.SourceTypeTelegramChannel:<span class="cov8" title="1">
+                tc, ok := protoConfig.GetConfig().(*feedium.SourceConfig_TelegramChannel)
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, errors.New("expected telegram_channel config")
+                }</span>
+                <span class="cov8" title="1">return &amp;biz.TelegramChannelConfig{
+                        TgID:     tc.TelegramChannel.GetTgId(),
+                        Username: tc.TelegramChannel.GetUsername(),
+                }, nil</span>
+
+        case biz.SourceTypeTelegramGroup:<span class="cov8" title="1">
+                tg, ok := protoConfig.GetConfig().(*feedium.SourceConfig_TelegramGroup)
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, errors.New("expected telegram_group config")
+                }</span>
+                <span class="cov8" title="1">return &amp;biz.TelegramGroupConfig{
+                        TgID:     tg.TelegramGroup.GetTgId(),
+                        Username: tg.TelegramGroup.GetUsername(),
+                }, nil</span>
+
+        case biz.SourceTypeRSS:<span class="cov8" title="1">
+                rc, ok := protoConfig.GetConfig().(*feedium.SourceConfig_Rss)
+                if !ok </span><span class="cov8" title="1">{
+                        return nil, errors.New("expected rss config")
+                }</span>
+                <span class="cov8" title="1">return &amp;biz.RSSConfig{
+                        FeedURL: rc.Rss.GetFeedUrl(),
+                }, nil</span>
+
+        case biz.SourceTypeHTML:<span class="cov8" title="1">
+                hc, ok := protoConfig.GetConfig().(*feedium.SourceConfig_Html)
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, errors.New("expected html config")
+                }</span>
+                <span class="cov8" title="1">return &amp;biz.HTMLConfig{
+                        URL: hc.Html.GetUrl(),
+                }, nil</span>
+        }
+
+        <span class="cov8" title="1">return nil, fmt.Errorf("unknown source type: %s", sourceType)</span>
+}
+
+// mapDomainToProto maps domain Source to proto Source.
+func (s *SourceService) mapDomainToProto(source biz.Source) (*feedium.Source, error) <span class="cov8" title="1">{
+        protoType := s.mapDomainTypeToProto(source.Type)
+        protoMode := s.mapDomainModeToProto(source.ProcessingMode)
+
+        protoConfig, err := s.mapDomainConfigToProto(source.Type, source.Config)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("map config: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;feedium.Source{
+                Id:             source.ID,
+                Type:           protoType,
+                ProcessingMode: protoMode,
+                Config:         protoConfig,
+                CreatedAt:      timestamppb.New(source.CreatedAt),
+                UpdatedAt:      timestamppb.New(source.UpdatedAt),
+        }, nil</span>
+}
+
+// mapDomainConfigToProto maps domain config to proto config oneof.
+func (s *SourceService) mapDomainConfigToProto(
+        sourceType biz.SourceType,
+        domainConfig biz.SourceConfig,
+) (*feedium.SourceConfig, error) <span class="cov8" title="1">{
+        protoConfig := &amp;feedium.SourceConfig{}
+
+        switch sourceType </span>{
+        case biz.SourceTypeTelegramChannel:<span class="cov8" title="1">
+                tc, ok := domainConfig.(*biz.TelegramChannelConfig)
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, errors.New("expected TelegramChannelConfig")
+                }</span>
+                <span class="cov8" title="1">protoConfig.Config = &amp;feedium.SourceConfig_TelegramChannel{
+                        TelegramChannel: &amp;feedium.TelegramChannelConfig{
+                                TgId:     tc.TgID,
+                                Username: tc.Username,
+                        },
+                }</span>
+
+        case biz.SourceTypeTelegramGroup:<span class="cov8" title="1">
+                tg, ok := domainConfig.(*biz.TelegramGroupConfig)
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, errors.New("expected TelegramGroupConfig")
+                }</span>
+                <span class="cov8" title="1">protoConfig.Config = &amp;feedium.SourceConfig_TelegramGroup{
+                        TelegramGroup: &amp;feedium.TelegramGroupConfig{
+                                TgId:     tg.TgID,
+                                Username: tg.Username,
+                        },
+                }</span>
+
+        case biz.SourceTypeRSS:<span class="cov8" title="1">
+                rc, ok := domainConfig.(*biz.RSSConfig)
+                if !ok </span><span class="cov8" title="1">{
+                        return nil, errors.New("expected RSSConfig")
+                }</span>
+                <span class="cov8" title="1">protoConfig.Config = &amp;feedium.SourceConfig_Rss{
+                        Rss: &amp;feedium.RSSConfig{
+                                FeedUrl: rc.FeedURL,
+                        },
+                }</span>
+
+        case biz.SourceTypeHTML:<span class="cov8" title="1">
+                hc, ok := domainConfig.(*biz.HTMLConfig)
+                if !ok </span><span class="cov0" title="0">{
+                        return nil, errors.New("expected HTMLConfig")
+                }</span>
+                <span class="cov8" title="1">protoConfig.Config = &amp;feedium.SourceConfig_Html{
+                        Html: &amp;feedium.HTMLConfig{
+                                Url: hc.URL,
+                        },
+                }</span>
+
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("unknown source type: %s", sourceType)</span>
+        }
+
+        <span class="cov8" title="1">return protoConfig, nil</span>
+}
+
+// mapDomainTypeToProto maps domain SourceType to proto SourceType.
+func (s *SourceService) mapDomainTypeToProto(sourceType biz.SourceType) feedium.SourceType <span class="cov8" title="1">{
+        switch sourceType </span>{
+        case biz.SourceTypeTelegramChannel:<span class="cov8" title="1">
+                return feedium.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL</span>
+        case biz.SourceTypeTelegramGroup:<span class="cov8" title="1">
+                return feedium.SourceType_SOURCE_TYPE_TELEGRAM_GROUP</span>
+        case biz.SourceTypeRSS:<span class="cov8" title="1">
+                return feedium.SourceType_SOURCE_TYPE_RSS</span>
+        case biz.SourceTypeHTML:<span class="cov8" title="1">
+                return feedium.SourceType_SOURCE_TYPE_HTML</span>
+        }
+        <span class="cov8" title="1">return feedium.SourceType_SOURCE_TYPE_UNSPECIFIED</span>
+}
+
+// mapDomainModeToProto maps domain ProcessingMode to proto ProcessingMode.
+func (s *SourceService) mapDomainModeToProto(mode biz.ProcessingMode) feedium.ProcessingMode <span class="cov8" title="1">{
+        switch mode </span>{
+        case biz.ProcessingModeSelfContained:<span class="cov8" title="1">
+                return feedium.ProcessingMode_PROCESSING_MODE_SELF_CONTAINED</span>
+        case biz.ProcessingModeCumulative:<span class="cov8" title="1">
+                return feedium.ProcessingMode_PROCESSING_MODE_CUMULATIVE</span>
+        }
+        <span class="cov8" title="1">return feedium.ProcessingMode_PROCESSING_MODE_UNSPECIFIED</span>
+}
+
+// mapProtoTypeToProto maps proto SourceType to domain SourceType.
+func (s *SourceService) mapProtoTypeToDomain(protoType feedium.SourceType) biz.SourceType <span class="cov8" title="1">{
+        switch protoType </span>{
+        case feedium.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL:<span class="cov8" title="1">
+                return biz.SourceTypeTelegramChannel</span>
+        case feedium.SourceType_SOURCE_TYPE_TELEGRAM_GROUP:<span class="cov8" title="1">
+                return biz.SourceTypeTelegramGroup</span>
+        case feedium.SourceType_SOURCE_TYPE_RSS:<span class="cov8" title="1">
+                return biz.SourceTypeRSS</span>
+        case feedium.SourceType_SOURCE_TYPE_HTML:<span class="cov8" title="1">
+                return biz.SourceTypeHTML</span>
+        }
+        <span class="cov0" title="0">return biz.SourceType("")</span>
+}
+
+// mapDomainErrorToStatus maps domain errors to gRPC status errors.
+func (s *SourceService) mapDomainErrorToStatus(err error) error <span class="cov8" title="1">{
+        switch </span>{
+        case errors.Is(err, biz.ErrSourceNotFound):<span class="cov8" title="1">
+                return status.Error(codes.NotFound, feedium.ErrorReason_ERROR_REASON_SOURCE_NOT_FOUND.String())</span>
+        case errors.Is(err, biz.ErrInvalidSourceType):<span class="cov8" title="1">
+                return status.Error(codes.InvalidArgument, feedium.ErrorReason_ERROR_REASON_SOURCE_INVALID_TYPE.String())</span>
+        case errors.Is(err, biz.ErrInvalidConfig):<span class="cov8" title="1">
+                return status.Error(codes.InvalidArgument, feedium.ErrorReason_ERROR_REASON_SOURCE_INVALID_CONFIG.String())</span>
+        case errors.Is(err, biz.ErrTypeImmutable):<span class="cov8" title="1">
+                return status.Error(codes.InvalidArgument, feedium.ErrorReason_ERROR_REASON_SOURCE_TYPE_IMMUTABLE.String())</span>
+        }
+        <span class="cov8" title="1">return status.Error(codes.Internal, "internal error")</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -82,8 +82,8 @@ goose -dir migrations create add_posts_table sql
 ```sql
 -- +goose Up
 CREATE TABLE posts (
-    id BIGSERIAL PRIMARY KEY,
-    source_id BIGINT NOT NULL REFERENCES sources(id),
+    id UUID PRIMARY KEY,
+    source_id UUID NOT NULL REFERENCES sources(id),
     external_id TEXT NOT NULL,
     ...
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -107,7 +107,9 @@ DROP TABLE IF EXISTS posts;
 
 - Версия: 18.3
 - Все таблицы в схеме `public`
-- UUID: не используем как PK, BIGSERIAL для PK
+- PK: UUID v7 (`github.com/google/uuid`) для всех таблиц — time-sortable, глобально уникален без координации, обеспечивает стабильную курсорную пагинацию
+- Библиотека: `github.com/google/uuid` v1.6+, генерация через `uuid.Must(uuid.NewV7())`
+- Тип колонки в БД: `UUID` (PostgreSQL native), генерация значения — на уровне Go (Ent Default hook), не через `DEFAULT gen_random_uuid()`
 - JSONB для meta-полей (source meta, media_urls)
 - TIMESTAMPTZ для всех дат
 - Индексы: создаём явно в миграциях, не полагаемся на ORM

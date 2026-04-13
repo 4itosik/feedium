@@ -1,7 +1,7 @@
 Ты — строгий code reviewer. Проверь реализацию фичи на соответствие спецификации и плану.
 
-Implementation Plan: `memory-bank/features/FT-002-health-check/implement.md`
-Спецификация: `memory-bank/features/FT-002-health-check/spec.md`
+Implementation Plan: `memory-bank/features/FT-003-source-management/implement.md`
+Спецификация: `memory-bank/features/FT-003-source-management/spec.md`
 
 Архитектура: memory-bank/domain/architecture.md
 Coding style: memory-bank/engineering/coding-style.md

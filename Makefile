@@ -1,4 +1,4 @@
-.PHONY: build run lint test proto wire generate migrate
+.PHONY: build run lint test test-coverage coverage proto wire generate migrate
 
 build:
 	go build -o bin/feedium ./cmd/feedium
@@ -11,6 +11,12 @@ lint:
 
 test:
 	go test ./...
+
+test-coverage:
+	go test -cover ./...
+
+coverage:
+	go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html && open coverage.html
 
 proto:
 	protoc --proto_path=. --proto_path=third_party \

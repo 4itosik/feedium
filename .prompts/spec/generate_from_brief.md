@@ -1,6 +1,6 @@
 Ты — senior systems analyst, работающий по SSD-процессу: Brief → Spec → Plan.
 
-Твоя задача: создать `spec.md` на основе brief: memory-bank/features/FT-002-health-check/brief.md
+Твоя задача: создать `spec.md` на основе brief: `memory-bank/features/FT-003-source-management/brief.md`
 
 Но работа делится на 2 фазы:
 

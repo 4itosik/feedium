@@ -7,10 +7,12 @@
 package main
 
 import (
+	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/conf"
 	"github.com/4itosik/feedium/internal/data"
 	"github.com/4itosik/feedium/internal/server"
 	"github.com/4itosik/feedium/internal/service/health"
+	"github.com/4itosik/feedium/internal/service/source"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
@@ -27,9 +29,12 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		return nil, nil, err
 	}
 	healthRepo := data.NewHealthRepo(dataData, logger)
-	service := health.NewHealthService(healthRepo, logger)
-	httpServer := server.NewHTTPServer(confServer, service, logger)
-	grpcServer := server.NewGRPCServer(confServer, service, logger)
+	healthService := health.NewHealthService(healthRepo, logger)
+	sourceRepo := data.NewSourceRepo(dataData)
+	sourceUsecase := biz.NewSourceUsecase(sourceRepo)
+	sourceService := source.NewSourceService(sourceUsecase)
+	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, logger)
+	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, logger)
 	app := newApp(logger, httpServer, grpcServer)
 	return app, func() {
 		cleanup()

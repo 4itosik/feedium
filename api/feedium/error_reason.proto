@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package feedium;
+
+option go_package = "feedium/api/feedium;feedium";
+
+enum ErrorReason {
+  ERROR_REASON_UNSPECIFIED = 0;
+  ERROR_REASON_SOURCE_NOT_FOUND = 1;
+  ERROR_REASON_SOURCE_INVALID_TYPE = 2;
+  ERROR_REASON_SOURCE_INVALID_CONFIG = 3;
+  ERROR_REASON_SOURCE_TYPE_IMMUTABLE = 4;
+}

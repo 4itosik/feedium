@@ -5,10 +5,12 @@ package main
 import (
 	"log/slog"
 
+	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/conf"
 	"github.com/4itosik/feedium/internal/data"
 	"github.com/4itosik/feedium/internal/server"
 	healthservice "github.com/4itosik/feedium/internal/service/health"
+	sourceservice "github.com/4itosik/feedium/internal/service/source"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
@@ -37,6 +39,8 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		server.ProviderSet,
 		data.ProviderSet,
 		healthservice.ProviderSet,
+		biz.ProviderSet,
+		sourceservice.ProviderSet,
 		newApp,
 	)
 	return &kratos.App{}, nil, nil

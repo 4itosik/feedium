@@ -226,6 +226,30 @@ linters:
           deny:
             - pkg: github.com/4itosik/feedium/internal/biz
               desc: Health service must not import biz layer
+        "biz no infra":
+          files:
+            - "internal/biz/**"
+          deny:
+            - pkg: entgo.io/ent
+              desc: biz must not import ent (architecture boundary)
+            - pkg: net/http
+              desc: biz must not import HTTP (architecture boundary)
+            - pkg: database/sql
+              desc: biz must not import SQL (architecture boundary)
+            - pkg: google.golang.org/protobuf
+              desc: biz must not import protobuf (architecture boundary)
+            - pkg: google.golang.org/grpc
+              desc: biz must not import gRPC (architecture boundary)
+        "service no data":
+          files:
+            - "internal/service/**"
+          deny:
+            - pkg: entgo.io/ent
+              desc: service must not import ent directly (use biz layer)
+            - pkg: database/sql
+              desc: service must not import SQL directly (use biz layer)
+            - pkg: github.com/4itosik/feedium/internal/data
+              desc: service must not import data layer (architecture boundary)
 
     embeddedstructfieldcheck:
       # Checks that sync.Mutex and sync.RWMutex are not used as embedded fields.

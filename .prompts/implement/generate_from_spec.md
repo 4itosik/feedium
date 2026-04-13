@@ -1,6 +1,6 @@
 Сгенерируй implementation plan (`implement.md`) на основе `spec.md`.
 
-Spec файл находится - memory-bank/features/FT-002-health-check/spec.md
+Spec файл находится - memory-bank/features/FT-003-source-management/spec.md
 
 Требования:
 - Полный, однозначный, без противоречий
