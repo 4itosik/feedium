@@ -34,4 +34,4 @@ status: active
 | Feature | Package | Upstream PRD | Delivery Status | Artifacts |
 |---|---|---|---|---|
 | `FT-001` Структура проекта | [FT-001-project-structure/](FT-001-project-structure/) | [PRD-001](../prd/PRD-001-mvp.md) | done | [brief](FT-001-project-structure/brief.md) · [spec](FT-001-project-structure/spec.md) · [implementation-plan](FT-001-project-structure/implementation-plan.md) |
-| `FT-002` Health Check | [FT-002-health-check/](FT-002-health-check/) | [PRD-001](../prd/PRD-001-mvp.md) | planned | [brief](FT-002-health-check/brief.md) |
+| `FT-002` Health Check | [FT-002-health-check/](FT-002-health-check/) | [PRD-001](../prd/PRD-001-mvp.md) | planned | [brief](FT-002-health-check/brief.md) · [spec](FT-002-health-check/spec.md) · [implementation-plan](FT-002-health-check/implementation-plan.md) |

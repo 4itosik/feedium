@@ -9,13 +9,12 @@ status: active
 
 # Coding Style
 
-## Язык и именование
+> **Предварительное чтение:** [go-style.md](go-style.md) — языковые идиомы Go (naming, errors, interfaces, context, values vs pointers, init, imports). Здесь — проектные конвенции Feedium поверх них.
 
-- Весь код, комментарии — на английском
-- Именование по стандартам Go: camelCase для приватных, PascalCase для экспортируемых
-- Пакеты — одно слово, lowercase, без подчёркиваний (`summary`, `source`, `post`)
-- Интерфейсы — без префикса `I`. Суффикс `-er` где уместно (`Collector`, `Scorer`)
-- Файлы — snake_case (`summary_worker.go`, `post_repo.go`)
+## Язык и файлы
+
+- Весь код и комментарии — на английском.
+- Файлы — `snake_case` (`summary_worker.go`, `post_repo.go`). Общие правила именования типов, функций, пакетов, receivers — см. [go-style.md](go-style.md#naming).
 
 ## Структура проекта (go-kratos layout)
 
@@ -71,33 +70,12 @@ status: active
 - Middleware, interceptors
 - Регистрация сервисов
 
-## Интерфейсы
+## Интерфейсы по слоям
 
-- Определяй интерфейс там, где он используется, не где реализуется
-- Интерфейс в biz/, реализация в data/ — основной паттерн
-- Минимальные интерфейсы: 1-3 метода. Если больше — разбивай
-- Каждый пакет — минимум зависимостей
+Общие правила — см. [go-style.md#интерфейсы](go-style.md#интерфейсы). Проектные:
 
-## Значения и указатели
-
-По значению по умолчанию. Указатель — только когда есть конкретная причина.
-
-**По значению:**
-- Доменные сущности в biz/: `Post`, `Source`, `Summary`
-- Value objects: `Pagination`, `DateRange`, `Score`
-- DTO между слоями (кроме proto-generated, там указатели — ок)
-- Любая структура, которую не нужно мутировать
-
-**Указатель нужен когда:**
-- Структура с состоянием: `*ent.Client`, `*sql.DB`, `*sync.Mutex`
-- Семантика nil (optional значение, отсутствие)
-- Pointer receiver для реализации интерфейса
-- Структура реально большая (десятки полей, тяжёлые вложения)
-
-**По слоям:**
-- `biz/` — сущности и интерфейсы репозиториев работают со значениями. Usecase-ы — указатели (есть зависимости)
-- `data/` — принимает и возвращает доменные значения. `*ent.Client` — указатель
-- `service/` — принимает proto (указатели, так генерирует protoc), конвертирует в значения для biz/
+- Основной паттерн: **интерфейс в `biz/`, реализация в `data/`**. Потребитель — usecase в `biz/`, поэтому интерфейс живёт там.
+- Compile-time assertion реализации обязателен: `var _ biz.PostRepo = (*postRepo)(nil)`.
 
 ```go
 type PostRepo interface {
@@ -105,6 +83,14 @@ type PostRepo interface {
     FindByExternalID(ctx context.Context, sourceID int64, externalID string) (Post, bool, error)
 }
 ```
+
+## Values vs pointers по слоям
+
+Общее правило «по умолчанию значение, указатель по причине» — см. [go-style.md#values-vs-pointers](go-style.md#values-vs-pointers). Проектная раскладка:
+
+- **`biz/`** — доменные сущности (`Post`, `Source`, `Summary`) и value objects (`Pagination`, `DateRange`, `Score`) передаются **по значению**. Usecase-ы — указатели, потому что содержат зависимости.
+- **`data/`** — принимает и возвращает доменные значения. `*ent.Client`, HTTP-клиенты — указатели.
+- **`service/`** — принимает proto (указатели, так генерирует protoc), конвертирует в значения для `biz/`.
 
 ## Чистые функции в biz/
 
@@ -136,10 +122,11 @@ func EnrichPost(post Post) Post {
 
 ## Error Handling
 
-- Kratos status errors для API-ошибок
-- Доменные ошибки в biz/ как sentinel errors (`var ErrPostNotFound = errors.New(...)`)
-- Всегда оборачивай ошибки с контекстом: `fmt.Errorf("save post: %w", err)`
-- Не логируй ошибку и не возвращай её одновременно — выбери одно
+Общие правила (error strings, `%w` в конце, early return) — см. [go-style.md#error-handling](go-style.md#error-handling). Проектные дополнения:
+
+- Kratos status errors для API-ошибок (на границе `service/`).
+- Доменные ошибки в `biz/` как sentinel errors: `var ErrPostNotFound = errors.New("post not found")`.
+- Не логируй ошибку и не возвращай её одновременно — выбери одно.
 
 ### Правила по слоям
 
@@ -183,7 +170,7 @@ logger.Error("summary scoring failed", "summary_id", summaryID, "post_id", postI
 - golangci-lint v2, конфиг в `.golangci.yml` в корне проекта
 - Конфиг зафиксирован, не менять без обсуждения
 - `local-prefixes` в goimports — обновить на реальный module path
-- Максимальная длина строки: 120 символов (golines)
+- **Максимальная длина строки: 120 символов (golines)** — осознанное отклонение от [Effective Go](https://go.dev/doc/effective_go) и [Google Style Guide](https://google.github.io/styleguide/go/guide#line-length), которые не задают фиксированный лимит и рекомендуют рефакторинг вместо переноса. Проект принял жёсткий лимит ради консистентного diff'а и автоформата через `golines`. Если строка не влезает — рассматривай это как сигнал к рефакторингу (группировка параметров в struct), а не как задачу для переноса.
 - Каноническая команда запуска: `golangci-lint run ./... -c .golangci.yml`. Запуск без `./...` и `-c .golangci.yml` запрещён — `./...` гарантирует обход всех пакетов, `-c` фиксирует путь к конфигу и исключает неявный pickup из окружения
 
 ## Конфигурация

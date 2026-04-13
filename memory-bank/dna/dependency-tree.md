@@ -27,6 +27,7 @@ principles.md                          ← ROOT, не имеет derived_from
 │   ├── domain/glossary.md
 │   ├── dna/dependency-tree.md
 │   ├── engineering/index.md
+│   ├── engineering/go-style.md
 │   ├── engineering/coding-style.md
 │   ├── engineering/api-contracts.md
 │   ├── engineering/database.md
@@ -36,9 +37,13 @@ principles.md                          ← ROOT, не имеет derived_from
 │   ├── adr/index.md
 │   ├── prd/index.md
 │   └── features/index.md
-│       └── features/FT-001-project-structure/
-│            ├── brief.md                (derived_from: prd/PRD-001-mvp.md, engineering/coding-style.md, domain/architecture.md)
-│            ├── spec.md                 (derived_from: brief.md, engineering/coding-style.md, domain/architecture.md)
+│       ├── features/FT-001-project-structure/
+│       │    ├── brief.md                (derived_from: prd/PRD-001-mvp.md, engineering/coding-style.md, domain/architecture.md)
+│       │    ├── spec.md                 (derived_from: brief.md, engineering/coding-style.md, domain/architecture.md)
+│       │    └── implementation-plan.md  (derived_from: spec.md)
+│       └── features/FT-002-health-check/
+│            ├── brief.md                (derived_from: prd/PRD-001-mvp.md, domain/architecture.md)
+│            ├── spec.md                 (derived_from: brief.md, domain/architecture.md, engineering/database.md)
 │            └── implementation-plan.md  (derived_from: spec.md)
 ├── dna/index.md
 └── cross-references.md
@@ -61,6 +66,7 @@ principles.md                          ← ROOT, не имеет derived_from
 | `domain/glossary.md` | `dna/governance.md` |
 | `dna/dependency-tree.md` | `governance.md` |
 | `engineering/index.md` | `dna/governance.md` |
+| `engineering/go-style.md` | `dna/governance.md` |
 | `engineering/coding-style.md` | `dna/governance.md` |
 | `engineering/api-contracts.md` | `dna/governance.md` |
 | `engineering/database.md` | `dna/governance.md` |
@@ -74,3 +80,6 @@ principles.md                          ← ROOT, не имеет derived_from
 | `features/FT-001-project-structure/brief.md` | `prd/PRD-001-mvp.md`, `engineering/coding-style.md`, `domain/architecture.md` |
 | `features/FT-001-project-structure/spec.md` | `brief.md`, `engineering/coding-style.md`, `domain/architecture.md` |
 | `features/FT-001-project-structure/implementation-plan.md` | `spec.md` |
+| `features/FT-002-health-check/brief.md` | `prd/PRD-001-mvp.md`, `domain/architecture.md` |
+| `features/FT-002-health-check/spec.md` | `brief.md`, `domain/architecture.md`, `engineering/database.md` |
+| `features/FT-002-health-check/implementation-plan.md` | `spec.md` |

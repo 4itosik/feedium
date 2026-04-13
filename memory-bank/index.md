@@ -49,6 +49,7 @@ status: active
 ### [Engineering — инженерные правила](engineering/index.md)
 
 - [Autonomy Boundaries](engineering/autonomy-boundaries.md) — Границы автономии агента: автопилот (без подтверждения), супервизия (покажи на КТ), эскалация (остановись и спроси). TDD-цикл в biz/. Читать перед любым действием, которое может требовать согласования.
+- [Go Style](engineering/go-style.md) — Языковые идиомы Go (naming, errors, interfaces, context, values vs pointers, init, imports). Правила уровня языка, независимые от проекта. Читать перед `coding-style.md`.
 - [Coding Style](engineering/coding-style.md) — kratos layout, правила по слоям (biz/data/service/task/server), именование, значения vs указатели, чистые функции в biz/, DI (Wire), error handling по слоям, logging (slog), graceful shutdown. Читать при написании любого кода в проекте.
 - [API Contracts](engineering/api-contracts.md) — Proto-файлы: расположение (`api/feedium/`), генерация (`make proto`), версионирование методов (V1/V2 в имени, не в пакете), HTTP annotations, структура типичного proto, error reasons. Читать при добавлении или изменении API.
 - [Database](engineering/database.md) — Ent ORM (схемы, генерация, паттерн использования в data/), goose-миграции (только SQL, формат), PostgreSQL conventions (BIGSERIAL, TIMESTAMPTZ, JSONB), constraints. Читать при создании или изменении схемы БД и написании миграций.
@@ -62,7 +63,7 @@ status: active
 ### [Features — feature packages](features/index.md)
 
 - [FT-001: Структура проекта](features/FT-001-project-structure/brief.md) — каркас Go-проекта по kratos-layout: go.mod, cmd/, internal/, Wire, Makefile. Артефакты: [brief](features/FT-001-project-structure/brief.md), [spec](features/FT-001-project-structure/spec.md), [implementation-plan](features/FT-001-project-structure/implementation-plan.md). Upstream: PRD-001. Delivery: done.
-- [FT-002: Health Check](features/FT-002-health-check/brief.md) — HTTP health-check эндпоинт + первичный setup PostgreSQL с проверкой доступности БД. Артефакты: [brief](features/FT-002-health-check/brief.md). Upstream: PRD-001. Delivery: planned.
+- [FT-002: Health Check](features/FT-002-health-check/brief.md) — HTTP health-check эндпоинт + первичный setup PostgreSQL с проверкой доступности БД. Артефакты: [brief](features/FT-002-health-check/brief.md), [spec](features/FT-002-health-check/spec.md), [implementation-plan](features/FT-002-health-check/implementation-plan.md). Upstream: PRD-001. Delivery: planned.
 
 ### [ADR — архитектурные решения](adr/index.md)
 

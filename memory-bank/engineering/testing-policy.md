@@ -1,6 +1,6 @@
 ---
 doc_kind: engineering
-doc_function: canonical
+doc_function: convention
 purpose: Описывает testing policy репозитория: обязательность test case design, требования к automated regression coverage и допустимые manual-only gaps.
 derived_from:
   - ../dna/governance.md
@@ -11,7 +11,7 @@ status: active
 
 ## Stack
 
-- **Framework:** `go test`, `testify` (assert + require)
+- **Framework:** `go test`, `testify` (assert + require) — **осознанное отклонение** от [Google Go Style Guide](https://google.github.io/styleguide/go/decisions#assert-libraries), который считает assertion-хелперы не-идиоматичными. Проект принял testify ради скорости написания и консистентности. В pull request'ах не смешивать стили в одном пакете.
 - **Моки:** `go.uber.org/mock` (mockgen), не ручные моки
 - **Goroutine Leak Detection:** `go.uber.org/goleak`
 - **Integration:** Testcontainers (PostgreSQL)
@@ -130,6 +130,41 @@ func TestPostUsecase_Save(t *testing.T) {
 
     // Arrange
     // ...
+}
+```
+
+### Test helpers и `t.Helper()`
+
+Любая вспомогательная функция, которая вызывает `t.Fatal` / `t.Error` или принимает `*testing.T` первым аргументом, **обязана** начинаться с `t.Helper()`. Без этого репорт об ошибке укажет на строчку внутри хелпера, а не на вызов в тесте — DX ломается.
+
+```go
+func setupTestDB(t *testing.T) *ent.Client {
+    t.Helper()
+    // ...
+}
+
+func requireSavedPost(t *testing.T, repo biz.PostRepo, id int64) biz.Post {
+    t.Helper()
+    post, ok, err := repo.FindByID(context.Background(), id)
+    require.NoError(t, err)
+    require.True(t, ok)
+    return post
+}
+```
+
+### Examples как исполняемая документация
+
+Для публичных API пакетов `biz/` и `api/` (proto-сгенерированные сервисы) желательны `ExampleXxx`-функции — они компилируются, проверяются `go test` и показываются в godoc.
+
+- Example **не заменяет** regression-тест, а дополняет его читаемым вызовом с точки зрения потребителя.
+- Комментарий `// Output:` обязателен — иначе example не запускается.
+- Не использовать examples как место для edge cases — для этого есть обычные тесты.
+
+```go
+func ExamplePostUsecase_Save() {
+    uc := biz.NewPostUsecase(repo, events)
+    _ = uc.Save(context.Background(), biz.Post{Title: "hello", SourceID: 1})
+    // Output:
 }
 ```
 
