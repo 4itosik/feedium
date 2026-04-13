@@ -62,6 +62,7 @@ status: active
 ### [Features — feature packages](features/index.md)
 
 - [FT-001: Структура проекта](features/FT-001-project-structure/brief.md) — каркас Go-проекта по kratos-layout: go.mod, cmd/, internal/, Wire, Makefile. Артефакты: [brief](features/FT-001-project-structure/brief.md), [spec](features/FT-001-project-structure/spec.md), [implementation-plan](features/FT-001-project-structure/implementation-plan.md). Upstream: PRD-001. Delivery: done.
+- [FT-002: Health Check](features/FT-002-health-check/brief.md) — HTTP health-check эндпоинт + первичный setup PostgreSQL с проверкой доступности БД. Артефакты: [brief](features/FT-002-health-check/brief.md). Upstream: PRD-001. Delivery: planned.
 
 ### [ADR — архитектурные решения](adr/index.md)
 

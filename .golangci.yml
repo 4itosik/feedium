@@ -215,11 +215,17 @@ linters:
             - pkg: math/rand$
               desc: Use math/rand/v2 instead, see https://go.dev/blog/randv2
         "non-main files":
+           files:
+             - "!**/main.go"
+           deny:
+             - pkg: log$
+               desc: Use log/slog instead, see https://go.dev/blog/slog
+        "health service no biz":
           files:
-            - "!**/main.go"
+            - "internal/service/health/**"
           deny:
-            - pkg: log$
-              desc: Use log/slog instead, see https://go.dev/blog/slog
+            - pkg: github.com/4itosik/feedium/internal/biz
+              desc: Health service must not import biz layer
 
     embeddedstructfieldcheck:
       # Checks that sync.Mutex and sync.RWMutex are not used as embedded fields.

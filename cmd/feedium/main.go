@@ -51,7 +51,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	app, cleanup, wireErr := wireApp(bc.GetServer(), logger)
+	if bc.GetData() != nil && bc.GetData().GetDatabase() != nil {
+		if err := conf.ValidateAndNormalizeDatabase(bc.GetData().GetDatabase()); err != nil {
+			logger.Error("failed to validate database config", "error", err)
+			os.Exit(1)
+		}
+	}
+
+	app, cleanup, wireErr := wireApp(&bc, logger)
 	if wireErr != nil {
 		logger.Error("failed to create app", "error", wireErr)
 		os.Exit(1)

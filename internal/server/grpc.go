@@ -5,10 +5,12 @@ import (
 
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 
+	feediumv1 "github.com/4itosik/feedium/api/feedium"
 	"github.com/4itosik/feedium/internal/conf"
+	healthservice "github.com/4itosik/feedium/internal/service/health"
 )
 
-func NewGRPCServer(c *conf.Server, _ *slog.Logger) *grpc.Server {
+func NewGRPCServer(c *conf.Server, hs *healthservice.HealthService, _ *slog.Logger) *grpc.Server {
 	var opts []grpc.ServerOption
 	if c.GetGrpc().GetAddr() != "" {
 		opts = append(opts, grpc.Address(c.GetGrpc().GetAddr()))
@@ -17,5 +19,6 @@ func NewGRPCServer(c *conf.Server, _ *slog.Logger) *grpc.Server {
 		opts = append(opts, grpc.Timeout(c.GetGrpc().GetTimeout().AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
+	feediumv1.RegisterHealthServiceServer(srv, hs)
 	return srv
 }

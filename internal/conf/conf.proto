@@ -8,6 +8,7 @@ import "google/protobuf/duration.proto";
 
 message Bootstrap {
   Server server = 1;
+  Data data = 2;
 }
 
 message Server {
@@ -23,4 +24,17 @@ message HTTP {
 message GRPC {
   string addr = 1;
   google.protobuf.Duration timeout = 2;
+}
+
+message Data {
+  Database database = 1;
+}
+
+message Database {
+  string host = 1;
+  int32 port = 2;
+  string database = 3;
+  string user = 4;
+  string password = 5;
+  string sslmode = 6;
 }

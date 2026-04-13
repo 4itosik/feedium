@@ -152,9 +152,25 @@ func EnrichPost(post Post) Post {
 
 - slog, глобальные логгеры запрещены (sloglint: no-global: all)
 - Логгер передаётся через DI
-- Structured logging keys: только стабильные идентификаторы (event_id, source_id) и error
-- Не засоряй логи лишними key-value парами — лаконичное сообщение + несколько ключей
+- Structured logging keys: только важные метаданные для фильтрации/корреляции (например, `summary_id`, `post_id`, `source_id`, `event_id`)
+- Технические/описательные детали (host, port, database, URL, counts, flags) по умолчанию писать в текст сообщения, а не в отдельные ключи
+- Для ошибки использовать единый ключ `err` (не `error`, не `e`, не `cause`)
+- Не засоряй логи лишними key-value парами — лаконичное сообщение + минимум ключей
 - Логирование — на уровне оркестрации (воркеры, сервисы), не в leaf-функциях
+
+```go
+// плохо: все детали распылены по ключам
+logger.Info(
+    "database connected",
+    "host", dbConfig.GetHost(),
+    "port", dbConfig.GetPort(),
+    "database", dbConfig.GetDatabase(),
+)
+
+// хорошо: детали в сообщении, в ключах только значимые метаданные
+logger.Info("database connected: host=localhost port=5432 database=feedium")
+logger.Error("summary scoring failed", "summary_id", summaryID, "post_id", postID, "err", err)
+```
 
 ## Кодогенерация
 

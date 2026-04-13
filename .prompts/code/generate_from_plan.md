@@ -1,6 +1,6 @@
 Прочитай Implementation Plan в файле:
 
-`memory-bank/features/FT-001-project-structure/implement.md`
+`memory-bank/features/FT-002-health-check/implement.md`
 
 Реализуй всё, что в нём описано, прямо в текущем репозитории.
 

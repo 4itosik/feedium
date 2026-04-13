@@ -8,7 +8,9 @@ package main
 
 import (
 	"github.com/4itosik/feedium/internal/conf"
+	"github.com/4itosik/feedium/internal/data"
 	"github.com/4itosik/feedium/internal/server"
+	"github.com/4itosik/feedium/internal/service/health"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
@@ -17,11 +19,20 @@ import (
 
 // Injectors from wire.go:
 
-func wireApp(confServer *conf.Server, logger *slog.Logger) (*kratos.App, func(), error) {
-	httpServer := server.NewHTTPServer(confServer, logger)
-	grpcServer := server.NewGRPCServer(confServer, logger)
+func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), error) {
+	confServer := newServerFromBootstrap(bc)
+	confData := newDataFromBootstrap(bc)
+	dataData, cleanup, err := data.NewData(confData, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	healthRepo := data.NewHealthRepo(dataData, logger)
+	service := health.NewHealthService(healthRepo, logger)
+	httpServer := server.NewHTTPServer(confServer, service, logger)
+	grpcServer := server.NewGRPCServer(confServer, service, logger)
 	app := newApp(logger, httpServer, grpcServer)
 	return app, func() {
+		cleanup()
 	}, nil
 }
 
@@ -29,4 +40,12 @@ func wireApp(confServer *conf.Server, logger *slog.Logger) (*kratos.App, func(),
 
 func newApp(logger *slog.Logger, hs *http.Server, gs *grpc.Server) *kratos.App {
 	return kratos.New(kratos.Name("feedium"), kratos.Server(hs, gs))
+}
+
+func newDataFromBootstrap(bc *conf.Bootstrap) *conf.Data {
+	return bc.GetData()
+}
+
+func newServerFromBootstrap(bc *conf.Bootstrap) *conf.Server {
+	return bc.GetServer()
 }
