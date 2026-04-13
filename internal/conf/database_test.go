@@ -3,8 +3,9 @@ package conf_test
 import (
 	"testing"
 
-	"github.com/4itosik/feedium/internal/conf"
 	"github.com/stretchr/testify/require"
+
+	"github.com/4itosik/feedium/internal/conf"
 )
 
 func TestValidateAndNormalizeDatabase_HappyPath(t *testing.T) {

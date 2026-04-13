@@ -6,6 +6,9 @@ require (
 	github.com/go-kratos/kratos/v2 v2.9.2
 	github.com/google/wire v0.7.0
 	github.com/lib/pq v1.12.3
+	github.com/stretchr/testify v1.11.1
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0
+	go.uber.org/goleak v1.3.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260120221211-b8f7ae30c516
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
@@ -37,7 +40,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230326075908-cb1d2100619a // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
@@ -55,9 +57,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/shirou/gopsutil/v4 v4.26.3 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/testcontainers/testcontainers-go v0.42.0 // indirect
-	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
@@ -66,7 +66,6 @@ require (
 	go.opentelemetry.io/otel v1.41.0 // indirect
 	go.opentelemetry.io/otel/metric v1.41.0 // indirect
 	go.opentelemetry.io/otel/trace v1.41.0 // indirect
-	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect

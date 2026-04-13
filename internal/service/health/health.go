@@ -6,9 +6,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	feediumv1 "github.com/4itosik/feedium/api/feedium"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	feediumv1 "github.com/4itosik/feedium/api/feedium"
 )
 
 type throttledLogger struct {
@@ -27,6 +28,7 @@ func (t *throttledLogger) LogError(ctx context.Context, err error) {
 	}
 }
 
+//nolint:revive // HealthService name follows proto convention
 type HealthService struct {
 	feediumv1.UnimplementedHealthServiceServer
 

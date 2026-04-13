@@ -26,14 +26,25 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	goleak.VerifyTestMain(m)
+	goleak.VerifyTestMain(m,
+		// Ignore testcontainers reaper goroutines
+		goleak.IgnoreTopFunction("github.com/testcontainers/testcontainers-go.(*Reaper).connect.func1"),
+		goleak.IgnoreTopFunction("github.com/testcontainers/testcontainers-go.(*Reaper).connect"),
+		goleak.IgnoreTopFunction("internal/poll.runtime_pollWait"),
+		goleak.IgnoreTopFunction("net.(*conn).Read"),
+		goleak.IgnoreTopFunction("net.(*conn).Write"),
+		goleak.IgnoreTopFunction("net/http.(*persistConn).readLoop"),
+		goleak.IgnoreTopFunction("net/http.(*persistConn).writeLoop"),
+	)
 }
 
 func setupPostgres(t *testing.T) (*sql.DB, func()) {
+	t.Helper()
+
 	ctx := context.Background()
 
-	//nolint:SA1019 // testcontainers-go deprecated API
-	container, err := postgres.RunContainer(ctx,
+	container, err := postgres.Run(ctx,
+		"postgres:18.3-alpine",
 		postgres.WithDatabase("testdb"),
 		postgres.WithUsername("testuser"),
 		postgres.WithPassword("testpass"),
@@ -45,6 +56,22 @@ func setupPostgres(t *testing.T) (*sql.DB, func()) {
 
 	db, err := sql.Open("postgres", connStr)
 	require.NoError(t, err)
+
+	// Wait for database to be actually ready to accept connections
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	for {
+		pingErr := db.PingContext(ctx)
+		if pingErr == nil {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatalf("database did not become ready in time: %v", pingErr)
+		case <-time.After(100 * time.Millisecond):
+			// Retry
+		}
+	}
 
 	cleanup := func() {
 		db.Close()
@@ -120,9 +147,13 @@ type slowPinger struct {
 	delay time.Duration
 }
 
-func (s *slowPinger) Ping(_ context.Context) error {
-	time.Sleep(s.delay)
-	return nil
+func (s *slowPinger) Ping(ctx context.Context) error {
+	select {
+	case <-time.After(s.delay):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func TestHealthService_Check_SlowPing(t *testing.T) {

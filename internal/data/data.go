@@ -44,12 +44,8 @@ func NewData(c *conf.Data, logger *slog.Logger) (*Data, func(), error) {
 		return nil, nil, fmt.Errorf("failed to ping database: %w", pingErr)
 	}
 
-	logger.Info(
-		"database connected",
-		"host", dbConfig.GetHost(),
-		"port", dbConfig.GetPort(),
-		"database", dbConfig.GetDatabase(),
-	)
+	logger.Info(fmt.Sprintf("database connected: host=%s port=%d database=%s",
+		dbConfig.GetHost(), dbConfig.GetPort(), dbConfig.GetDatabase()))
 
 	cleanup := func() {
 		if closeErr := db.Close(); closeErr != nil {
