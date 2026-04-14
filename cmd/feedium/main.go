@@ -1,48 +1,77 @@
 package main
 
 import (
-	"context"
-	"fmt"
+	"flag"
+	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"feedium/internal/bootstrap"
-	"feedium/internal/platform/logger"
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/config"
+	"github.com/go-kratos/kratos/v2/config/file"
+
+	"github.com/4itosik/feedium/internal/conf"
+)
+
+//nolint:gochecknoglobals // flag package requires global variable
+var flagconf = flag.String(
+	"conf",
+	"../../configs",
+	"config path, eg: -conf ./configs",
 )
 
 func main() {
-	os.Exit(run())
+	flag.Parse()
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
+	c := config.New(
+		config.WithSource(
+			file.NewSource(*flagconf),
+		),
+	)
+	if err := c.Load(); err != nil {
+		logger.Error("failed to load config", "path", *flagconf, "error", err)
+		os.Exit(1)
+	}
+
+	var bc conf.Bootstrap
+	if err := c.Scan(&bc); err != nil {
+		logger.Error("failed to scan config", "error", err)
+		os.Exit(1)
+	}
+
+	if bc.GetServer().GetHttp().GetAddr() == "" {
+		logger.Error("server.http.addr is empty")
+		os.Exit(1)
+	}
+	if bc.GetServer().GetGrpc().GetAddr() == "" {
+		logger.Error("server.grpc.addr is empty")
+		os.Exit(1)
+	}
+
+	if bc.GetData() != nil && bc.GetData().GetDatabase() != nil {
+		if err := conf.ValidateAndNormalizeDatabase(bc.GetData().GetDatabase()); err != nil {
+			logger.Error("failed to validate database config", "error", err)
+			os.Exit(1)
+		}
+	}
+
+	app, cleanup, wireErr := wireApp(&bc, logger)
+	if wireErr != nil {
+		logger.Error("failed to create app", "error", wireErr)
+		os.Exit(1)
+	}
+
+	if runErr := runApp(app, cleanup); runErr != nil {
+		logger.Error("failed to run app", "error", runErr)
+		cleanup()
+		os.Exit(1)
+	}
 }
 
-func run() int {
-	log := logger.Init()
-	log.Info("Feedium is starting")
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	cmd, err := parseCommand(os.Args[1:])
-	if err != nil {
-		log.Error("invalid command", "error", err)
-		fmt.Fprintln(os.Stderr, "usage: feedium [run [migrate]]")
-		return 1
-	}
-
-	switch cmd {
-	case commandServe:
-		runErr := bootstrap.Run(ctx, log)
-		if runErr != nil {
-			log.Error("server error", "error", runErr)
-			return 1
-		}
-	case commandMigrate:
-		migrateErr := bootstrap.Migrate(ctx, log)
-		if migrateErr != nil {
-			log.Error("migration error", "error", migrateErr)
-			return 1
-		}
-	}
-
-	return 0
+func runApp(app *kratos.App, cleanup func()) error {
+	defer cleanup()
+	return app.Run()
 }

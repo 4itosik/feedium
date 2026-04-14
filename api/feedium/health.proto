@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package feedium;
+
+option go_package = "feedium/api/feedium;feedium";
+
+import "google/api/annotations.proto";
+
+service HealthService {
+  rpc V1Check(V1CheckRequest) returns (V1CheckResponse) {
+    option (google.api.http) = {
+      get: "/healthz"
+    };
+  }
+}
+
+message V1CheckRequest {}
+
+message V1CheckResponse {
+  string status = 1;
+}

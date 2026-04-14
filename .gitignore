@@ -6,7 +6,10 @@
 .cache
 .idea/
 
-data
-feedium
+/bin/
+/feedium
 
 coverage.out
+session-ses_2854.md
+health.test
+data.test

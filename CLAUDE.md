@@ -1,3 +1,1 @@
-# CLAUDE.md
-
-Читай [AGENTS.md](AGENTS.md) — это основной маршрутизатор документации.
+Прочитай главный индекс Memory Bank: [memory-bank/index.md](memory-bank/index.md)

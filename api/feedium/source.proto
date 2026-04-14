@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package feedium;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "feedium/api/feedium;feedium";
+
+enum SourceType {
+  SOURCE_TYPE_UNSPECIFIED = 0;
+  SOURCE_TYPE_TELEGRAM_CHANNEL = 1;
+  SOURCE_TYPE_TELEGRAM_GROUP = 2;
+  SOURCE_TYPE_RSS = 3;
+  SOURCE_TYPE_HTML = 4;
+}
+
+enum ProcessingMode {
+  PROCESSING_MODE_UNSPECIFIED = 0;
+  PROCESSING_MODE_SELF_CONTAINED = 1;
+  PROCESSING_MODE_CUMULATIVE = 2;
+}
+
+message TelegramChannelConfig {
+  int64 tg_id = 1;
+  string username = 2;
+}
+
+message TelegramGroupConfig {
+  int64 tg_id = 1;
+  string username = 2;
+}
+
+message RSSConfig {
+  string feed_url = 1;
+}
+
+message HTMLConfig {
+  string url = 1;
+}
+
+message SourceConfig {
+  oneof config {
+    TelegramChannelConfig telegram_channel = 1;
+    TelegramGroupConfig telegram_group = 2;
+    RSSConfig rss = 3;
+    HTMLConfig html = 4;
+  }
+}
+
+message Source {
+  string id = 1;
+  SourceType type = 2;
+  ProcessingMode processing_mode = 3;
+  SourceConfig config = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message V1CreateSourceRequest {
+  SourceType type = 1;
+  SourceConfig config = 2;
+}
+
+message V1CreateSourceResponse {
+  Source source = 1;
+}
+
+message V1UpdateSourceRequest {
+  string id = 1;
+  SourceType type = 2;
+  SourceConfig config = 3;
+}
+
+message V1UpdateSourceResponse {
+  Source source = 1;
+}
+
+message V1DeleteSourceRequest {
+  string id = 1;
+}
+
+message V1DeleteSourceResponse {
+}
+
+message V1ListSourcesRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  optional SourceType type = 3;
+}
+
+message V1ListSourcesResponse {
+  repeated Source items = 1;
+  string next_page_token = 2;
+}
+
+message V1GetSourceRequest {
+  string id = 1;
+}
+
+message V1GetSourceResponse {
+  Source source = 1;
+}
+
+service SourceService {
+  rpc V1CreateSource(V1CreateSourceRequest) returns (V1CreateSourceResponse) {
+    option (google.api.http) = {
+      post: "/v1/sources"
+      body: "*"
+    };
+  }
+
+  rpc V1UpdateSource(V1UpdateSourceRequest) returns (V1UpdateSourceResponse) {
+    option (google.api.http) = {
+      put: "/v1/sources/{id}"
+      body: "*"
+    };
+  }
+
+  rpc V1DeleteSource(V1DeleteSourceRequest) returns (V1DeleteSourceResponse) {
+    option (google.api.http) = {
+      delete: "/v1/sources/{id}"
+    };
+  }
+
+  rpc V1ListSources(V1ListSourcesRequest) returns (V1ListSourcesResponse) {
+    option (google.api.http) = {
+      get: "/v1/sources"
+    };
+  }
+
+  rpc V1GetSource(V1GetSourceRequest) returns (V1GetSourceResponse) {
+    option (google.api.http) = {
+      get: "/v1/sources/{id}"
+    };
+  }
+}

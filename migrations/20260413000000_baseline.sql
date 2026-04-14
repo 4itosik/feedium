@@ -1,0 +1,4 @@
+-- +goose Up
+-- baseline: no schema changes
+-- +goose Down
+-- baseline: no schema changes

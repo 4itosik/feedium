@@ -1,0 +1,219 @@
+---
+doc_kind: engineering
+doc_function: convention
+purpose: Coding style Feedium: kratos layout, правила по слоям, именование, значения vs указатели, error handling, logging, DI.
+derived_from:
+  - ../dna/governance.md
+status: active
+---
+
+# Coding Style
+
+> **Предварительное чтение:** [go-style.md](go-style.md) — языковые идиомы Go (naming, errors, interfaces, context, values vs pointers, init, imports). Здесь — проектные конвенции Feedium поверх них.
+
+## Язык и файлы
+
+- Весь код и комментарии — на английском.
+- Файлы — `snake_case` (`summary_worker.go`, `post_repo.go`). Общие правила именования типов, функций, пакетов, receivers — см. [go-style.md](go-style.md#naming).
+
+## Структура проекта (go-kratos layout)
+
+```
+├── api/                    ← proto-файлы и сгенерированный код
+│   └── feedium/
+├── cmd/
+│   └── feedium/            ← main.go, wire injection
+├── configs/                ← yaml-конфигурация
+├── internal/
+│   ├── biz/                ← доменная логика, интерфейсы репозиториев
+│   ├── data/               ← реализация репозиториев, внешние клиенты
+│   ├── service/            ← тонкий адаптер API → biz
+│   ├── task/               ← воркеры (transport.Server)
+│   └── server/             ← настройка HTTP/gRPC серверов
+├── ent/                    ← ent-схемы и сгенерированный код
+│   └── schema/
+├── migrations/             ← goose SQL-миграции
+└── third_party/            ← proto-зависимости
+```
+
+## Правила по слоям
+
+### biz/
+
+- Доменные сущности, бизнес-правила, usecase-ы
+- Интерфейсы репозиториев и внешних сервисов определяются здесь
+- Нулевой импорт инфраструктуры: никаких ent, http, sql
+- Один файл — один домен (`source.go`, `post.go`, `summary.go`)
+
+### data/
+
+- Реализует интерфейсы из biz/
+- Знает про ent, HTTP-клиенты, внешние API
+- Не содержит бизнес-логику — только маппинг и вызовы
+
+### service/
+
+- Принимает proto DTO, конвертирует в доменные объекты, вызывает biz
+- Без бизнес-логики, без прямого доступа к data
+- Один сервис — один proto service
+
+### task/
+
+- Воркеры реализуют `transport.Server`
+- Kratos управляет lifecycle (Start/Stop)
+- Бизнес-функции возвращают структурированный результат (status, retry, error)
+- Логирование, ретраи, state transitions — только здесь, не в leaf-функциях
+
+### server/
+
+- Настройка HTTP и gRPC серверов
+- Middleware, interceptors
+- Регистрация сервисов
+
+## Интерфейсы по слоям
+
+Общие правила — см. [go-style.md#интерфейсы](go-style.md#интерфейсы). Проектные:
+
+- Основной паттерн: **интерфейс в `biz/`, реализация в `data/`**. Потребитель — usecase в `biz/`, поэтому интерфейс живёт там.
+- Compile-time assertion реализации обязателен: `var _ biz.PostRepo = (*postRepo)(nil)`.
+
+```go
+type PostRepo interface {
+    Save(ctx context.Context, post Post) (Post, error)
+    FindByExternalID(ctx context.Context, sourceID int64, externalID string) (Post, bool, error)
+}
+```
+
+## Values vs pointers по слоям
+
+Общее правило «по умолчанию значение, указатель по причине» — см. [go-style.md#values-vs-pointers](go-style.md#values-vs-pointers). Проектная раскладка:
+
+- **`biz/`** — доменные сущности (`Post`, `Source`, `Summary`) и value objects (`Pagination`, `DateRange`, `Score`) передаются **по значению**. Usecase-ы — указатели, потому что содержат зависимости.
+- **`data/`** — принимает и возвращает доменные значения. `*ent.Client`, HTTP-клиенты — указатели.
+- **`service/`** — принимает proto (указатели, так генерирует protoc), конвертирует в значения для `biz/`.
+
+## Чистые функции в biz/
+
+Не мутируй входные аргументы — возвращай новый результат. Функция получает всё через аргументы, не читает глобальное состояние.
+
+```go
+// плохо — мутация входного аргумента
+func EnrichPost(post *Post) {
+    post.Slug = slugify(post.Title)
+}
+
+// хорошо — возвращает новое значение
+func EnrichPost(post Post) Post {
+    post.Slug = slugify(post.Title)
+    return post
+}
+```
+
+Правила:
+- Бизнес-функции (scoring, validation, enrichment) — чистые, без побочных эффектов
+- Побочные эффекты (БД, HTTP, логи) — только в usecase-методах и выше
+- Контекст — для cancellation и tracing, не для передачи бизнес-данных
+
+## Dependency Injection
+
+- Wire для DI (стандарт kratos)
+- Конструкторы `New*` принимают интерфейсы, возвращают конкретные типы
+- Не проверяй nil для зависимостей, инициализированных в `New*`
+
+## Error Handling
+
+Общие правила (error strings, `%w` в конце, early return) — см. [go-style.md#error-handling](go-style.md#error-handling). Проектные дополнения:
+
+- Kratos status errors для API-ошибок (на границе `service/`).
+- Доменные ошибки в `biz/` как sentinel errors: `var ErrPostNotFound = errors.New("post not found")`.
+- Не логируй ошибку и не возвращай её одновременно — выбери одно.
+
+### Правила по слоям
+
+- **data/** — только возвращает ошибку наверх, не логирует. Оборачивает с контекстом операции: `fmt.Errorf("postRepo.Save: %w", err)`
+- **biz/** — оборачивает ошибку бизнес-контекстом, не логирует. Может конвертировать инфраструктурные ошибки в доменные
+- **service/** — конвертирует доменные ошибки в kratos status errors. Может логировать unexpected errors
+- **task/** — точка логирования. Здесь принимается решение: логировать, ретраить, менять state. Leaf-функции не логируют
+
+## Логирование
+
+- slog, глобальные логгеры запрещены (sloglint: no-global: all)
+- Логгер передаётся через DI
+- Structured logging keys: только важные метаданные для фильтрации/корреляции (например, `summary_id`, `post_id`, `source_id`, `event_id`)
+- Технические/описательные детали (host, port, database, URL, counts, flags) по умолчанию писать в текст сообщения, а не в отдельные ключи
+- Для ошибки использовать единый ключ `err` (не `error`, не `e`, не `cause`)
+- Не засоряй логи лишними key-value парами — лаконичное сообщение + минимум ключей
+- Логирование — на уровне оркестрации (воркеры, сервисы), не в leaf-функциях
+
+```go
+// плохо: все детали распылены по ключам
+logger.Info(
+    "database connected",
+    "host", dbConfig.GetHost(),
+    "port", dbConfig.GetPort(),
+    "database", dbConfig.GetDatabase(),
+)
+
+// хорошо: детали в сообщении, в ключах только значимые метаданные
+logger.Info("database connected: host=localhost port=5432 database=feedium")
+logger.Error("summary scoring failed", "summary_id", summaryID, "post_id", postID, "err", err)
+```
+
+## Кодогенерация
+
+- При изменении входных данных генерации: `go generate ./...` и коммит результатов
+- Сгенерированные файлы коммитятся в репозиторий
+- Это касается: ent, protoc, mockgen, wire
+
+## Линтер
+
+- golangci-lint v2, конфиг в `.golangci.yml` в корне проекта
+- Конфиг зафиксирован, не менять без обсуждения
+- `local-prefixes` в goimports — обновить на реальный module path
+- **Максимальная длина строки: 120 символов (golines)** — осознанное отклонение от [Effective Go](https://go.dev/doc/effective_go) и [Google Style Guide](https://google.github.io/styleguide/go/guide#line-length), которые не задают фиксированный лимит и рекомендуют рефакторинг вместо переноса. Проект принял жёсткий лимит ради консистентного diff'а и автоформата через `golines`. Если строка не влезает — рассматривай это как сигнал к рефакторингу (группировка параметров в struct), а не как задачу для переноса.
+- Каноническая команда запуска: `golangci-lint run ./... -c .golangci.yml`. Запуск без `./...` и `-c .golangci.yml` запрещён — `./...` гарантирует обход всех пакетов, `-c` фиксирует путь к конфигу и исключает неявный pickup из окружения
+
+## Конфигурация
+
+- Вся конфигурация, включая секреты, в YAML-файлах в `configs/`.
+- Kratos config для парсинга.
+- Конфиг с секретами не коммитить.
+
+### Ownership
+
+| Owner | Отвечает за |
+| --- | --- |
+| `configs/*.yaml` | структура, defaults и секреты (LLM API key, Telegram credentials) |
+| `cmd/feedium/main.go` | загрузка конфигурации через kratos |
+| `internal/data/` | DSN, параметры подключения к БД |
+| `internal/task/` | интервалы воркеров, rate limits |
+
+### Workflow при изменении конфигурации
+
+1. Обновить YAML в `configs/`.
+2. Если новое поле — обновить kratos config struct.
+
+## Graceful Shutdown и Health Checks
+
+- Kratos управляет lifecycle — не реализуй свой signal handling
+- Readiness probe: выключена до старта серверов, выключена после SIGTERM
+- Liveness probe: всегда ok, ошибка только при fatal (требует рестарт)
+- При SIGTERM: прекратить приём новых запросов, дождаться завершения текущих, закрыть соединения с БД и внешними сервисами
+- Воркеры (task/) реализуют `transport.Server` — kratos вызывает Stop() автоматически
+- Таймаут graceful shutdown: задаётся в конфигурации сервера, по умолчанию 10s
+
+```go
+// cmd/feedium/main.go
+app := kratos.New(
+    kratos.Name("feedium"),
+    kratos.Server(httpSrv, grpcSrv, summaryWorker),
+    // kratos обрабатывает SIGTERM/SIGINT и вызывает Stop() на всех серверах
+)
+```
+
+## Общие правила
+
+- Решай проблему, а не последствие
+- Выбор библиотеки — только после согласования
+- Не трогай существующие миграции
+- Коммитить сгенерированный код

@@ -36,7 +36,7 @@ formatters:
       # with the given prefixes are grouped after 3rd-party packages.
       # Default: []
       local-prefixes:
-        - github.com/my/project
+        - github.com/4itosik/feedium
 
     golines:
       # Target maximum line length.
@@ -215,11 +215,41 @@ linters:
             - pkg: math/rand$
               desc: Use math/rand/v2 instead, see https://go.dev/blog/randv2
         "non-main files":
+           files:
+             - "!**/main.go"
+           deny:
+             - pkg: log$
+               desc: Use log/slog instead, see https://go.dev/blog/slog
+        "health service no biz":
           files:
-            - "!**/main.go"
+            - "internal/service/health/**"
           deny:
-            - pkg: log$
-              desc: Use log/slog instead, see https://go.dev/blog/slog
+            - pkg: github.com/4itosik/feedium/internal/biz
+              desc: Health service must not import biz layer
+        "biz no infra":
+          files:
+            - "internal/biz/**"
+          deny:
+            - pkg: entgo.io/ent
+              desc: biz must not import ent (architecture boundary)
+            - pkg: net/http
+              desc: biz must not import HTTP (architecture boundary)
+            - pkg: database/sql
+              desc: biz must not import SQL (architecture boundary)
+            - pkg: google.golang.org/protobuf
+              desc: biz must not import protobuf (architecture boundary)
+            - pkg: google.golang.org/grpc
+              desc: biz must not import gRPC (architecture boundary)
+        "service no data":
+          files:
+            - "internal/service/**"
+          deny:
+            - pkg: entgo.io/ent
+              desc: service must not import ent directly (use biz layer)
+            - pkg: database/sql
+              desc: service must not import SQL directly (use biz layer)
+            - pkg: github.com/4itosik/feedium/internal/data
+              desc: service must not import data layer (architecture boundary)
 
     embeddedstructfieldcheck:
       # Checks that sync.Mutex and sync.RWMutex are not used as embedded fields.

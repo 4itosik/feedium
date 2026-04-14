@@ -1,6 +1,0 @@
-Summarize the following conversation in 5-7 sentences.
-Focus on main topics, key decisions, and important facts.
-Attribute key statements to their authors.
-
-{{ range .Posts }}[{{ .PublishedAt }}] {{ .Author }}: {{ .Content }}
-{{ end }}
