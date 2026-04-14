@@ -17,6 +17,8 @@ Coding style: memory-bank/engineering/coding-style.md
 5. Нет отступлений от coding-style.md
 6. Тесты покрывают AC из spec.md
 7. Существующие тесты не сломаны
+8. Interface написан там где используется
+9. Все Interface сгенерировоны с помощью go.uber.org/mock/gomock рядом в отдельной папке mock 
 
 Для каждого найденного замечания:
 - Что именно не так (цитата из кода/спеки)
