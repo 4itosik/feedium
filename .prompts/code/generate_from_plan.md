@@ -1,6 +1,6 @@
 Прочитай Implementation Plan в файле:
 
-`memory-bank/features/FT-003-source-management/implement.md`
+`memory-bank/features/FT-004-posts-management/implement.md`
 
 Реализуй всё, что в нём описано, прямо в текущем репозитории.
 

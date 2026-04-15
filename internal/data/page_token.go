@@ -14,21 +14,20 @@ const tokenParts = 2
 
 // pageTokenData holds the decoded page token data.
 type pageTokenData struct {
-	CreatedAt time.Time
+	SortValue time.Time
 	ID        uuid.UUID
 }
 
-// encodePageToken encodes a page token from created_at and id.
+// encodePageToken encodes a page token from sort value and id.
 //
 //nolint:unparam // error return kept for symmetry with decodePageToken
-func encodePageToken(createdAt time.Time, id uuid.UUID) (string, error) {
-	// Format: RFC3339Nano + "|" + UUID
-	tokenStr := fmt.Sprintf("%s|%s", createdAt.Format(time.RFC3339Nano), id.String())
+func encodePageToken(sortValue time.Time, id uuid.UUID) (string, error) {
+	tokenStr := fmt.Sprintf("%s|%s", sortValue.Format(time.RFC3339Nano), id.String())
 	encoded := base64.StdEncoding.EncodeToString([]byte(tokenStr))
 	return encoded, nil
 }
 
-// decodePageToken decodes a page token into created_at and id.
+// decodePageToken decodes a page token into sort value and id.
 func decodePageToken(token string) (pageTokenData, error) {
 	decoded, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
@@ -40,7 +39,7 @@ func decodePageToken(token string) (pageTokenData, error) {
 		return pageTokenData{}, errors.New("invalid token format")
 	}
 
-	createdAt, err := time.Parse(time.RFC3339Nano, parts[0])
+	sortValue, err := time.Parse(time.RFC3339Nano, parts[0])
 	if err != nil {
 		return pageTokenData{}, fmt.Errorf("parse timestamp: %w", err)
 	}
@@ -51,7 +50,7 @@ func decodePageToken(token string) (pageTokenData, error) {
 	}
 
 	return pageTokenData{
-		CreatedAt: createdAt,
+		SortValue: sortValue,
 		ID:        id,
 	}, nil
 }

@@ -29,6 +29,10 @@ const (
 	ErrorReason_ERROR_REASON_SOURCE_INVALID_TYPE   ErrorReason = 2
 	ErrorReason_ERROR_REASON_SOURCE_INVALID_CONFIG ErrorReason = 3
 	ErrorReason_ERROR_REASON_SOURCE_TYPE_IMMUTABLE ErrorReason = 4
+	ErrorReason_ERROR_REASON_POST_NOT_FOUND        ErrorReason = 5
+	ErrorReason_ERROR_REASON_POST_INVALID_ARGUMENT ErrorReason = 6
+	ErrorReason_ERROR_REASON_POST_SOURCE_NOT_FOUND ErrorReason = 7
+	ErrorReason_ERROR_REASON_POST_ALREADY_EXISTS   ErrorReason = 8
 )
 
 // Enum value maps for ErrorReason.
@@ -39,6 +43,10 @@ var (
 		2: "ERROR_REASON_SOURCE_INVALID_TYPE",
 		3: "ERROR_REASON_SOURCE_INVALID_CONFIG",
 		4: "ERROR_REASON_SOURCE_TYPE_IMMUTABLE",
+		5: "ERROR_REASON_POST_NOT_FOUND",
+		6: "ERROR_REASON_POST_INVALID_ARGUMENT",
+		7: "ERROR_REASON_POST_SOURCE_NOT_FOUND",
+		8: "ERROR_REASON_POST_ALREADY_EXISTS",
 	}
 	ErrorReason_value = map[string]int32{
 		"ERROR_REASON_UNSPECIFIED":           0,
@@ -46,6 +54,10 @@ var (
 		"ERROR_REASON_SOURCE_INVALID_TYPE":   2,
 		"ERROR_REASON_SOURCE_INVALID_CONFIG": 3,
 		"ERROR_REASON_SOURCE_TYPE_IMMUTABLE": 4,
+		"ERROR_REASON_POST_NOT_FOUND":        5,
+		"ERROR_REASON_POST_INVALID_ARGUMENT": 6,
+		"ERROR_REASON_POST_SOURCE_NOT_FOUND": 7,
+		"ERROR_REASON_POST_ALREADY_EXISTS":   8,
 	}
 )
 
@@ -80,13 +92,17 @@ var File_api_feedium_error_reason_proto protoreflect.FileDescriptor
 
 const file_api_feedium_error_reason_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/feedium/error_reason.proto\x12\afeedium*\xc4\x01\n" +
+	"\x1eapi/feedium/error_reason.proto\x12\afeedium*\xdb\x02\n" +
 	"\vErrorReason\x12\x1c\n" +
 	"\x18ERROR_REASON_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dERROR_REASON_SOURCE_NOT_FOUND\x10\x01\x12$\n" +
 	" ERROR_REASON_SOURCE_INVALID_TYPE\x10\x02\x12&\n" +
 	"\"ERROR_REASON_SOURCE_INVALID_CONFIG\x10\x03\x12&\n" +
-	"\"ERROR_REASON_SOURCE_TYPE_IMMUTABLE\x10\x04B\x1dZ\x1bfeedium/api/feedium;feediumb\x06proto3"
+	"\"ERROR_REASON_SOURCE_TYPE_IMMUTABLE\x10\x04\x12\x1f\n" +
+	"\x1bERROR_REASON_POST_NOT_FOUND\x10\x05\x12&\n" +
+	"\"ERROR_REASON_POST_INVALID_ARGUMENT\x10\x06\x12&\n" +
+	"\"ERROR_REASON_POST_SOURCE_NOT_FOUND\x10\a\x12$\n" +
+	" ERROR_REASON_POST_ALREADY_EXISTS\x10\bB\x1dZ\x1bfeedium/api/feedium;feediumb\x06proto3"
 
 var (
 	file_api_feedium_error_reason_proto_rawDescOnce sync.Once

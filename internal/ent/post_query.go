@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -18,53 +17,53 @@ import (
 	"github.com/google/uuid"
 )
 
-// SourceQuery is the builder for querying Source entities.
-type SourceQuery struct {
+// PostQuery is the builder for querying Post entities.
+type PostQuery struct {
 	config
 	ctx        *QueryContext
-	order      []source.OrderOption
+	order      []post.OrderOption
 	inters     []Interceptor
-	predicates []predicate.Source
-	withPosts  *PostQuery
+	predicates []predicate.Post
+	withSource *SourceQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the SourceQuery builder.
-func (_q *SourceQuery) Where(ps ...predicate.Source) *SourceQuery {
+// Where adds a new predicate for the PostQuery builder.
+func (_q *PostQuery) Where(ps ...predicate.Post) *PostQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *SourceQuery) Limit(limit int) *SourceQuery {
+func (_q *PostQuery) Limit(limit int) *PostQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *SourceQuery) Offset(offset int) *SourceQuery {
+func (_q *PostQuery) Offset(offset int) *PostQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *SourceQuery) Unique(unique bool) *SourceQuery {
+func (_q *PostQuery) Unique(unique bool) *PostQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *SourceQuery) Order(o ...source.OrderOption) *SourceQuery {
+func (_q *PostQuery) Order(o ...post.OrderOption) *PostQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryPosts chains the current query on the "posts" edge.
-func (_q *SourceQuery) QueryPosts() *PostQuery {
-	query := (&PostClient{config: _q.config}).Query()
+// QuerySource chains the current query on the "source" edge.
+func (_q *PostQuery) QuerySource() *SourceQuery {
+	query := (&SourceClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -74,9 +73,9 @@ func (_q *SourceQuery) QueryPosts() *PostQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(source.Table, source.FieldID, selector),
-			sqlgraph.To(post.Table, post.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, source.PostsTable, source.PostsColumn),
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.SourceTable, post.SourceColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -84,21 +83,21 @@ func (_q *SourceQuery) QueryPosts() *PostQuery {
 	return query
 }
 
-// First returns the first Source entity from the query.
-// Returns a *NotFoundError when no Source was found.
-func (_q *SourceQuery) First(ctx context.Context) (*Source, error) {
+// First returns the first Post entity from the query.
+// Returns a *NotFoundError when no Post was found.
+func (_q *PostQuery) First(ctx context.Context) (*Post, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{source.Label}
+		return nil, &NotFoundError{post.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *SourceQuery) FirstX(ctx context.Context) *Source {
+func (_q *PostQuery) FirstX(ctx context.Context) *Post {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -106,22 +105,22 @@ func (_q *SourceQuery) FirstX(ctx context.Context) *Source {
 	return node
 }
 
-// FirstID returns the first Source ID from the query.
-// Returns a *NotFoundError when no Source ID was found.
-func (_q *SourceQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+// FirstID returns the first Post ID from the query.
+// Returns a *NotFoundError when no Post ID was found.
+func (_q *PostQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{source.Label}
+		err = &NotFoundError{post.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *SourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (_q *PostQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -129,10 +128,10 @@ func (_q *SourceQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// Only returns a single Source entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Source entity is found.
-// Returns a *NotFoundError when no Source entities are found.
-func (_q *SourceQuery) Only(ctx context.Context) (*Source, error) {
+// Only returns a single Post entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one Post entity is found.
+// Returns a *NotFoundError when no Post entities are found.
+func (_q *PostQuery) Only(ctx context.Context) (*Post, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -141,14 +140,14 @@ func (_q *SourceQuery) Only(ctx context.Context) (*Source, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{source.Label}
+		return nil, &NotFoundError{post.Label}
 	default:
-		return nil, &NotSingularError{source.Label}
+		return nil, &NotSingularError{post.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *SourceQuery) OnlyX(ctx context.Context) *Source {
+func (_q *PostQuery) OnlyX(ctx context.Context) *Post {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -156,10 +155,10 @@ func (_q *SourceQuery) OnlyX(ctx context.Context) *Source {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Source ID in the query.
-// Returns a *NotSingularError when more than one Source ID is found.
+// OnlyID is like Only, but returns the only Post ID in the query.
+// Returns a *NotSingularError when more than one Post ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *SourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *PostQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -168,15 +167,15 @@ func (_q *SourceQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{source.Label}
+		err = &NotFoundError{post.Label}
 	default:
-		err = &NotSingularError{source.Label}
+		err = &NotSingularError{post.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *SourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (_q *PostQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -184,18 +183,18 @@ func (_q *SourceQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// All executes the query and returns a list of Sources.
-func (_q *SourceQuery) All(ctx context.Context) ([]*Source, error) {
+// All executes the query and returns a list of Posts.
+func (_q *PostQuery) All(ctx context.Context) ([]*Post, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*Source, *SourceQuery]()
-	return withInterceptors[[]*Source](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*Post, *PostQuery]()
+	return withInterceptors[[]*Post](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *SourceQuery) AllX(ctx context.Context) []*Source {
+func (_q *PostQuery) AllX(ctx context.Context) []*Post {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -203,20 +202,20 @@ func (_q *SourceQuery) AllX(ctx context.Context) []*Source {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Source IDs.
-func (_q *SourceQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+// IDs executes the query and returns a list of Post IDs.
+func (_q *PostQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(source.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(post.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *SourceQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (_q *PostQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -225,16 +224,16 @@ func (_q *SourceQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *SourceQuery) Count(ctx context.Context) (int, error) {
+func (_q *PostQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*SourceQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*PostQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *SourceQuery) CountX(ctx context.Context) int {
+func (_q *PostQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -243,7 +242,7 @@ func (_q *SourceQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *SourceQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *PostQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -256,7 +255,7 @@ func (_q *SourceQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *SourceQuery) ExistX(ctx context.Context) bool {
+func (_q *PostQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -264,33 +263,33 @@ func (_q *SourceQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the SourceQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the PostQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *SourceQuery) Clone() *SourceQuery {
+func (_q *PostQuery) Clone() *PostQuery {
 	if _q == nil {
 		return nil
 	}
-	return &SourceQuery{
+	return &PostQuery{
 		config:     _q.config,
 		ctx:        _q.ctx.Clone(),
-		order:      append([]source.OrderOption{}, _q.order...),
+		order:      append([]post.OrderOption{}, _q.order...),
 		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.Source{}, _q.predicates...),
-		withPosts:  _q.withPosts.Clone(),
+		predicates: append([]predicate.Post{}, _q.predicates...),
+		withSource: _q.withSource.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithPosts tells the query-builder to eager-load the nodes that are connected to
-// the "posts" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *SourceQuery) WithPosts(opts ...func(*PostQuery)) *SourceQuery {
-	query := (&PostClient{config: _q.config}).Query()
+// WithSource tells the query-builder to eager-load the nodes that are connected to
+// the "source" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithSource(opts ...func(*SourceQuery)) *PostQuery {
+	query := (&SourceClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withPosts = query
+	_q.withSource = query
 	return _q
 }
 
@@ -300,19 +299,19 @@ func (_q *SourceQuery) WithPosts(opts ...func(*PostQuery)) *SourceQuery {
 // Example:
 //
 //	var v []struct {
-//		Type string `json:"type,omitempty"`
+//		SourceID uuid.UUID `json:"source_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Source.Query().
-//		GroupBy(source.FieldType).
+//	client.Post.Query().
+//		GroupBy(post.FieldSourceID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *SourceQuery) GroupBy(field string, fields ...string) *SourceGroupBy {
+func (_q *PostQuery) GroupBy(field string, fields ...string) *PostGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &SourceGroupBy{build: _q}
+	grbuild := &PostGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = source.Label
+	grbuild.label = post.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -323,26 +322,26 @@ func (_q *SourceQuery) GroupBy(field string, fields ...string) *SourceGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Type string `json:"type,omitempty"`
+//		SourceID uuid.UUID `json:"source_id,omitempty"`
 //	}
 //
-//	client.Source.Query().
-//		Select(source.FieldType).
+//	client.Post.Query().
+//		Select(post.FieldSourceID).
 //		Scan(ctx, &v)
-func (_q *SourceQuery) Select(fields ...string) *SourceSelect {
+func (_q *PostQuery) Select(fields ...string) *PostSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &SourceSelect{SourceQuery: _q}
-	sbuild.label = source.Label
+	sbuild := &PostSelect{PostQuery: _q}
+	sbuild.label = post.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a SourceSelect configured with the given aggregations.
-func (_q *SourceQuery) Aggregate(fns ...AggregateFunc) *SourceSelect {
+// Aggregate returns a PostSelect configured with the given aggregations.
+func (_q *PostQuery) Aggregate(fns ...AggregateFunc) *PostSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *SourceQuery) prepareQuery(ctx context.Context) error {
+func (_q *PostQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -354,7 +353,7 @@ func (_q *SourceQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !source.ValidColumn(f) {
+		if !post.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -368,19 +367,19 @@ func (_q *SourceQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Source, error) {
+func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, error) {
 	var (
-		nodes       = []*Source{}
+		nodes       = []*Post{}
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
-			_q.withPosts != nil,
+			_q.withSource != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*Source).scanValues(nil, columns)
+		return (*Post).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Source{config: _q.config}
+		node := &Post{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -394,48 +393,46 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withPosts; query != nil {
-		if err := _q.loadPosts(ctx, query, nodes,
-			func(n *Source) { n.Edges.Posts = []*Post{} },
-			func(n *Source, e *Post) { n.Edges.Posts = append(n.Edges.Posts, e) }); err != nil {
+	if query := _q.withSource; query != nil {
+		if err := _q.loadSource(ctx, query, nodes, nil,
+			func(n *Post, e *Source) { n.Edges.Source = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *SourceQuery) loadPosts(ctx context.Context, query *PostQuery, nodes []*Source, init func(*Source), assign func(*Source, *Post)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Source)
+func (_q *PostQuery) loadSource(ctx context.Context, query *SourceQuery, nodes []*Post, init func(*Post), assign func(*Post, *Source)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Post)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		fk := nodes[i].SourceID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
 		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(post.FieldSourceID)
+	if len(ids) == 0 {
+		return nil
 	}
-	query.Where(predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(source.PostsColumn), fks...))
-	}))
+	query.Where(source.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.SourceID
-		node, ok := nodeids[fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "source_id" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
 
-func (_q *SourceQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *PostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -444,8 +441,8 @@ func (_q *SourceQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *SourceQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(source.Table, source.Columns, sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID))
+func (_q *PostQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(post.Table, post.Columns, sqlgraph.NewFieldSpec(post.FieldID, field.TypeUUID))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -454,11 +451,14 @@ func (_q *SourceQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, source.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, post.FieldID)
 		for i := range fields {
-			if fields[i] != source.FieldID {
+			if fields[i] != post.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withSource != nil {
+			_spec.Node.AddColumnOnce(post.FieldSourceID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -484,12 +484,12 @@ func (_q *SourceQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *SourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *PostQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(source.Table)
+	t1 := builder.Table(post.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = source.Columns
+		columns = post.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -516,28 +516,28 @@ func (_q *SourceQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// SourceGroupBy is the group-by builder for Source entities.
-type SourceGroupBy struct {
+// PostGroupBy is the group-by builder for Post entities.
+type PostGroupBy struct {
 	selector
-	build *SourceQuery
+	build *PostQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *SourceGroupBy) Aggregate(fns ...AggregateFunc) *SourceGroupBy {
+func (_g *PostGroupBy) Aggregate(fns ...AggregateFunc) *PostGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *SourceGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *PostGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*SourceQuery, *SourceGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*PostQuery, *PostGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *SourceGroupBy) sqlScan(ctx context.Context, root *SourceQuery, v any) error {
+func (_g *PostGroupBy) sqlScan(ctx context.Context, root *PostQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -564,28 +564,28 @@ func (_g *SourceGroupBy) sqlScan(ctx context.Context, root *SourceQuery, v any) 
 	return sql.ScanSlice(rows, v)
 }
 
-// SourceSelect is the builder for selecting fields of Source entities.
-type SourceSelect struct {
-	*SourceQuery
+// PostSelect is the builder for selecting fields of Post entities.
+type PostSelect struct {
+	*PostQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *SourceSelect) Aggregate(fns ...AggregateFunc) *SourceSelect {
+func (_s *PostSelect) Aggregate(fns ...AggregateFunc) *PostSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *SourceSelect) Scan(ctx context.Context, v any) error {
+func (_s *PostSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*SourceQuery, *SourceSelect](ctx, _s.SourceQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*PostQuery, *PostSelect](ctx, _s.PostQuery, _s, _s.inters, v)
 }
 
-func (_s *SourceSelect) sqlScan(ctx context.Context, root *SourceQuery, v any) error {
+func (_s *PostSelect) sqlScan(ctx context.Context, root *PostQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

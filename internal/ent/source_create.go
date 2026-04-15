@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/source"
 	"github.com/google/uuid"
 )
@@ -73,6 +74,21 @@ func (_c *SourceCreate) SetNillableID(v *uuid.UUID) *SourceCreate {
 		_c.SetID(*v)
 	}
 	return _c
+}
+
+// AddPostIDs adds the "posts" edge to the Post entity by IDs.
+func (_c *SourceCreate) AddPostIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddPostIDs(ids...)
+	return _c
+}
+
+// AddPosts adds the "posts" edges to the Post entity.
+func (_c *SourceCreate) AddPosts(v ...*Post) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPostIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -193,6 +209,22 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(source.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if nodes := _c.mutation.PostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.PostsTable,
+			Columns: []string{source.PostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

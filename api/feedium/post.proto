@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package feedium;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "api/feedium/source.proto";
+
+option go_package = "feedium/api/feedium;feedium";
+
+enum PostSortField {
+  POST_SORT_FIELD_UNSPECIFIED = 0;
+  POST_SORT_FIELD_PUBLISHED_AT = 1;
+  POST_SORT_FIELD_CREATED_AT = 2;
+}
+
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_DESC = 1;
+  SORT_DIRECTION_ASC = 2;
+}
+
+message PostSourceRef {
+  string id = 1;
+  SourceType type = 2;
+}
+
+message Post {
+  string id = 1;
+  PostSourceRef source = 2;
+  string external_id = 3;
+  google.protobuf.Timestamp published_at = 4;
+  optional string author = 5;
+  string text = 6;
+  map<string, string> metadata = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message V1CreatePostRequest {
+  string source_id = 1;
+  string external_id = 2;
+  google.protobuf.Timestamp published_at = 3;
+  optional string author = 4;
+  string text = 5;
+  map<string, string> metadata = 6;
+}
+
+message V1CreatePostResponse {
+  Post post = 1;
+}
+
+message V1UpdatePostRequest {
+  string id = 1;
+  string external_id = 2;
+  google.protobuf.Timestamp published_at = 3;
+  optional string author = 4;
+  string text = 5;
+  map<string, string> metadata = 6;
+}
+
+message V1UpdatePostResponse {
+  Post post = 1;
+}
+
+message V1DeletePostRequest {
+  string id = 1;
+}
+
+message V1DeletePostResponse {
+}
+
+message V1GetPostRequest {
+  string id = 1;
+}
+
+message V1GetPostResponse {
+  Post post = 1;
+}
+
+message V1ListPostsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  optional string source_id = 3;
+  PostSortField order_by = 4;
+  SortDirection order_dir = 5;
+}
+
+message V1ListPostsResponse {
+  repeated Post items = 1;
+  string next_page_token = 2;
+}
+
+service PostService {
+  rpc V1CreatePost(V1CreatePostRequest) returns (V1CreatePostResponse) {
+    option (google.api.http) = {
+      post: "/v1/posts"
+      body: "*"
+    };
+  }
+
+  rpc V1UpdatePost(V1UpdatePostRequest) returns (V1UpdatePostResponse) {
+    option (google.api.http) = {
+      put: "/v1/posts/{id}"
+      body: "*"
+    };
+  }
+
+  rpc V1DeletePost(V1DeletePostRequest) returns (V1DeletePostResponse) {
+    option (google.api.http) = {
+      delete: "/v1/posts/{id}"
+    };
+  }
+
+  rpc V1GetPost(V1GetPostRequest) returns (V1GetPostResponse) {
+    option (google.api.http) = {
+      get: "/v1/posts/{id}"
+    };
+  }
+
+  rpc V1ListPosts(V1ListPostsRequest) returns (V1ListPostsResponse) {
+    option (google.api.http) = {
+      get: "/v1/posts"
+    };
+  }
+}

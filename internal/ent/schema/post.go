@@ -12,20 +12,31 @@ import (
 	"github.com/google/uuid"
 )
 
-type Source struct {
+type Post struct {
 	ent.Schema
 }
 
-func (Source) Fields() []ent.Field {
+func (Post) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(func() uuid.UUID {
 				return uuid.Must(uuid.NewV7())
 			}).
 			Immutable(),
-		field.String("type").
+		field.UUID("source_id", uuid.UUID{}),
+		field.String("external_id").
 			NotEmpty(),
-		field.JSON("config", map[string]any{}).
+		field.Time("published_at").
+			SchemaType(map[string]string{
+				dialect.Postgres: "timestamptz",
+			}),
+		field.String("author").
+			Optional().
+			Nillable(),
+		field.String("text").
+			NotEmpty(),
+		field.JSON("metadata", map[string]string{}).
+			Default(map[string]string{}).
 			SchemaType(map[string]string{
 				dialect.Postgres: "jsonb",
 			}),
@@ -44,14 +55,19 @@ func (Source) Fields() []ent.Field {
 	}
 }
 
-func (Source) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("type", "created_at", "id"),
+func (Post) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.From("source", Source.Type).
+			Ref("posts").
+			Field("source_id").
+			Unique().
+			Required(),
 	}
 }
 
-func (Source) Edges() []ent.Edge {
-	return []ent.Edge{
-		edge.To("posts", Post.Type),
+func (Post) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("source_id", "published_at", "id"),
+		index.Fields("source_id", "created_at", "id"),
 	}
 }

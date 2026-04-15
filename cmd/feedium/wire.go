@@ -10,6 +10,7 @@ import (
 	"github.com/4itosik/feedium/internal/data"
 	"github.com/4itosik/feedium/internal/server"
 	healthservice "github.com/4itosik/feedium/internal/service/health"
+	postservice "github.com/4itosik/feedium/internal/service/post"
 	sourceservice "github.com/4itosik/feedium/internal/service/source"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
@@ -41,6 +42,9 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		healthservice.ProviderSet,
 		biz.ProviderSet,
 		sourceservice.ProviderSet,
+		postservice.ProviderSet,
+		wire.Bind(new(sourceservice.Usecase), new(*biz.SourceUsecase)),
+		wire.Bind(new(postservice.Usecase), new(*biz.PostUsecase)),
 		newApp,
 	)
 	return &kratos.App{}, nil, nil

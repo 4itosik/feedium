@@ -14,6 +14,8 @@ var ProviderSet = wire.NewSet(
 	NewData,
 	NewHealthRepo,
 	NewSourceRepo,
+	NewPostRepo,
 	wire.Bind(new(healthservice.Pinger), new(*HealthRepo)),
 	wire.Bind(new(biz.SourceRepo), new(*sourceRepo)),
+	wire.Bind(new(biz.PostRepo), new(*postRepo)),
 )

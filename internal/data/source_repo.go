@@ -147,9 +147,9 @@ func (sr *sourceRepo) List(ctx context.Context, filter biz.ListSourcesFilter) (b
 	if decodedToken != nil {
 		query = query.Where(
 			source.Or(
-				source.CreatedAtGT(decodedToken.CreatedAt),
+				source.CreatedAtGT(decodedToken.SortValue),
 				source.And(
-					source.CreatedAtEQ(decodedToken.CreatedAt),
+					source.CreatedAtEQ(decodedToken.SortValue),
 					source.IDGT(decodedToken.ID),
 				),
 			),

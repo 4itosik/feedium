@@ -8,6 +8,44 @@ import (
 )
 
 var (
+	// PostsColumns holds the columns for the "posts" table.
+	PostsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "external_id", Type: field.TypeString},
+		{Name: "published_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "author", Type: field.TypeString, Nullable: true},
+		{Name: "text", Type: field.TypeString},
+		{Name: "metadata", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// PostsTable holds the schema information for the "posts" table.
+	PostsTable = &schema.Table{
+		Name:       "posts",
+		Columns:    PostsColumns,
+		PrimaryKey: []*schema.Column{PostsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "posts_sources_posts",
+				Columns:    []*schema.Column{PostsColumns[8]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "post_source_id_published_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[8], PostsColumns[2], PostsColumns[0]},
+			},
+			{
+				Name:    "post_source_id_created_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[8], PostsColumns[6], PostsColumns[0]},
+			},
+		},
+	}
 	// SourcesColumns holds the columns for the "sources" table.
 	SourcesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -31,9 +69,11 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		PostsTable,
 		SourcesTable,
 	}
 )
 
 func init() {
+	PostsTable.ForeignKeys[0].RefTable = SourcesTable
 }
