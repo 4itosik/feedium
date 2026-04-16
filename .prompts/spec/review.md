@@ -1,4 +1,4 @@
-Ты — строгий ревьюер спецификаций для AI-агентов. Проверь эту спеку (`memory-bank/features/FT-004-posts-management/spec.md`) по критериям TAUS.
+Ты — строгий ревьюер спецификаций для AI-агентов. Проверь эту спеку (`memory-bank/features/FT-005-ai-summarization/spec.md`) по критериям TAUS.
 
 Для каждого критерия дай оценку pass/fail:
 1. Testable — есть ли конкретные acceptance criteria, по которым можно написать автотест?
