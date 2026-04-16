@@ -17,20 +17,28 @@ type Usecase interface {
 	GetSummaryEvent(ctx context.Context, id string) (*biz.SummaryEvent, error)
 	GetSummary(ctx context.Context, id string) (biz.Summary, error)
 	ListPostSummaries(ctx context.Context, postID string) ([]biz.Summary, error)
-	ListSourceSummaries(ctx context.Context, sourceID string, pageSize int, pageToken string) (biz.ListSummariesResult, error)
+	ListSourceSummaries(
+		ctx context.Context,
+		sourceID string,
+		pageSize int,
+		pageToken string,
+	) (biz.ListSummariesResult, error)
 }
 
-type SummaryService struct {
+type Service struct {
 	feedium.UnimplementedSummaryServiceServer
 
 	uc Usecase
 }
 
-func NewSummaryService(uc Usecase) *SummaryService {
-	return &SummaryService{uc: uc}
+func NewService(uc Usecase) *Service {
+	return &Service{uc: uc}
 }
 
-func (s *SummaryService) V1SummarizeSource(ctx context.Context, req *feedium.V1SummarizeSourceRequest) (*feedium.V1SummarizeSourceResponse, error) {
+func (s *Service) V1SummarizeSource(
+	ctx context.Context,
+	req *feedium.V1SummarizeSourceRequest,
+) (*feedium.V1SummarizeSourceResponse, error) {
 	taskID, existing, err := s.uc.TriggerSourceSummarize(ctx, req.GetSourceId())
 	if err != nil {
 		return nil, s.mapDomainErrorToStatus(err)
@@ -42,7 +50,10 @@ func (s *SummaryService) V1SummarizeSource(ctx context.Context, req *feedium.V1S
 	}, nil
 }
 
-func (s *SummaryService) V1GetSummaryEvent(ctx context.Context, req *feedium.V1GetSummaryEventRequest) (*feedium.V1GetSummaryEventResponse, error) {
+func (s *Service) V1GetSummaryEvent(
+	ctx context.Context,
+	req *feedium.V1GetSummaryEventRequest,
+) (*feedium.V1GetSummaryEventResponse, error) {
 	event, err := s.uc.GetSummaryEvent(ctx, req.GetId())
 	if err != nil {
 		return nil, s.mapDomainErrorToStatus(err)
@@ -53,7 +64,10 @@ func (s *SummaryService) V1GetSummaryEvent(ctx context.Context, req *feedium.V1G
 	}, nil
 }
 
-func (s *SummaryService) V1ListPostSummaries(ctx context.Context, req *feedium.V1ListPostSummariesRequest) (*feedium.V1ListPostSummariesResponse, error) {
+func (s *Service) V1ListPostSummaries(
+	ctx context.Context,
+	req *feedium.V1ListPostSummariesRequest,
+) (*feedium.V1ListPostSummariesResponse, error) {
 	summaries, err := s.uc.ListPostSummaries(ctx, req.GetPostId())
 	if err != nil {
 		return nil, s.mapDomainErrorToStatus(err)
@@ -67,7 +81,10 @@ func (s *SummaryService) V1ListPostSummaries(ctx context.Context, req *feedium.V
 	return &feedium.V1ListPostSummariesResponse{Summaries: protoItems}, nil
 }
 
-func (s *SummaryService) V1ListSourceSummaries(ctx context.Context, req *feedium.V1ListSourceSummariesRequest) (*feedium.V1ListSourceSummariesResponse, error) {
+func (s *Service) V1ListSourceSummaries(
+	ctx context.Context,
+	req *feedium.V1ListSourceSummariesRequest,
+) (*feedium.V1ListSourceSummariesResponse, error) {
 	result, err := s.uc.ListSourceSummaries(ctx, req.GetSourceId(), int(req.GetPageSize()), req.GetPageToken())
 	if err != nil {
 		return nil, s.mapDomainErrorToStatus(err)
@@ -84,7 +101,10 @@ func (s *SummaryService) V1ListSourceSummaries(ctx context.Context, req *feedium
 	}, nil
 }
 
-func (s *SummaryService) V1GetSummary(ctx context.Context, req *feedium.V1GetSummaryRequest) (*feedium.V1GetSummaryResponse, error) {
+func (s *Service) V1GetSummary(
+	ctx context.Context,
+	req *feedium.V1GetSummaryRequest,
+) (*feedium.V1GetSummaryResponse, error) {
 	sm, err := s.uc.GetSummary(ctx, req.GetId())
 	if err != nil {
 		return nil, s.mapDomainErrorToStatus(err)
@@ -93,12 +113,12 @@ func (s *SummaryService) V1GetSummary(ctx context.Context, req *feedium.V1GetSum
 	return &feedium.V1GetSummaryResponse{Summary: s.mapSummaryToProto(sm)}, nil
 }
 
-func (s *SummaryService) mapSummaryToProto(sm biz.Summary) *feedium.Summary {
+func (s *Service) mapSummaryToProto(sm biz.Summary) *feedium.Summary {
 	pb := &feedium.Summary{
 		Id:        sm.ID,
 		SourceId:  sm.SourceID,
 		Text:      sm.Text,
-		WordCount: int32(sm.WordCount),
+		WordCount: int32(sm.WordCount), //nolint:gosec // word count fits in int32
 		CreatedAt: timestamppb.New(sm.CreatedAt),
 	}
 	if sm.PostID != nil {
@@ -107,7 +127,7 @@ func (s *SummaryService) mapSummaryToProto(sm biz.Summary) *feedium.Summary {
 	return pb
 }
 
-func (s *SummaryService) mapSummaryEventToProto(event *biz.SummaryEvent) *feedium.SummaryEvent {
+func (s *Service) mapSummaryEventToProto(event *biz.SummaryEvent) *feedium.SummaryEvent {
 	pb := &feedium.SummaryEvent{
 		Id:        event.ID,
 		SourceId:  event.SourceID,
@@ -130,7 +150,7 @@ func (s *SummaryService) mapSummaryEventToProto(event *biz.SummaryEvent) *feediu
 	return pb
 }
 
-func (s *SummaryService) mapEventTypeToProto(t biz.SummaryEventType) feedium.SummaryEventType {
+func (s *Service) mapEventTypeToProto(t biz.SummaryEventType) feedium.SummaryEventType {
 	switch t {
 	case biz.SummaryEventTypeSummarizePost:
 		return feedium.SummaryEventType_SUMMARY_EVENT_TYPE_SUMMARIZE_POST
@@ -140,7 +160,7 @@ func (s *SummaryService) mapEventTypeToProto(t biz.SummaryEventType) feedium.Sum
 	return feedium.SummaryEventType_SUMMARY_EVENT_TYPE_UNSPECIFIED
 }
 
-func (s *SummaryService) mapEventStatusToProto(st biz.SummaryEventStatus) feedium.SummaryEventStatus {
+func (s *Service) mapEventStatusToProto(st biz.SummaryEventStatus) feedium.SummaryEventStatus {
 	switch st {
 	case biz.SummaryEventStatusPending:
 		return feedium.SummaryEventStatus_SUMMARY_EVENT_STATUS_PENDING
@@ -156,7 +176,7 @@ func (s *SummaryService) mapEventStatusToProto(st biz.SummaryEventStatus) feediu
 	return feedium.SummaryEventStatus_SUMMARY_EVENT_STATUS_UNSPECIFIED
 }
 
-func (s *SummaryService) mapDomainErrorToStatus(err error) error {
+func (s *Service) mapDomainErrorToStatus(err error) error {
 	switch {
 	case errors.Is(err, biz.ErrSourceNotFound):
 		return status.Error(codes.NotFound, feedium.ErrorReason_ERROR_REASON_SOURCE_NOT_FOUND.String())
@@ -165,7 +185,10 @@ func (s *SummaryService) mapDomainErrorToStatus(err error) error {
 	case errors.Is(err, biz.ErrSummaryEventNotFound):
 		return status.Error(codes.NotFound, feedium.ErrorReason_ERROR_REASON_SUMMARY_EVENT_NOT_FOUND.String())
 	case errors.Is(err, biz.ErrSummarizeSelfContainedSrc):
-		return status.Error(codes.InvalidArgument, feedium.ErrorReason_ERROR_REASON_SUMMARIZE_SELF_CONTAINED_SOURCE.String())
+		return status.Error(
+			codes.InvalidArgument,
+			feedium.ErrorReason_ERROR_REASON_SUMMARIZE_SELF_CONTAINED_SOURCE.String(),
+		)
 	}
 	return status.Error(codes.Internal, "internal error")
 }

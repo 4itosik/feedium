@@ -47,9 +47,11 @@ func (pr *postRepo) Save(ctx context.Context, post biz.Post) (biz.Post, bool, er
 		metadata = map[string]string{}
 	}
 
+	client := clientFromContext(ctx, pr.data.Ent)
+
 	// Try to insert the post
 	// If conflict occurs (same source_id + external_id), fetch the existing one
-	entPost, err := pr.data.Ent.Post.Create().
+	entPost, err := client.Post.Create().
 		SetID(postID).
 		SetSourceID(sourceID).
 		SetExternalID(post.ExternalID).
@@ -79,7 +81,7 @@ func (pr *postRepo) Save(ctx context.Context, post biz.Post) (biz.Post, bool, er
 	}
 
 	// Get the source info for eager loading
-	src, err := pr.data.Ent.Source.Get(ctx, entPost.SourceID)
+	src, err := client.Source.Get(ctx, entPost.SourceID)
 	if err != nil {
 		return biz.Post{}, false, fmt.Errorf("get source for post: %w", err)
 	}
@@ -93,7 +95,7 @@ func (pr *postRepo) getBySourceAndExternalID(
 	sourceID uuid.UUID,
 	externalID string,
 ) (biz.Post, error) {
-	entPost, err := pr.data.Ent.Post.Query().
+	entPost, err := clientFromContext(ctx, pr.data.Ent).Post.Query().
 		Where(
 			post.SourceIDEQ(sourceID),
 			post.ExternalIDEQ(externalID),

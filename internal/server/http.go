@@ -18,7 +18,7 @@ func NewHTTPServer(
 	hs *healthservice.HealthService,
 	ss *sourceservice.SourceService,
 	ps *postservice.PostService,
-	sms *summaryservice.SummaryService,
+	sms *summaryservice.Service,
 	_ *slog.Logger,
 ) *kratoshttp.Server {
 	var opts []kratoshttp.ServerOption

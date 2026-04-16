@@ -99,7 +99,10 @@ func TestIntegration_OutboxRepo_ListPending_SortedByCreatedAt(t *testing.T) {
 	require.Len(t, pending, 2)
 	assert.Equal(t, saved1.ID, pending[0].ID)
 	assert.Equal(t, saved2.ID, pending[1].ID)
-	assert.True(t, pending[0].CreatedAt.Before(pending[1].CreatedAt) || pending[0].CreatedAt.Equal(pending[1].CreatedAt))
+	assert.True(
+		t,
+		pending[0].CreatedAt.Before(pending[1].CreatedAt) || pending[0].CreatedAt.Equal(pending[1].CreatedAt),
+	)
 }
 
 func TestIntegration_OutboxRepo_UpdateStatus_Completed(t *testing.T) {

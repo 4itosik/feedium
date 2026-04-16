@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -13,6 +14,14 @@ import (
 
 	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/conf"
+)
+
+const (
+	defaultPollInterval = 5 * time.Second
+	defaultEventTTL     = 24 * time.Hour
+	defaultMaxWindow    = 72 * time.Hour
+	listPageSize        = 500
+	backoffBase         = 2
 )
 
 type SummaryWorker struct {
@@ -46,12 +55,10 @@ func NewSummaryWorker(
 }
 
 func (w *SummaryWorker) Start(ctx context.Context) error {
-	w.wg.Add(1)
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 		pollInterval := w.cfg.GetWorker().GetPollInterval().AsDuration()
 		if pollInterval == 0 {
-			pollInterval = 5 * time.Second
+			pollInterval = defaultPollInterval
 		}
 		for {
 			select {
@@ -70,11 +77,11 @@ func (w *SummaryWorker) Start(ctx context.Context) error {
 				}
 			}
 		}
-	}()
+	})
 	return nil
 }
 
-func (w *SummaryWorker) Stop(ctx context.Context) error {
+func (w *SummaryWorker) Stop(_ context.Context) error {
 	close(w.done)
 	w.wg.Wait()
 	return nil
@@ -88,7 +95,7 @@ func (w *SummaryWorker) processBatch(ctx context.Context) {
 
 	events, err := w.outboxRepo.ListPending(ctx, batchSize)
 	if err != nil {
-		w.log.Error("failed to list pending events", "error", err)
+		w.log.ErrorContext(ctx, "failed to list pending events", "error", err)
 		return
 	}
 
@@ -107,22 +114,23 @@ func (w *SummaryWorker) processEvent(ctx context.Context, event biz.SummaryEvent
 
 	eventTTL := w.cfg.GetOutbox().GetEventTtl().AsDuration()
 	if eventTTL == 0 {
-		eventTTL = 24 * time.Hour
+		eventTTL = defaultEventTTL
 	}
 
 	if time.Since(event.CreatedAt) > eventTTL {
 		age := time.Since(event.CreatedAt)
-		logger.Info("event expired", "age", age)
-		if err := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusExpired, nil, nil); err != nil {
-			logger.Error("failed to mark event as expired", "error", err)
-		}
+		logger.InfoContext(ctx, "event expired", "age", age)
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusExpired, nil, nil,
+		)
 		return
 	}
 
-	if err := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusProcessing, nil, nil); err != nil {
-		logger.Error("failed to mark event as processing", "error", err)
-		return
-	}
+	w.updateEventStatus(
+		ctx, logger, event.ID,
+		biz.SummaryEventStatusProcessing, nil, nil,
+	)
 
 	switch event.EventType {
 	case biz.SummaryEventTypeSummarizePost:
@@ -131,28 +139,43 @@ func (w *SummaryWorker) processEvent(ctx context.Context, event biz.SummaryEvent
 		w.processSummarizeSource(ctx, logger, event)
 	}
 
-	logger.Info("event processed", "status", "done", "duration", time.Since(start))
+	logger.InfoContext(ctx, "event processed", "status", "done", "duration", time.Since(start))
 }
 
-func (w *SummaryWorker) processSummarizePost(ctx context.Context, logger *slog.Logger, event biz.SummaryEvent) {
+func (w *SummaryWorker) processSummarizePost(
+	ctx context.Context,
+	logger *slog.Logger,
+	event biz.SummaryEvent,
+) {
+	if event.PostID == nil {
+		errText := "post id is nil for summarize_post event"
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
+		return
+	}
+
 	post, err := w.postRepo.Get(ctx, *event.PostID)
 	if err != nil {
 		errText := "post not found"
 		if !isNotFound(err) {
 			errText = fmt.Sprintf("get post: %v", err)
 		}
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
 		return
 	}
 
 	summaryText, err := w.summarizeWithRetry(ctx, logger, post.Text)
 	if err != nil {
 		errText := err.Error()
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
 		return
 	}
 
@@ -169,22 +192,29 @@ func (w *SummaryWorker) processSummarizePost(ctx context.Context, logger *slog.L
 	saved, saveErr := w.summaryRepo.Save(ctx, sm)
 	if saveErr != nil {
 		errText := fmt.Sprintf("save summary: %v", saveErr)
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
 		return
 	}
 
 	summaryID := saved.ID
-	if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusCompleted, &summaryID, nil); updateErr != nil {
-		logger.Error("failed to update status", "error", updateErr)
-	}
+	w.updateEventStatus(
+		ctx, logger, event.ID,
+		biz.SummaryEventStatusCompleted, &summaryID, nil,
+	)
 }
 
-func (w *SummaryWorker) processSummarizeSource(ctx context.Context, logger *slog.Logger, event biz.SummaryEvent) {
+//nolint:funlen // complex event processing with multiple error handling paths
+func (w *SummaryWorker) processSummarizeSource(
+	ctx context.Context,
+	logger *slog.Logger,
+	event biz.SummaryEvent,
+) {
 	maxWindow := w.cfg.GetCumulative().GetMaxWindow().AsDuration()
 	if maxWindow == 0 {
-		maxWindow = 72 * time.Hour
+		maxWindow = defaultMaxWindow
 	}
 	maxInputChars := int(w.cfg.GetCumulative().GetMaxInputChars())
 	if maxInputChars <= 0 {
@@ -194,64 +224,84 @@ func (w *SummaryWorker) processSummarizeSource(ctx context.Context, logger *slog
 	lastSummary, err := w.summaryRepo.GetLastBySource(ctx, event.SourceID)
 	if err != nil {
 		errText := fmt.Sprintf("get last summary: %v", err)
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
 		return
 	}
 
 	now := time.Now()
 	windowStart := now.Add(-maxWindow)
-	if lastSummary != nil {
-		if lastSummary.CreatedAt.After(windowStart) {
-			windowStart = lastSummary.CreatedAt
-		}
-	}
-
-	postsResult, err := w.postRepo.List(ctx, biz.ListPostsFilter{
-		SourceID:      event.SourceID,
-		PageSize:      500,
-		OrderBy:       biz.SortByCreatedAt,
-		OrderDir:      biz.SortAsc,
-		CreatedAfter:  &windowStart,
-		CreatedBefore: &now,
-	})
-	if err != nil {
-		errText := fmt.Sprintf("list posts: %v", err)
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
-		return
-	}
-
-	if len(postsResult.Items) == 0 {
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusCompleted, nil, nil); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
-		return
+	if lastSummary != nil && lastSummary.CreatedAt.After(windowStart) {
+		windowStart = lastSummary.CreatedAt
 	}
 
 	var sb strings.Builder
-	for _, p := range postsResult.Items {
-		sb.WriteString(p.Text)
-		sb.WriteString("\n\n")
+	foundPosts := false
+	pageToken := ""
+	exceeded := false
+
+	for {
+		postsResult, listErr := w.postRepo.List(ctx, biz.ListPostsFilter{
+			SourceID:      event.SourceID,
+			PageSize:      listPageSize,
+			PageToken:     pageToken,
+			OrderBy:       biz.SortByCreatedAt,
+			OrderDir:      biz.SortAsc,
+			CreatedAfter:  &windowStart,
+			CreatedBefore: &now,
+		})
+		if listErr != nil {
+			errText := fmt.Sprintf("list posts: %v", listErr)
+			w.updateEventStatus(
+				ctx, logger, event.ID,
+				biz.SummaryEventStatusFailed, nil, &errText,
+			)
+			return
+		}
+
+		for _, p := range postsResult.Items {
+			foundPosts = true
+			sb.WriteString(p.Text)
+			sb.WriteString("\n\n")
+			if sb.Len() > maxInputChars {
+				exceeded = true
+				break
+			}
+		}
+
+		if postsResult.NextPageToken == "" || exceeded {
+			break
+		}
+		pageToken = postsResult.NextPageToken
+	}
+
+	if !foundPosts {
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusCompleted, nil, nil,
+		)
+		return
 	}
 
 	concat := sb.String()
 	if len(concat) > maxInputChars {
 		errText := "input text exceeds max_input_chars limit"
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
 		return
 	}
 
 	summaryText, err := w.summarizeWithRetry(ctx, logger, concat)
 	if err != nil {
 		errText := err.Error()
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
 		return
 	}
 
@@ -268,19 +318,40 @@ func (w *SummaryWorker) processSummarizeSource(ctx context.Context, logger *slog
 	saved, saveErr := w.summaryRepo.Save(ctx, sm)
 	if saveErr != nil {
 		errText := fmt.Sprintf("save summary: %v", saveErr)
-		if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusFailed, nil, &errText); updateErr != nil {
-			logger.Error("failed to update status", "error", updateErr)
-		}
+		w.updateEventStatus(
+			ctx, logger, event.ID,
+			biz.SummaryEventStatusFailed, nil, &errText,
+		)
 		return
 	}
 
 	summaryID := saved.ID
-	if updateErr := w.outboxRepo.UpdateStatus(ctx, event.ID, biz.SummaryEventStatusCompleted, &summaryID, nil); updateErr != nil {
-		logger.Error("failed to update status", "error", updateErr)
+	w.updateEventStatus(
+		ctx, logger, event.ID,
+		biz.SummaryEventStatusCompleted, &summaryID, nil,
+	)
+}
+
+func (w *SummaryWorker) updateEventStatus(
+	ctx context.Context,
+	logger *slog.Logger,
+	eventID string,
+	status biz.SummaryEventStatus,
+	summaryID *string,
+	errText *string,
+) {
+	if updateErr := w.outboxRepo.UpdateStatus(
+		ctx, eventID, status, summaryID, errText,
+	); updateErr != nil {
+		logger.ErrorContext(ctx, "failed to update status", "error", updateErr)
 	}
 }
 
-func (w *SummaryWorker) summarizeWithRetry(ctx context.Context, logger *slog.Logger, text string) (string, error) {
+func (w *SummaryWorker) summarizeWithRetry(
+	ctx context.Context,
+	logger *slog.Logger,
+	text string,
+) (string, error) {
 	maxRetries := int(w.cfg.GetLlm().GetMaxRetries())
 	if maxRetries <= 0 {
 		maxRetries = 3
@@ -291,8 +362,13 @@ func (w *SummaryWorker) summarizeWithRetry(ctx context.Context, logger *slog.Log
 		result, err := w.llmProvider.Summarize(ctx, text)
 		if err != nil {
 			lastErr = err
-			logger.Warn("llm summarize attempt failed", "attempt", attempt+1, "error", err)
-			backoff := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+			logger.WarnContext(
+				ctx, "llm summarize attempt failed",
+				"attempt", attempt+1, "error", err,
+			)
+			backoff := time.Duration(
+				math.Pow(backoffBase, float64(attempt)),
+			) * time.Second
 			select {
 			case <-time.After(backoff):
 			case <-ctx.Done():
@@ -302,8 +378,11 @@ func (w *SummaryWorker) summarizeWithRetry(ctx context.Context, logger *slog.Log
 		}
 
 		if strings.TrimSpace(result) == "" {
-			lastErr = fmt.Errorf("llm returned empty summary on attempt %d", attempt+1)
-			logger.Warn("empty summary", "attempt", attempt+1)
+			lastErr = fmt.Errorf(
+				"llm returned empty summary on attempt %d",
+				attempt+1,
+			)
+			logger.WarnContext(ctx, "empty summary", "attempt", attempt+1)
 			continue
 		}
 
@@ -314,5 +393,7 @@ func (w *SummaryWorker) summarizeWithRetry(ctx context.Context, logger *slog.Log
 }
 
 func isNotFound(err error) bool {
-	return err != nil && (err == biz.ErrPostNotFound || err == biz.ErrSourceNotFound || err == biz.ErrSummaryNotFound)
+	return errors.Is(err, biz.ErrPostNotFound) ||
+		errors.Is(err, biz.ErrSourceNotFound) ||
+		errors.Is(err, biz.ErrSummaryNotFound)
 }

@@ -18,7 +18,7 @@ func NewGRPCServer(
 	hs *healthservice.HealthService,
 	ss *sourceservice.SourceService,
 	ps *postservice.PostService,
-	sms *summaryservice.SummaryService,
+	sms *summaryservice.Service,
 	_ *slog.Logger,
 ) *grpc.Server {
 	var opts []grpc.ServerOption

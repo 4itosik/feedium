@@ -7,7 +7,7 @@ import (
 	healthservice "github.com/4itosik/feedium/internal/service/health"
 )
 
-var ProviderSet = wire.NewSet(
+var ProviderSet = wire.NewSet( //nolint:gochecknoglobals // wire dependency injection
 	NewData,
 	NewHealthRepo,
 	NewSourceRepo,

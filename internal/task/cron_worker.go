@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -41,9 +42,7 @@ func NewCronWorker(
 }
 
 func (w *CronWorker) Start(ctx context.Context) error {
-	w.wg.Add(1)
-	go func() {
-		defer w.wg.Done()
+	w.wg.Go(func() {
 		interval := w.cfg.GetCron().GetInterval().AsDuration()
 		if interval == 0 {
 			interval = time.Hour
@@ -65,11 +64,11 @@ func (w *CronWorker) Start(ctx context.Context) error {
 				}
 			}
 		}
-	}()
+	})
 	return nil
 }
 
-func (w *CronWorker) Stop(ctx context.Context) error {
+func (w *CronWorker) Stop(_ context.Context) error {
 	close(w.done)
 	w.wg.Wait()
 	return nil
@@ -81,11 +80,11 @@ func (w *CronWorker) tick(ctx context.Context) {
 	for {
 		sources, err := w.sourceRepo.List(ctx, biz.ListSourcesFilter{
 			ProcessingMode: &mode,
-			PageSize:       500,
+			PageSize:       listPageSize,
 			PageToken:      pageToken,
 		})
 		if err != nil {
-			w.log.Error("cron: failed to list sources", "error", err)
+			w.log.ErrorContext(ctx, "cron: failed to list sources", "error", err)
 			return
 		}
 
@@ -105,7 +104,7 @@ func (w *CronWorker) processSource(ctx context.Context, source biz.Source) {
 
 	found, _, err := w.outboxRepo.HasActiveEvent(ctx, source.ID, biz.SummaryEventTypeSummarizeSource)
 	if err != nil {
-		logger.Error("failed to check active event", "error", err)
+		logger.ErrorContext(ctx, "failed to check active event", "error", err)
 		return
 	}
 	if found {
@@ -114,7 +113,7 @@ func (w *CronWorker) processSource(ctx context.Context, source biz.Source) {
 
 	lastSummary, err := w.summaryRepo.GetLastBySource(ctx, source.ID)
 	if err != nil {
-		logger.Error("failed to get last summary", "error", err)
+		logger.ErrorContext(ctx, "failed to get last summary", "error", err)
 		return
 	}
 
@@ -133,7 +132,7 @@ func (w *CronWorker) processSource(ctx context.Context, source biz.Source) {
 		CreatedBefore: &now,
 	})
 	if err != nil {
-		logger.Error("failed to check new posts", "error", err)
+		logger.ErrorContext(ctx, "failed to check new posts", "error", err)
 		return
 	}
 
@@ -143,9 +142,13 @@ func (w *CronWorker) processSource(ctx context.Context, source biz.Source) {
 
 	event := biz.NewSummaryEvent(biz.SummaryEventTypeSummarizeSource, source.ID, nil)
 	if _, saveErr := w.outboxRepo.Save(ctx, event); saveErr != nil {
-		logger.Error("failed to create summary event", "error", saveErr)
+		if errors.Is(saveErr, biz.ErrSummaryAlreadyProcessing) {
+			logger.InfoContext(ctx, "summary event already active, skipping")
+			return
+		}
+		logger.ErrorContext(ctx, "failed to create summary event", "error", saveErr)
 		return
 	}
 
-	logger.Info("created summary event for cumulative source")
+	logger.InfoContext(ctx, "created summary event for cumulative source")
 }

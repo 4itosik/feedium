@@ -43,7 +43,7 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	postService := post.NewPostService(postUsecase)
 	summaryRepo := data.NewSummaryRepo(dataData)
 	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo)
-	summaryService := summary.NewSummaryService(summaryUsecase)
+	summaryService := summary.NewService(summaryUsecase)
 	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, summaryService, logger)
 	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, summaryService, logger)
 	summaryLLM := newSummaryLLMFromBootstrap(bc)

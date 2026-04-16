@@ -40,7 +40,10 @@ func makeRSSSource(id string) biz.Source {
 	}
 }
 
-func setupCreateMocks(t *testing.T, ctrl *gomock.Controller) (*mock.MockTxManager, *mock.MockSummaryOutboxRepo, *mock.MockSourceRepo) {
+func setupCreateMocks(
+	t *testing.T,
+	ctrl *gomock.Controller,
+) (*mock.MockTxManager, *mock.MockSummaryOutboxRepo, *mock.MockSourceRepo) {
 	t.Helper()
 	txManager := mock.NewMockTxManager(ctrl)
 	outboxRepo := mock.NewMockSummaryOutboxRepo(ctrl)
@@ -49,9 +52,11 @@ func setupCreateMocks(t *testing.T, ctrl *gomock.Controller) (*mock.MockTxManage
 }
 
 func expectInTx(txManager *mock.MockTxManager) {
-	txManager.EXPECT().InTx(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(context.Context) error) error {
-		return fn(context.Background())
-	})
+	txManager.EXPECT().
+		InTx(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, fn func(context.Context) error) error {
+			return fn(context.Background())
+		})
 }
 
 func TestPostUsecase_Create(t *testing.T) {

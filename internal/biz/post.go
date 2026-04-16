@@ -140,7 +140,12 @@ type PostUsecase struct {
 	sourceRepo SourceRepo
 }
 
-func NewPostUsecase(repo PostRepo, txManager TxManager, outboxRepo SummaryOutboxRepo, sourceRepo SourceRepo) *PostUsecase {
+func NewPostUsecase(
+	repo PostRepo,
+	txManager TxManager,
+	outboxRepo SummaryOutboxRepo,
+	sourceRepo SourceRepo,
+) *PostUsecase {
 	return &PostUsecase{repo: repo, txManager: txManager, outboxRepo: outboxRepo, sourceRepo: sourceRepo}
 }
 

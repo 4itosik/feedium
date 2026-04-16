@@ -17,7 +17,7 @@ type summaryRepo struct {
 
 var _ biz.SummaryRepo = (*summaryRepo)(nil)
 
-func NewSummaryRepo(data *Data) *summaryRepo {
+func NewSummaryRepo(data *Data) *summaryRepo { //nolint:revive // unexported return type for wire DI
 	return &summaryRepo{data: data}
 }
 
@@ -98,7 +98,12 @@ func (r *summaryRepo) ListByPost(ctx context.Context, postID string) ([]biz.Summ
 	return result, nil
 }
 
-func (r *summaryRepo) ListBySource(ctx context.Context, sourceID string, pageSize int, pageToken string) (biz.ListSummariesResult, error) {
+func (r *summaryRepo) ListBySource(
+	ctx context.Context,
+	sourceID string,
+	pageSize int,
+	pageToken string,
+) (biz.ListSummariesResult, error) {
 	client := clientFromContext(ctx, r.data.Ent)
 
 	uid, err := uuid.Parse(sourceID)
@@ -164,7 +169,7 @@ func (r *summaryRepo) GetLastBySource(ctx context.Context, sourceID string) (*bi
 		First(ctx)
 	if err != nil {
 		if entgo.IsNotFound(err) {
-			return nil, nil
+			return nil, nil //nolint:nilnil // not found is a valid empty result
 		}
 		return nil, fmt.Errorf("get last summary by source: %w", err)
 	}

@@ -16,6 +16,8 @@ import (
 	"github.com/4itosik/feedium/internal/conf"
 )
 
+const defaultLLMTimeout = 30 * time.Second
+
 const defaultSystemPrompt = `You are a concise summarizer. Summarize the provided text in the same language as the original. Preserve key facts, names, numbers, and conclusions. Produce a concise summary.`
 
 type openRouterProvider struct {
@@ -47,6 +49,7 @@ type chatResponse struct {
 	} `json:"choices"`
 }
 
+//nolint:revive // unexported return type for wire DI
 func NewOpenRouterProvider(cfg *conf.SummaryLLM, logger *slog.Logger) (*openRouterProvider, error) {
 	if cfg == nil {
 		return nil, errors.New("summary.llm configuration is required")
@@ -59,7 +62,7 @@ func NewOpenRouterProvider(cfg *conf.SummaryLLM, logger *slog.Logger) (*openRout
 
 	timeout := cfg.GetTimeout().AsDuration()
 	if timeout == 0 {
-		timeout = 30 * time.Second
+		timeout = defaultLLMTimeout
 	}
 
 	return &openRouterProvider{

@@ -2,7 +2,6 @@
 package biz
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -90,27 +89,14 @@ func TestSummaryInvariant(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	postID := "01961d9c-4f78-7e2e-8c3a-5e7d9a1b2c3e"
-	sourceID := "01961d9c-4f78-7e2e-8c3a-5e7d9a1b2c3d"
 
 	t.Run("self contained has PostID", func(t *testing.T) {
-		summary := Summary{
-			ID:        "some-id",
-			PostID:    &postID,
-			SourceID:  sourceID,
-			Text:      "summary text",
-			WordCount: strings.Count("summary text", " ") + 1,
-		}
+		summary := Summary{PostID: &postID}
 		assert.NotNil(t, summary.PostID)
 	})
 
 	t.Run("cumulative has nil PostID", func(t *testing.T) {
-		summary := Summary{
-			ID:        "some-id",
-			PostID:    nil,
-			SourceID:  sourceID,
-			Text:      "summary text",
-			WordCount: strings.Count("summary text", " ") + 1,
-		}
+		summary := Summary{}
 		assert.Nil(t, summary.PostID)
 	})
 }

@@ -20,7 +20,7 @@ type summaryOutboxRepo struct {
 
 var _ biz.SummaryOutboxRepo = (*summaryOutboxRepo)(nil)
 
-func NewSummaryOutboxRepo(data *Data) *summaryOutboxRepo {
+func NewSummaryOutboxRepo(data *Data) *summaryOutboxRepo { //nolint:revive // unexported return type for wire DI
 	return &summaryOutboxRepo{data: data}
 }
 
@@ -101,7 +101,13 @@ func (r *summaryOutboxRepo) ListPending(ctx context.Context, limit int) ([]biz.S
 	return result, nil
 }
 
-func (r *summaryOutboxRepo) UpdateStatus(ctx context.Context, id string, status biz.SummaryEventStatus, summaryID *string, errText *string) error {
+func (r *summaryOutboxRepo) UpdateStatus(
+	ctx context.Context,
+	id string,
+	status biz.SummaryEventStatus,
+	summaryID *string,
+	errText *string,
+) error {
 	client := clientFromContext(ctx, r.data.Ent)
 
 	uid, err := uuid.Parse(id)
@@ -124,7 +130,8 @@ func (r *summaryOutboxRepo) UpdateStatus(ctx context.Context, id string, status 
 		builder.SetError(*errText)
 	}
 
-	if status == biz.SummaryEventStatusCompleted || status == biz.SummaryEventStatusFailed || status == biz.SummaryEventStatusExpired {
+	if status == biz.SummaryEventStatusCompleted || status == biz.SummaryEventStatusFailed ||
+		status == biz.SummaryEventStatusExpired {
 		now := time.Now()
 		builder.SetProcessedAt(now)
 	}
@@ -140,7 +147,11 @@ func (r *summaryOutboxRepo) UpdateStatus(ctx context.Context, id string, status 
 	return nil
 }
 
-func (r *summaryOutboxRepo) HasActiveEvent(ctx context.Context, sourceID string, eventType biz.SummaryEventType) (bool, *biz.SummaryEvent, error) {
+func (r *summaryOutboxRepo) HasActiveEvent(
+	ctx context.Context,
+	sourceID string,
+	eventType biz.SummaryEventType,
+) (bool, *biz.SummaryEvent, error) {
 	client := clientFromContext(ctx, r.data.Ent)
 
 	uid, err := uuid.Parse(sourceID)

@@ -57,6 +57,11 @@ func (uc *SummaryUsecase) ListPostSummaries(ctx context.Context, postID string) 
 	return uc.summaryRepo.ListByPost(ctx, postID)
 }
 
-func (uc *SummaryUsecase) ListSourceSummaries(ctx context.Context, sourceID string, pageSize int, pageToken string) (ListSummariesResult, error) {
+func (uc *SummaryUsecase) ListSourceSummaries(
+	ctx context.Context,
+	sourceID string,
+	pageSize int,
+	pageToken string,
+) (ListSummariesResult, error) {
 	return uc.summaryRepo.ListBySource(ctx, sourceID, pageSize, pageToken)
 }
