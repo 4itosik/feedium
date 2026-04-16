@@ -53,5 +53,7 @@ func (Source) Indexes() []ent.Index {
 func (Source) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("posts", Post.Type),
+		edge.To("source_summaries", Summary.Type),
+		edge.To("summary_events", SummaryEvent.Type),
 	}
 }

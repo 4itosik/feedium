@@ -14,6 +14,7 @@ import (
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/predicate"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
 	"github.com/google/uuid"
 )
 
@@ -123,6 +124,21 @@ func (_u *PostUpdate) SetSource(v *Source) *PostUpdate {
 	return _u.SetSourceID(v.ID)
 }
 
+// AddSummaryIDs adds the "summaries" edge to the Summary entity by IDs.
+func (_u *PostUpdate) AddSummaryIDs(ids ...uuid.UUID) *PostUpdate {
+	_u.mutation.AddSummaryIDs(ids...)
+	return _u
+}
+
+// AddSummaries adds the "summaries" edges to the Summary entity.
+func (_u *PostUpdate) AddSummaries(v ...*Summary) *PostUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSummaryIDs(ids...)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdate) Mutation() *PostMutation {
 	return _u.mutation
@@ -132,6 +148,27 @@ func (_u *PostUpdate) Mutation() *PostMutation {
 func (_u *PostUpdate) ClearSource() *PostUpdate {
 	_u.mutation.ClearSource()
 	return _u
+}
+
+// ClearSummaries clears all "summaries" edges to the Summary entity.
+func (_u *PostUpdate) ClearSummaries() *PostUpdate {
+	_u.mutation.ClearSummaries()
+	return _u
+}
+
+// RemoveSummaryIDs removes the "summaries" edge to Summary entities by IDs.
+func (_u *PostUpdate) RemoveSummaryIDs(ids ...uuid.UUID) *PostUpdate {
+	_u.mutation.RemoveSummaryIDs(ids...)
+	return _u
+}
+
+// RemoveSummaries removes "summaries" edges to Summary entities.
+func (_u *PostUpdate) RemoveSummaries(v ...*Summary) *PostUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSummaryIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -243,6 +280,51 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SummariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SummariesTable,
+			Columns: []string{post.SummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSummariesIDs(); len(nodes) > 0 && !_u.mutation.SummariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SummariesTable,
+			Columns: []string{post.SummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SummariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SummariesTable,
+			Columns: []string{post.SummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -363,6 +445,21 @@ func (_u *PostUpdateOne) SetSource(v *Source) *PostUpdateOne {
 	return _u.SetSourceID(v.ID)
 }
 
+// AddSummaryIDs adds the "summaries" edge to the Summary entity by IDs.
+func (_u *PostUpdateOne) AddSummaryIDs(ids ...uuid.UUID) *PostUpdateOne {
+	_u.mutation.AddSummaryIDs(ids...)
+	return _u
+}
+
+// AddSummaries adds the "summaries" edges to the Summary entity.
+func (_u *PostUpdateOne) AddSummaries(v ...*Summary) *PostUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSummaryIDs(ids...)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdateOne) Mutation() *PostMutation {
 	return _u.mutation
@@ -372,6 +469,27 @@ func (_u *PostUpdateOne) Mutation() *PostMutation {
 func (_u *PostUpdateOne) ClearSource() *PostUpdateOne {
 	_u.mutation.ClearSource()
 	return _u
+}
+
+// ClearSummaries clears all "summaries" edges to the Summary entity.
+func (_u *PostUpdateOne) ClearSummaries() *PostUpdateOne {
+	_u.mutation.ClearSummaries()
+	return _u
+}
+
+// RemoveSummaryIDs removes the "summaries" edge to Summary entities by IDs.
+func (_u *PostUpdateOne) RemoveSummaryIDs(ids ...uuid.UUID) *PostUpdateOne {
+	_u.mutation.RemoveSummaryIDs(ids...)
+	return _u
+}
+
+// RemoveSummaries removes "summaries" edges to Summary entities.
+func (_u *PostUpdateOne) RemoveSummaries(v ...*Summary) *PostUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSummaryIDs(ids...)
 }
 
 // Where appends a list predicates to the PostUpdate builder.
@@ -513,6 +631,51 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(source.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SummariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SummariesTable,
+			Columns: []string{post.SummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSummariesIDs(); len(nodes) > 0 && !_u.mutation.SummariesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SummariesTable,
+			Columns: []string{post.SummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SummariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SummariesTable,
+			Columns: []string{post.SummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

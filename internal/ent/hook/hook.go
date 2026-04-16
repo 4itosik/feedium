@@ -33,6 +33,30 @@ func (f SourceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SourceMutation", m)
 }
 
+// The SummaryFunc type is an adapter to allow the use of ordinary
+// function as Summary mutator.
+type SummaryFunc func(context.Context, *ent.SummaryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SummaryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SummaryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SummaryMutation", m)
+}
+
+// The SummaryEventFunc type is an adapter to allow the use of ordinary
+// function as SummaryEvent mutator.
+type SummaryEventFunc func(context.Context, *ent.SummaryEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SummaryEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SummaryEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SummaryEventMutation", m)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

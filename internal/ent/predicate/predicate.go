@@ -11,3 +11,9 @@ type Post func(*sql.Selector)
 
 // Source is the predicate function for source builders.
 type Source func(*sql.Selector)
+
+// Summary is the predicate function for summary builders.
+type Summary func(*sql.Selector)
+
+// SummaryEvent is the predicate function for summaryevent builders.
+type SummaryEvent func(*sql.Selector)

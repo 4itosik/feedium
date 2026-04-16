@@ -16,6 +16,10 @@ type Tx struct {
 	Post *PostClient
 	// Source is the client for interacting with the Source builders.
 	Source *SourceClient
+	// Summary is the client for interacting with the Summary builders.
+	Summary *SummaryClient
+	// SummaryEvent is the client for interacting with the SummaryEvent builders.
+	SummaryEvent *SummaryEventClient
 
 	// lazily loaded.
 	client     *Client
@@ -149,6 +153,8 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Post = NewPostClient(tx.config)
 	tx.Source = NewSourceClient(tx.config)
+	tx.Summary = NewSummaryClient(tx.config)
+	tx.SummaryEvent = NewSummaryEventClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

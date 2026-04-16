@@ -67,13 +67,105 @@ var (
 			},
 		},
 	}
+	// SummariesColumns holds the columns for the "summaries" table.
+	SummariesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "text", Type: field.TypeString, Size: 2147483647},
+		{Name: "word_count", Type: field.TypeInt},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "post_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "source_id", Type: field.TypeUUID},
+	}
+	// SummariesTable holds the schema information for the "summaries" table.
+	SummariesTable = &schema.Table{
+		Name:       "summaries",
+		Columns:    SummariesColumns,
+		PrimaryKey: []*schema.Column{SummariesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "summaries_posts_summaries",
+				Columns:    []*schema.Column{SummariesColumns[4]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "summaries_sources_source_summaries",
+				Columns:    []*schema.Column{SummariesColumns[5]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "summary_post_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SummariesColumns[4], SummariesColumns[3]},
+			},
+			{
+				Name:    "summary_source_id_created_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{SummariesColumns[5], SummariesColumns[3], SummariesColumns[0]},
+			},
+		},
+	}
+	// SummaryEventsColumns holds the columns for the "summary_events" table.
+	SummaryEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "post_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "source_id", Type: field.TypeUUID},
+		{Name: "event_type", Type: field.TypeString},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "processed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "source_summary_events", Type: field.TypeUUID, Nullable: true},
+		{Name: "summary_id", Type: field.TypeUUID, Nullable: true},
+	}
+	// SummaryEventsTable holds the schema information for the "summary_events" table.
+	SummaryEventsTable = &schema.Table{
+		Name:       "summary_events",
+		Columns:    SummaryEventsColumns,
+		PrimaryKey: []*schema.Column{SummaryEventsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "summary_events_sources_summary_events",
+				Columns:    []*schema.Column{SummaryEventsColumns[8]},
+				RefColumns: []*schema.Column{SourcesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "summary_events_summaries_summary",
+				Columns:    []*schema.Column{SummaryEventsColumns[9]},
+				RefColumns: []*schema.Column{SummariesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "summaryevent_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SummaryEventsColumns[4], SummaryEventsColumns[6]},
+			},
+			{
+				Name:    "summaryevent_source_id_event_type_status",
+				Unique:  false,
+				Columns: []*schema.Column{SummaryEventsColumns[2], SummaryEventsColumns[3], SummaryEventsColumns[4]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		PostsTable,
 		SourcesTable,
+		SummariesTable,
+		SummaryEventsTable,
 	}
 )
 
 func init() {
 	PostsTable.ForeignKeys[0].RefTable = SourcesTable
+	SummariesTable.ForeignKeys[0].RefTable = PostsTable
+	SummariesTable.ForeignKeys[1].RefTable = SourcesTable
+	SummaryEventsTable.ForeignKeys[0].RefTable = SourcesTable
+	SummaryEventsTable.ForeignKeys[1].RefTable = SummariesTable
 }

@@ -12,6 +12,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
+	"github.com/4itosik/feedium/internal/ent/summaryevent"
 	"github.com/google/uuid"
 )
 
@@ -89,6 +91,36 @@ func (_c *SourceCreate) AddPosts(v ...*Post) *SourceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddPostIDs(ids...)
+}
+
+// AddSourceSummaryIDs adds the "source_summaries" edge to the Summary entity by IDs.
+func (_c *SourceCreate) AddSourceSummaryIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddSourceSummaryIDs(ids...)
+	return _c
+}
+
+// AddSourceSummaries adds the "source_summaries" edges to the Summary entity.
+func (_c *SourceCreate) AddSourceSummaries(v ...*Summary) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSourceSummaryIDs(ids...)
+}
+
+// AddSummaryEventIDs adds the "summary_events" edge to the SummaryEvent entity by IDs.
+func (_c *SourceCreate) AddSummaryEventIDs(ids ...uuid.UUID) *SourceCreate {
+	_c.mutation.AddSummaryEventIDs(ids...)
+	return _c
+}
+
+// AddSummaryEvents adds the "summary_events" edges to the SummaryEvent entity.
+func (_c *SourceCreate) AddSummaryEvents(v ...*SummaryEvent) *SourceCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSummaryEventIDs(ids...)
 }
 
 // Mutation returns the SourceMutation object of the builder.
@@ -219,6 +251,38 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SourceSummariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SourceSummariesTable,
+			Columns: []string{source.SourceSummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SummaryEventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   source.SummaryEventsTable,
+			Columns: []string{source.SummaryEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summaryevent.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

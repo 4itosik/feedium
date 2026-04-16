@@ -43,11 +43,13 @@ const (
 )
 
 type ListPostsFilter struct {
-	SourceID  string
-	PageSize  int
-	PageToken string
-	OrderBy   SortField
-	OrderDir  SortDirection
+	SourceID      string
+	PageSize      int
+	PageToken     string
+	OrderBy       SortField
+	OrderDir      SortDirection
+	CreatedAfter  *time.Time
+	CreatedBefore *time.Time
 }
 
 type ListPostsResult struct {
@@ -115,11 +117,16 @@ func ValidateListPostsFilter(filter ListPostsFilter) error {
 			return fmt.Errorf("%w: invalid source_id", ErrPostInvalidArgument)
 		}
 	}
+	if filter.CreatedAfter != nil && filter.CreatedBefore != nil {
+		if filter.CreatedAfter.After(*filter.CreatedBefore) {
+			return fmt.Errorf("%w: created_after must be before created_before", ErrPostInvalidArgument)
+		}
+	}
 	return nil
 }
 
 type PostRepo interface {
-	Save(ctx context.Context, post Post) (Post, error)
+	Save(ctx context.Context, post Post) (Post, bool, error)
 	Update(ctx context.Context, post Post) (Post, error)
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (Post, error)
@@ -127,11 +134,14 @@ type PostRepo interface {
 }
 
 type PostUsecase struct {
-	repo PostRepo
+	repo       PostRepo
+	txManager  TxManager
+	outboxRepo SummaryOutboxRepo
+	sourceRepo SourceRepo
 }
 
-func NewPostUsecase(repo PostRepo) *PostUsecase {
-	return &PostUsecase{repo: repo}
+func NewPostUsecase(repo PostRepo, txManager TxManager, outboxRepo SummaryOutboxRepo, sourceRepo SourceRepo) *PostUsecase {
+	return &PostUsecase{repo: repo, txManager: txManager, outboxRepo: outboxRepo, sourceRepo: sourceRepo}
 }
 
 func (uc *PostUsecase) Create(
@@ -142,6 +152,11 @@ func (uc *PostUsecase) Create(
 	metadata map[string]string,
 ) (Post, error) {
 	if err := ValidateCreatePost(sourceID, externalID, text, publishedAt); err != nil {
+		return Post{}, err
+	}
+
+	source, err := uc.sourceRepo.Get(ctx, sourceID)
+	if err != nil {
 		return Post{}, err
 	}
 
@@ -162,7 +177,32 @@ func (uc *PostUsecase) Create(
 		UpdatedAt:   now,
 	}
 
-	return uc.repo.Save(ctx, post)
+	mode := ProcessingModeForType(source.Type)
+
+	var saved Post
+
+	txErr := uc.txManager.InTx(ctx, func(txCtx context.Context) error {
+		var created bool
+		saved, created, err = uc.repo.Save(txCtx, post)
+		if err != nil {
+			return err
+		}
+
+		if mode == ProcessingModeSelfContained && created {
+			event := NewSummaryEvent(SummaryEventTypeSummarizePost, sourceID, &saved.ID)
+			if _, outboxErr := uc.outboxRepo.Save(txCtx, event); outboxErr != nil {
+				return outboxErr
+			}
+		}
+
+		return nil
+	})
+
+	if txErr != nil {
+		return Post{}, txErr
+	}
+
+	return saved, nil
 }
 
 func (uc *PostUsecase) Update(

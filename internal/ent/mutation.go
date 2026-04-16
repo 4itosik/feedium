@@ -14,6 +14,8 @@ import (
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/predicate"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
+	"github.com/4itosik/feedium/internal/ent/summaryevent"
 	"github.com/google/uuid"
 )
 
@@ -26,29 +28,34 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypePost   = "Post"
-	TypeSource = "Source"
+	TypePost         = "Post"
+	TypeSource       = "Source"
+	TypeSummary      = "Summary"
+	TypeSummaryEvent = "SummaryEvent"
 )
 
 // PostMutation represents an operation that mutates the Post nodes in the graph.
 type PostMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	external_id   *string
-	published_at  *time.Time
-	author        *string
-	text          *string
-	metadata      *map[string]string
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	source        *uuid.UUID
-	clearedsource bool
-	done          bool
-	oldValue      func(context.Context) (*Post, error)
-	predicates    []predicate.Post
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	external_id      *string
+	published_at     *time.Time
+	author           *string
+	text             *string
+	metadata         *map[string]string
+	created_at       *time.Time
+	updated_at       *time.Time
+	clearedFields    map[string]struct{}
+	source           *uuid.UUID
+	clearedsource    bool
+	summaries        map[uuid.UUID]struct{}
+	removedsummaries map[uuid.UUID]struct{}
+	clearedsummaries bool
+	done             bool
+	oldValue         func(context.Context) (*Post, error)
+	predicates       []predicate.Post
 }
 
 var _ ent.Mutation = (*PostMutation)(nil)
@@ -483,6 +490,60 @@ func (m *PostMutation) ResetSource() {
 	m.clearedsource = false
 }
 
+// AddSummaryIDs adds the "summaries" edge to the Summary entity by ids.
+func (m *PostMutation) AddSummaryIDs(ids ...uuid.UUID) {
+	if m.summaries == nil {
+		m.summaries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.summaries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSummaries clears the "summaries" edge to the Summary entity.
+func (m *PostMutation) ClearSummaries() {
+	m.clearedsummaries = true
+}
+
+// SummariesCleared reports if the "summaries" edge to the Summary entity was cleared.
+func (m *PostMutation) SummariesCleared() bool {
+	return m.clearedsummaries
+}
+
+// RemoveSummaryIDs removes the "summaries" edge to the Summary entity by IDs.
+func (m *PostMutation) RemoveSummaryIDs(ids ...uuid.UUID) {
+	if m.removedsummaries == nil {
+		m.removedsummaries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.summaries, ids[i])
+		m.removedsummaries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSummaries returns the removed IDs of the "summaries" edge to the Summary entity.
+func (m *PostMutation) RemovedSummariesIDs() (ids []uuid.UUID) {
+	for id := range m.removedsummaries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SummariesIDs returns the "summaries" edge IDs in the mutation.
+func (m *PostMutation) SummariesIDs() (ids []uuid.UUID) {
+	for id := range m.summaries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSummaries resets all changes to the "summaries" edge.
+func (m *PostMutation) ResetSummaries() {
+	m.summaries = nil
+	m.clearedsummaries = false
+	m.removedsummaries = nil
+}
+
 // Where appends a list predicates to the PostMutation builder.
 func (m *PostMutation) Where(ps ...predicate.Post) {
 	m.predicates = append(m.predicates, ps...)
@@ -744,9 +805,12 @@ func (m *PostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.source != nil {
 		edges = append(edges, post.EdgeSource)
+	}
+	if m.summaries != nil {
+		edges = append(edges, post.EdgeSummaries)
 	}
 	return edges
 }
@@ -759,27 +823,47 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 		if id := m.source; id != nil {
 			return []ent.Value{*id}
 		}
+	case post.EdgeSummaries:
+		ids := make([]ent.Value, 0, len(m.summaries))
+		for id := range m.summaries {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.removedsummaries != nil {
+		edges = append(edges, post.EdgeSummaries)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *PostMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case post.EdgeSummaries:
+		ids := make([]ent.Value, 0, len(m.removedsummaries))
+		for id := range m.removedsummaries {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedsource {
 		edges = append(edges, post.EdgeSource)
+	}
+	if m.clearedsummaries {
+		edges = append(edges, post.EdgeSummaries)
 	}
 	return edges
 }
@@ -790,6 +874,8 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 	switch name {
 	case post.EdgeSource:
 		return m.clearedsource
+	case post.EdgeSummaries:
+		return m.clearedsummaries
 	}
 	return false
 }
@@ -812,6 +898,9 @@ func (m *PostMutation) ResetEdge(name string) error {
 	case post.EdgeSource:
 		m.ResetSource()
 		return nil
+	case post.EdgeSummaries:
+		m.ResetSummaries()
+		return nil
 	}
 	return fmt.Errorf("unknown Post edge %s", name)
 }
@@ -819,20 +908,26 @@ func (m *PostMutation) ResetEdge(name string) error {
 // SourceMutation represents an operation that mutates the Source nodes in the graph.
 type SourceMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	_type         *string
-	_config       *map[string]interface{}
-	created_at    *time.Time
-	updated_at    *time.Time
-	clearedFields map[string]struct{}
-	posts         map[uuid.UUID]struct{}
-	removedposts  map[uuid.UUID]struct{}
-	clearedposts  bool
-	done          bool
-	oldValue      func(context.Context) (*Source, error)
-	predicates    []predicate.Source
+	op                      Op
+	typ                     string
+	id                      *uuid.UUID
+	_type                   *string
+	_config                 *map[string]interface{}
+	created_at              *time.Time
+	updated_at              *time.Time
+	clearedFields           map[string]struct{}
+	posts                   map[uuid.UUID]struct{}
+	removedposts            map[uuid.UUID]struct{}
+	clearedposts            bool
+	source_summaries        map[uuid.UUID]struct{}
+	removedsource_summaries map[uuid.UUID]struct{}
+	clearedsource_summaries bool
+	summary_events          map[uuid.UUID]struct{}
+	removedsummary_events   map[uuid.UUID]struct{}
+	clearedsummary_events   bool
+	done                    bool
+	oldValue                func(context.Context) (*Source, error)
+	predicates              []predicate.Source
 }
 
 var _ ent.Mutation = (*SourceMutation)(nil)
@@ -1137,6 +1232,114 @@ func (m *SourceMutation) ResetPosts() {
 	m.removedposts = nil
 }
 
+// AddSourceSummaryIDs adds the "source_summaries" edge to the Summary entity by ids.
+func (m *SourceMutation) AddSourceSummaryIDs(ids ...uuid.UUID) {
+	if m.source_summaries == nil {
+		m.source_summaries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.source_summaries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSourceSummaries clears the "source_summaries" edge to the Summary entity.
+func (m *SourceMutation) ClearSourceSummaries() {
+	m.clearedsource_summaries = true
+}
+
+// SourceSummariesCleared reports if the "source_summaries" edge to the Summary entity was cleared.
+func (m *SourceMutation) SourceSummariesCleared() bool {
+	return m.clearedsource_summaries
+}
+
+// RemoveSourceSummaryIDs removes the "source_summaries" edge to the Summary entity by IDs.
+func (m *SourceMutation) RemoveSourceSummaryIDs(ids ...uuid.UUID) {
+	if m.removedsource_summaries == nil {
+		m.removedsource_summaries = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.source_summaries, ids[i])
+		m.removedsource_summaries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSourceSummaries returns the removed IDs of the "source_summaries" edge to the Summary entity.
+func (m *SourceMutation) RemovedSourceSummariesIDs() (ids []uuid.UUID) {
+	for id := range m.removedsource_summaries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SourceSummariesIDs returns the "source_summaries" edge IDs in the mutation.
+func (m *SourceMutation) SourceSummariesIDs() (ids []uuid.UUID) {
+	for id := range m.source_summaries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSourceSummaries resets all changes to the "source_summaries" edge.
+func (m *SourceMutation) ResetSourceSummaries() {
+	m.source_summaries = nil
+	m.clearedsource_summaries = false
+	m.removedsource_summaries = nil
+}
+
+// AddSummaryEventIDs adds the "summary_events" edge to the SummaryEvent entity by ids.
+func (m *SourceMutation) AddSummaryEventIDs(ids ...uuid.UUID) {
+	if m.summary_events == nil {
+		m.summary_events = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.summary_events[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSummaryEvents clears the "summary_events" edge to the SummaryEvent entity.
+func (m *SourceMutation) ClearSummaryEvents() {
+	m.clearedsummary_events = true
+}
+
+// SummaryEventsCleared reports if the "summary_events" edge to the SummaryEvent entity was cleared.
+func (m *SourceMutation) SummaryEventsCleared() bool {
+	return m.clearedsummary_events
+}
+
+// RemoveSummaryEventIDs removes the "summary_events" edge to the SummaryEvent entity by IDs.
+func (m *SourceMutation) RemoveSummaryEventIDs(ids ...uuid.UUID) {
+	if m.removedsummary_events == nil {
+		m.removedsummary_events = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.summary_events, ids[i])
+		m.removedsummary_events[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSummaryEvents returns the removed IDs of the "summary_events" edge to the SummaryEvent entity.
+func (m *SourceMutation) RemovedSummaryEventsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsummary_events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SummaryEventsIDs returns the "summary_events" edge IDs in the mutation.
+func (m *SourceMutation) SummaryEventsIDs() (ids []uuid.UUID) {
+	for id := range m.summary_events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSummaryEvents resets all changes to the "summary_events" edge.
+func (m *SourceMutation) ResetSummaryEvents() {
+	m.summary_events = nil
+	m.clearedsummary_events = false
+	m.removedsummary_events = nil
+}
+
 // Where appends a list predicates to the SourceMutation builder.
 func (m *SourceMutation) Where(ps ...predicate.Source) {
 	m.predicates = append(m.predicates, ps...)
@@ -1321,9 +1524,15 @@ func (m *SourceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *SourceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.posts != nil {
 		edges = append(edges, source.EdgePosts)
+	}
+	if m.source_summaries != nil {
+		edges = append(edges, source.EdgeSourceSummaries)
+	}
+	if m.summary_events != nil {
+		edges = append(edges, source.EdgeSummaryEvents)
 	}
 	return edges
 }
@@ -1338,15 +1547,33 @@ func (m *SourceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case source.EdgeSourceSummaries:
+		ids := make([]ent.Value, 0, len(m.source_summaries))
+		for id := range m.source_summaries {
+			ids = append(ids, id)
+		}
+		return ids
+	case source.EdgeSummaryEvents:
+		ids := make([]ent.Value, 0, len(m.summary_events))
+		for id := range m.summary_events {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *SourceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.removedposts != nil {
 		edges = append(edges, source.EdgePosts)
+	}
+	if m.removedsource_summaries != nil {
+		edges = append(edges, source.EdgeSourceSummaries)
+	}
+	if m.removedsummary_events != nil {
+		edges = append(edges, source.EdgeSummaryEvents)
 	}
 	return edges
 }
@@ -1361,15 +1588,33 @@ func (m *SourceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case source.EdgeSourceSummaries:
+		ids := make([]ent.Value, 0, len(m.removedsource_summaries))
+		for id := range m.removedsource_summaries {
+			ids = append(ids, id)
+		}
+		return ids
+	case source.EdgeSummaryEvents:
+		ids := make([]ent.Value, 0, len(m.removedsummary_events))
+		for id := range m.removedsummary_events {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *SourceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 3)
 	if m.clearedposts {
 		edges = append(edges, source.EdgePosts)
+	}
+	if m.clearedsource_summaries {
+		edges = append(edges, source.EdgeSourceSummaries)
+	}
+	if m.clearedsummary_events {
+		edges = append(edges, source.EdgeSummaryEvents)
 	}
 	return edges
 }
@@ -1380,6 +1625,10 @@ func (m *SourceMutation) EdgeCleared(name string) bool {
 	switch name {
 	case source.EdgePosts:
 		return m.clearedposts
+	case source.EdgeSourceSummaries:
+		return m.clearedsource_summaries
+	case source.EdgeSummaryEvents:
+		return m.clearedsummary_events
 	}
 	return false
 }
@@ -1399,6 +1648,1561 @@ func (m *SourceMutation) ResetEdge(name string) error {
 	case source.EdgePosts:
 		m.ResetPosts()
 		return nil
+	case source.EdgeSourceSummaries:
+		m.ResetSourceSummaries()
+		return nil
+	case source.EdgeSummaryEvents:
+		m.ResetSummaryEvents()
+		return nil
 	}
 	return fmt.Errorf("unknown Source edge %s", name)
+}
+
+// SummaryMutation represents an operation that mutates the Summary nodes in the graph.
+type SummaryMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	text          *string
+	word_count    *int
+	addword_count *int
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	post          *uuid.UUID
+	clearedpost   bool
+	source        *uuid.UUID
+	clearedsource bool
+	done          bool
+	oldValue      func(context.Context) (*Summary, error)
+	predicates    []predicate.Summary
+}
+
+var _ ent.Mutation = (*SummaryMutation)(nil)
+
+// summaryOption allows management of the mutation configuration using functional options.
+type summaryOption func(*SummaryMutation)
+
+// newSummaryMutation creates new mutation for the Summary entity.
+func newSummaryMutation(c config, op Op, opts ...summaryOption) *SummaryMutation {
+	m := &SummaryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSummary,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSummaryID sets the ID field of the mutation.
+func withSummaryID(id uuid.UUID) summaryOption {
+	return func(m *SummaryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Summary
+		)
+		m.oldValue = func(ctx context.Context) (*Summary, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Summary.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSummary sets the old Summary of the mutation.
+func withSummary(node *Summary) summaryOption {
+	return func(m *SummaryMutation) {
+		m.oldValue = func(context.Context) (*Summary, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SummaryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SummaryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Summary entities.
+func (m *SummaryMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SummaryMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SummaryMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Summary.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPostID sets the "post_id" field.
+func (m *SummaryMutation) SetPostID(u uuid.UUID) {
+	m.post = &u
+}
+
+// PostID returns the value of the "post_id" field in the mutation.
+func (m *SummaryMutation) PostID() (r uuid.UUID, exists bool) {
+	v := m.post
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostID returns the old "post_id" field's value of the Summary entity.
+// If the Summary object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryMutation) OldPostID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostID: %w", err)
+	}
+	return oldValue.PostID, nil
+}
+
+// ClearPostID clears the value of the "post_id" field.
+func (m *SummaryMutation) ClearPostID() {
+	m.post = nil
+	m.clearedFields[summary.FieldPostID] = struct{}{}
+}
+
+// PostIDCleared returns if the "post_id" field was cleared in this mutation.
+func (m *SummaryMutation) PostIDCleared() bool {
+	_, ok := m.clearedFields[summary.FieldPostID]
+	return ok
+}
+
+// ResetPostID resets all changes to the "post_id" field.
+func (m *SummaryMutation) ResetPostID() {
+	m.post = nil
+	delete(m.clearedFields, summary.FieldPostID)
+}
+
+// SetSourceID sets the "source_id" field.
+func (m *SummaryMutation) SetSourceID(u uuid.UUID) {
+	m.source = &u
+}
+
+// SourceID returns the value of the "source_id" field in the mutation.
+func (m *SummaryMutation) SourceID() (r uuid.UUID, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceID returns the old "source_id" field's value of the Summary entity.
+// If the Summary object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryMutation) OldSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceID: %w", err)
+	}
+	return oldValue.SourceID, nil
+}
+
+// ResetSourceID resets all changes to the "source_id" field.
+func (m *SummaryMutation) ResetSourceID() {
+	m.source = nil
+}
+
+// SetText sets the "text" field.
+func (m *SummaryMutation) SetText(s string) {
+	m.text = &s
+}
+
+// Text returns the value of the "text" field in the mutation.
+func (m *SummaryMutation) Text() (r string, exists bool) {
+	v := m.text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldText returns the old "text" field's value of the Summary entity.
+// If the Summary object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryMutation) OldText(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldText: %w", err)
+	}
+	return oldValue.Text, nil
+}
+
+// ResetText resets all changes to the "text" field.
+func (m *SummaryMutation) ResetText() {
+	m.text = nil
+}
+
+// SetWordCount sets the "word_count" field.
+func (m *SummaryMutation) SetWordCount(i int) {
+	m.word_count = &i
+	m.addword_count = nil
+}
+
+// WordCount returns the value of the "word_count" field in the mutation.
+func (m *SummaryMutation) WordCount() (r int, exists bool) {
+	v := m.word_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWordCount returns the old "word_count" field's value of the Summary entity.
+// If the Summary object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryMutation) OldWordCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWordCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWordCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWordCount: %w", err)
+	}
+	return oldValue.WordCount, nil
+}
+
+// AddWordCount adds i to the "word_count" field.
+func (m *SummaryMutation) AddWordCount(i int) {
+	if m.addword_count != nil {
+		*m.addword_count += i
+	} else {
+		m.addword_count = &i
+	}
+}
+
+// AddedWordCount returns the value that was added to the "word_count" field in this mutation.
+func (m *SummaryMutation) AddedWordCount() (r int, exists bool) {
+	v := m.addword_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWordCount resets all changes to the "word_count" field.
+func (m *SummaryMutation) ResetWordCount() {
+	m.word_count = nil
+	m.addword_count = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SummaryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SummaryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Summary entity.
+// If the Summary object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SummaryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearPost clears the "post" edge to the Post entity.
+func (m *SummaryMutation) ClearPost() {
+	m.clearedpost = true
+	m.clearedFields[summary.FieldPostID] = struct{}{}
+}
+
+// PostCleared reports if the "post" edge to the Post entity was cleared.
+func (m *SummaryMutation) PostCleared() bool {
+	return m.PostIDCleared() || m.clearedpost
+}
+
+// PostIDs returns the "post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PostID instead. It exists only for internal usage by the builders.
+func (m *SummaryMutation) PostIDs() (ids []uuid.UUID) {
+	if id := m.post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPost resets all changes to the "post" edge.
+func (m *SummaryMutation) ResetPost() {
+	m.post = nil
+	m.clearedpost = false
+}
+
+// ClearSource clears the "source" edge to the Source entity.
+func (m *SummaryMutation) ClearSource() {
+	m.clearedsource = true
+	m.clearedFields[summary.FieldSourceID] = struct{}{}
+}
+
+// SourceCleared reports if the "source" edge to the Source entity was cleared.
+func (m *SummaryMutation) SourceCleared() bool {
+	return m.clearedsource
+}
+
+// SourceIDs returns the "source" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SourceID instead. It exists only for internal usage by the builders.
+func (m *SummaryMutation) SourceIDs() (ids []uuid.UUID) {
+	if id := m.source; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSource resets all changes to the "source" edge.
+func (m *SummaryMutation) ResetSource() {
+	m.source = nil
+	m.clearedsource = false
+}
+
+// Where appends a list predicates to the SummaryMutation builder.
+func (m *SummaryMutation) Where(ps ...predicate.Summary) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SummaryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SummaryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Summary, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SummaryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SummaryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Summary).
+func (m *SummaryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SummaryMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.post != nil {
+		fields = append(fields, summary.FieldPostID)
+	}
+	if m.source != nil {
+		fields = append(fields, summary.FieldSourceID)
+	}
+	if m.text != nil {
+		fields = append(fields, summary.FieldText)
+	}
+	if m.word_count != nil {
+		fields = append(fields, summary.FieldWordCount)
+	}
+	if m.created_at != nil {
+		fields = append(fields, summary.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SummaryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case summary.FieldPostID:
+		return m.PostID()
+	case summary.FieldSourceID:
+		return m.SourceID()
+	case summary.FieldText:
+		return m.Text()
+	case summary.FieldWordCount:
+		return m.WordCount()
+	case summary.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SummaryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case summary.FieldPostID:
+		return m.OldPostID(ctx)
+	case summary.FieldSourceID:
+		return m.OldSourceID(ctx)
+	case summary.FieldText:
+		return m.OldText(ctx)
+	case summary.FieldWordCount:
+		return m.OldWordCount(ctx)
+	case summary.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Summary field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SummaryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case summary.FieldPostID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostID(v)
+		return nil
+	case summary.FieldSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceID(v)
+		return nil
+	case summary.FieldText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetText(v)
+		return nil
+	case summary.FieldWordCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWordCount(v)
+		return nil
+	case summary.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Summary field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SummaryMutation) AddedFields() []string {
+	var fields []string
+	if m.addword_count != nil {
+		fields = append(fields, summary.FieldWordCount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SummaryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case summary.FieldWordCount:
+		return m.AddedWordCount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SummaryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case summary.FieldWordCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWordCount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Summary numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SummaryMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(summary.FieldPostID) {
+		fields = append(fields, summary.FieldPostID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SummaryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SummaryMutation) ClearField(name string) error {
+	switch name {
+	case summary.FieldPostID:
+		m.ClearPostID()
+		return nil
+	}
+	return fmt.Errorf("unknown Summary nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SummaryMutation) ResetField(name string) error {
+	switch name {
+	case summary.FieldPostID:
+		m.ResetPostID()
+		return nil
+	case summary.FieldSourceID:
+		m.ResetSourceID()
+		return nil
+	case summary.FieldText:
+		m.ResetText()
+		return nil
+	case summary.FieldWordCount:
+		m.ResetWordCount()
+		return nil
+	case summary.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Summary field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SummaryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.post != nil {
+		edges = append(edges, summary.EdgePost)
+	}
+	if m.source != nil {
+		edges = append(edges, summary.EdgeSource)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SummaryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case summary.EdgePost:
+		if id := m.post; id != nil {
+			return []ent.Value{*id}
+		}
+	case summary.EdgeSource:
+		if id := m.source; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SummaryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SummaryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SummaryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedpost {
+		edges = append(edges, summary.EdgePost)
+	}
+	if m.clearedsource {
+		edges = append(edges, summary.EdgeSource)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SummaryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case summary.EdgePost:
+		return m.clearedpost
+	case summary.EdgeSource:
+		return m.clearedsource
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SummaryMutation) ClearEdge(name string) error {
+	switch name {
+	case summary.EdgePost:
+		m.ClearPost()
+		return nil
+	case summary.EdgeSource:
+		m.ClearSource()
+		return nil
+	}
+	return fmt.Errorf("unknown Summary unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SummaryMutation) ResetEdge(name string) error {
+	switch name {
+	case summary.EdgePost:
+		m.ResetPost()
+		return nil
+	case summary.EdgeSource:
+		m.ResetSource()
+		return nil
+	}
+	return fmt.Errorf("unknown Summary edge %s", name)
+}
+
+// SummaryEventMutation represents an operation that mutates the SummaryEvent nodes in the graph.
+type SummaryEventMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	post_id        *uuid.UUID
+	source_id      *uuid.UUID
+	event_type     *string
+	status         *string
+	error          *string
+	created_at     *time.Time
+	processed_at   *time.Time
+	clearedFields  map[string]struct{}
+	summary        *uuid.UUID
+	clearedsummary bool
+	done           bool
+	oldValue       func(context.Context) (*SummaryEvent, error)
+	predicates     []predicate.SummaryEvent
+}
+
+var _ ent.Mutation = (*SummaryEventMutation)(nil)
+
+// summaryeventOption allows management of the mutation configuration using functional options.
+type summaryeventOption func(*SummaryEventMutation)
+
+// newSummaryEventMutation creates new mutation for the SummaryEvent entity.
+func newSummaryEventMutation(c config, op Op, opts ...summaryeventOption) *SummaryEventMutation {
+	m := &SummaryEventMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSummaryEvent,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSummaryEventID sets the ID field of the mutation.
+func withSummaryEventID(id uuid.UUID) summaryeventOption {
+	return func(m *SummaryEventMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SummaryEvent
+		)
+		m.oldValue = func(ctx context.Context) (*SummaryEvent, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SummaryEvent.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSummaryEvent sets the old SummaryEvent of the mutation.
+func withSummaryEvent(node *SummaryEvent) summaryeventOption {
+	return func(m *SummaryEventMutation) {
+		m.oldValue = func(context.Context) (*SummaryEvent, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SummaryEventMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SummaryEventMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SummaryEvent entities.
+func (m *SummaryEventMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SummaryEventMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SummaryEventMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SummaryEvent.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPostID sets the "post_id" field.
+func (m *SummaryEventMutation) SetPostID(u uuid.UUID) {
+	m.post_id = &u
+}
+
+// PostID returns the value of the "post_id" field in the mutation.
+func (m *SummaryEventMutation) PostID() (r uuid.UUID, exists bool) {
+	v := m.post_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostID returns the old "post_id" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldPostID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostID: %w", err)
+	}
+	return oldValue.PostID, nil
+}
+
+// ClearPostID clears the value of the "post_id" field.
+func (m *SummaryEventMutation) ClearPostID() {
+	m.post_id = nil
+	m.clearedFields[summaryevent.FieldPostID] = struct{}{}
+}
+
+// PostIDCleared returns if the "post_id" field was cleared in this mutation.
+func (m *SummaryEventMutation) PostIDCleared() bool {
+	_, ok := m.clearedFields[summaryevent.FieldPostID]
+	return ok
+}
+
+// ResetPostID resets all changes to the "post_id" field.
+func (m *SummaryEventMutation) ResetPostID() {
+	m.post_id = nil
+	delete(m.clearedFields, summaryevent.FieldPostID)
+}
+
+// SetSourceID sets the "source_id" field.
+func (m *SummaryEventMutation) SetSourceID(u uuid.UUID) {
+	m.source_id = &u
+}
+
+// SourceID returns the value of the "source_id" field in the mutation.
+func (m *SummaryEventMutation) SourceID() (r uuid.UUID, exists bool) {
+	v := m.source_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceID returns the old "source_id" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldSourceID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceID: %w", err)
+	}
+	return oldValue.SourceID, nil
+}
+
+// ResetSourceID resets all changes to the "source_id" field.
+func (m *SummaryEventMutation) ResetSourceID() {
+	m.source_id = nil
+}
+
+// SetEventType sets the "event_type" field.
+func (m *SummaryEventMutation) SetEventType(s string) {
+	m.event_type = &s
+}
+
+// EventType returns the value of the "event_type" field in the mutation.
+func (m *SummaryEventMutation) EventType() (r string, exists bool) {
+	v := m.event_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventType returns the old "event_type" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldEventType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventType: %w", err)
+	}
+	return oldValue.EventType, nil
+}
+
+// ResetEventType resets all changes to the "event_type" field.
+func (m *SummaryEventMutation) ResetEventType() {
+	m.event_type = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *SummaryEventMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *SummaryEventMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *SummaryEventMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (m *SummaryEventMutation) SetSummaryID(u uuid.UUID) {
+	m.summary = &u
+}
+
+// SummaryID returns the value of the "summary_id" field in the mutation.
+func (m *SummaryEventMutation) SummaryID() (r uuid.UUID, exists bool) {
+	v := m.summary
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSummaryID returns the old "summary_id" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldSummaryID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSummaryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSummaryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSummaryID: %w", err)
+	}
+	return oldValue.SummaryID, nil
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (m *SummaryEventMutation) ClearSummaryID() {
+	m.summary = nil
+	m.clearedFields[summaryevent.FieldSummaryID] = struct{}{}
+}
+
+// SummaryIDCleared returns if the "summary_id" field was cleared in this mutation.
+func (m *SummaryEventMutation) SummaryIDCleared() bool {
+	_, ok := m.clearedFields[summaryevent.FieldSummaryID]
+	return ok
+}
+
+// ResetSummaryID resets all changes to the "summary_id" field.
+func (m *SummaryEventMutation) ResetSummaryID() {
+	m.summary = nil
+	delete(m.clearedFields, summaryevent.FieldSummaryID)
+}
+
+// SetError sets the "error" field.
+func (m *SummaryEventMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *SummaryEventMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldError(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ClearError clears the value of the "error" field.
+func (m *SummaryEventMutation) ClearError() {
+	m.error = nil
+	m.clearedFields[summaryevent.FieldError] = struct{}{}
+}
+
+// ErrorCleared returns if the "error" field was cleared in this mutation.
+func (m *SummaryEventMutation) ErrorCleared() bool {
+	_, ok := m.clearedFields[summaryevent.FieldError]
+	return ok
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *SummaryEventMutation) ResetError() {
+	m.error = nil
+	delete(m.clearedFields, summaryevent.FieldError)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SummaryEventMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SummaryEventMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SummaryEventMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetProcessedAt sets the "processed_at" field.
+func (m *SummaryEventMutation) SetProcessedAt(t time.Time) {
+	m.processed_at = &t
+}
+
+// ProcessedAt returns the value of the "processed_at" field in the mutation.
+func (m *SummaryEventMutation) ProcessedAt() (r time.Time, exists bool) {
+	v := m.processed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProcessedAt returns the old "processed_at" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldProcessedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProcessedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProcessedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProcessedAt: %w", err)
+	}
+	return oldValue.ProcessedAt, nil
+}
+
+// ClearProcessedAt clears the value of the "processed_at" field.
+func (m *SummaryEventMutation) ClearProcessedAt() {
+	m.processed_at = nil
+	m.clearedFields[summaryevent.FieldProcessedAt] = struct{}{}
+}
+
+// ProcessedAtCleared returns if the "processed_at" field was cleared in this mutation.
+func (m *SummaryEventMutation) ProcessedAtCleared() bool {
+	_, ok := m.clearedFields[summaryevent.FieldProcessedAt]
+	return ok
+}
+
+// ResetProcessedAt resets all changes to the "processed_at" field.
+func (m *SummaryEventMutation) ResetProcessedAt() {
+	m.processed_at = nil
+	delete(m.clearedFields, summaryevent.FieldProcessedAt)
+}
+
+// ClearSummary clears the "summary" edge to the Summary entity.
+func (m *SummaryEventMutation) ClearSummary() {
+	m.clearedsummary = true
+	m.clearedFields[summaryevent.FieldSummaryID] = struct{}{}
+}
+
+// SummaryCleared reports if the "summary" edge to the Summary entity was cleared.
+func (m *SummaryEventMutation) SummaryCleared() bool {
+	return m.SummaryIDCleared() || m.clearedsummary
+}
+
+// SummaryIDs returns the "summary" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SummaryID instead. It exists only for internal usage by the builders.
+func (m *SummaryEventMutation) SummaryIDs() (ids []uuid.UUID) {
+	if id := m.summary; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSummary resets all changes to the "summary" edge.
+func (m *SummaryEventMutation) ResetSummary() {
+	m.summary = nil
+	m.clearedsummary = false
+}
+
+// Where appends a list predicates to the SummaryEventMutation builder.
+func (m *SummaryEventMutation) Where(ps ...predicate.SummaryEvent) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SummaryEventMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SummaryEventMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SummaryEvent, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SummaryEventMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SummaryEventMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SummaryEvent).
+func (m *SummaryEventMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SummaryEventMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.post_id != nil {
+		fields = append(fields, summaryevent.FieldPostID)
+	}
+	if m.source_id != nil {
+		fields = append(fields, summaryevent.FieldSourceID)
+	}
+	if m.event_type != nil {
+		fields = append(fields, summaryevent.FieldEventType)
+	}
+	if m.status != nil {
+		fields = append(fields, summaryevent.FieldStatus)
+	}
+	if m.summary != nil {
+		fields = append(fields, summaryevent.FieldSummaryID)
+	}
+	if m.error != nil {
+		fields = append(fields, summaryevent.FieldError)
+	}
+	if m.created_at != nil {
+		fields = append(fields, summaryevent.FieldCreatedAt)
+	}
+	if m.processed_at != nil {
+		fields = append(fields, summaryevent.FieldProcessedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SummaryEventMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case summaryevent.FieldPostID:
+		return m.PostID()
+	case summaryevent.FieldSourceID:
+		return m.SourceID()
+	case summaryevent.FieldEventType:
+		return m.EventType()
+	case summaryevent.FieldStatus:
+		return m.Status()
+	case summaryevent.FieldSummaryID:
+		return m.SummaryID()
+	case summaryevent.FieldError:
+		return m.Error()
+	case summaryevent.FieldCreatedAt:
+		return m.CreatedAt()
+	case summaryevent.FieldProcessedAt:
+		return m.ProcessedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SummaryEventMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case summaryevent.FieldPostID:
+		return m.OldPostID(ctx)
+	case summaryevent.FieldSourceID:
+		return m.OldSourceID(ctx)
+	case summaryevent.FieldEventType:
+		return m.OldEventType(ctx)
+	case summaryevent.FieldStatus:
+		return m.OldStatus(ctx)
+	case summaryevent.FieldSummaryID:
+		return m.OldSummaryID(ctx)
+	case summaryevent.FieldError:
+		return m.OldError(ctx)
+	case summaryevent.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case summaryevent.FieldProcessedAt:
+		return m.OldProcessedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown SummaryEvent field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SummaryEventMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case summaryevent.FieldPostID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostID(v)
+		return nil
+	case summaryevent.FieldSourceID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceID(v)
+		return nil
+	case summaryevent.FieldEventType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventType(v)
+		return nil
+	case summaryevent.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case summaryevent.FieldSummaryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSummaryID(v)
+		return nil
+	case summaryevent.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case summaryevent.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case summaryevent.FieldProcessedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProcessedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SummaryEvent field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SummaryEventMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SummaryEventMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SummaryEventMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown SummaryEvent numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SummaryEventMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(summaryevent.FieldPostID) {
+		fields = append(fields, summaryevent.FieldPostID)
+	}
+	if m.FieldCleared(summaryevent.FieldSummaryID) {
+		fields = append(fields, summaryevent.FieldSummaryID)
+	}
+	if m.FieldCleared(summaryevent.FieldError) {
+		fields = append(fields, summaryevent.FieldError)
+	}
+	if m.FieldCleared(summaryevent.FieldProcessedAt) {
+		fields = append(fields, summaryevent.FieldProcessedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SummaryEventMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SummaryEventMutation) ClearField(name string) error {
+	switch name {
+	case summaryevent.FieldPostID:
+		m.ClearPostID()
+		return nil
+	case summaryevent.FieldSummaryID:
+		m.ClearSummaryID()
+		return nil
+	case summaryevent.FieldError:
+		m.ClearError()
+		return nil
+	case summaryevent.FieldProcessedAt:
+		m.ClearProcessedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SummaryEvent nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SummaryEventMutation) ResetField(name string) error {
+	switch name {
+	case summaryevent.FieldPostID:
+		m.ResetPostID()
+		return nil
+	case summaryevent.FieldSourceID:
+		m.ResetSourceID()
+		return nil
+	case summaryevent.FieldEventType:
+		m.ResetEventType()
+		return nil
+	case summaryevent.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case summaryevent.FieldSummaryID:
+		m.ResetSummaryID()
+		return nil
+	case summaryevent.FieldError:
+		m.ResetError()
+		return nil
+	case summaryevent.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case summaryevent.FieldProcessedAt:
+		m.ResetProcessedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown SummaryEvent field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SummaryEventMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.summary != nil {
+		edges = append(edges, summaryevent.EdgeSummary)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SummaryEventMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case summaryevent.EdgeSummary:
+		if id := m.summary; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SummaryEventMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SummaryEventMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SummaryEventMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedsummary {
+		edges = append(edges, summaryevent.EdgeSummary)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SummaryEventMutation) EdgeCleared(name string) bool {
+	switch name {
+	case summaryevent.EdgeSummary:
+		return m.clearedsummary
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SummaryEventMutation) ClearEdge(name string) error {
+	switch name {
+	case summaryevent.EdgeSummary:
+		m.ClearSummary()
+		return nil
+	}
+	return fmt.Errorf("unknown SummaryEvent unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SummaryEventMutation) ResetEdge(name string) error {
+	switch name {
+	case summaryevent.EdgeSummary:
+		m.ResetSummary()
+		return nil
+	}
+	return fmt.Errorf("unknown SummaryEvent edge %s", name)
 }

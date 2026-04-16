@@ -76,9 +76,10 @@ type Source struct {
 
 // ListSourcesFilter defines filtering and pagination for listing sources.
 type ListSourcesFilter struct {
-	Type      SourceType
-	PageSize  int
-	PageToken string
+	Type           SourceType
+	PageSize       int
+	PageToken      string
+	ProcessingMode *ProcessingMode
 }
 
 // ListSourcesResult holds results from listing sources.

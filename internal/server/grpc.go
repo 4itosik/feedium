@@ -10,6 +10,7 @@ import (
 	healthservice "github.com/4itosik/feedium/internal/service/health"
 	postservice "github.com/4itosik/feedium/internal/service/post"
 	sourceservice "github.com/4itosik/feedium/internal/service/source"
+	summaryservice "github.com/4itosik/feedium/internal/service/summary"
 )
 
 func NewGRPCServer(
@@ -17,6 +18,7 @@ func NewGRPCServer(
 	hs *healthservice.HealthService,
 	ss *sourceservice.SourceService,
 	ps *postservice.PostService,
+	sms *summaryservice.SummaryService,
 	_ *slog.Logger,
 ) *grpc.Server {
 	var opts []grpc.ServerOption
@@ -30,5 +32,6 @@ func NewGRPCServer(
 	feediumv1.RegisterHealthServiceServer(srv, hs)
 	feediumv1.RegisterSourceServiceServer(srv, ss)
 	feediumv1.RegisterPostServiceServer(srv, ps)
+	feediumv1.RegisterSummaryServiceServer(srv, sms)
 	return srv
 }

@@ -14,6 +14,8 @@ import (
 	"github.com/4itosik/feedium/internal/service/health"
 	"github.com/4itosik/feedium/internal/service/post"
 	"github.com/4itosik/feedium/internal/service/source"
+	"github.com/4itosik/feedium/internal/service/summary"
+	"github.com/4itosik/feedium/internal/task"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 	"github.com/go-kratos/kratos/v2/transport/http"
@@ -35,11 +37,25 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	sourceUsecase := biz.NewSourceUsecase(sourceRepo)
 	sourceService := source.NewSourceService(sourceUsecase)
 	postRepo := data.NewPostRepo(dataData)
-	postUsecase := biz.NewPostUsecase(postRepo)
+	txManager := data.NewTxManager(dataData)
+	summaryOutboxRepo := data.NewSummaryOutboxRepo(dataData)
+	postUsecase := biz.NewPostUsecase(postRepo, txManager, summaryOutboxRepo, sourceRepo)
 	postService := post.NewPostService(postUsecase)
-	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, logger)
-	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, logger)
-	app := newApp(logger, httpServer, grpcServer)
+	summaryRepo := data.NewSummaryRepo(dataData)
+	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo)
+	summaryService := summary.NewSummaryService(summaryUsecase)
+	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, summaryService, logger)
+	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, summaryService, logger)
+	summaryLLM := newSummaryLLMFromBootstrap(bc)
+	openRouterProvider, err := data.NewOpenRouterProvider(summaryLLM, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	confSummary := newSummaryConfigFromBootstrap(bc)
+	summaryWorker := task.NewSummaryWorker(summaryOutboxRepo, postRepo, summaryRepo, openRouterProvider, confSummary, logger)
+	cronWorker := task.NewCronWorker(summaryOutboxRepo, sourceRepo, summaryRepo, postRepo, confSummary, logger)
+	app := newApp(logger, httpServer, grpcServer, summaryWorker, cronWorker)
 	return app, func() {
 		cleanup()
 	}, nil
@@ -47,8 +63,8 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 
 // wire.go:
 
-func newApp(logger *slog.Logger, hs *http.Server, gs *grpc.Server) *kratos.App {
-	return kratos.New(kratos.Name("feedium"), kratos.Server(hs, gs))
+func newApp(logger *slog.Logger, hs *http.Server, gs *grpc.Server, sw *task.SummaryWorker, cw *task.CronWorker) *kratos.App {
+	return kratos.New(kratos.Name("feedium"), kratos.Server(hs, gs, sw, cw))
 }
 
 func newDataFromBootstrap(bc *conf.Bootstrap) *conf.Data {
@@ -57,4 +73,15 @@ func newDataFromBootstrap(bc *conf.Bootstrap) *conf.Data {
 
 func newServerFromBootstrap(bc *conf.Bootstrap) *conf.Server {
 	return bc.GetServer()
+}
+
+func newSummaryConfigFromBootstrap(bc *conf.Bootstrap) *conf.Summary {
+	return bc.GetSummary()
+}
+
+func newSummaryLLMFromBootstrap(bc *conf.Bootstrap) *conf.SummaryLLM {
+	if bc.GetSummary() == nil {
+		return nil
+	}
+	return bc.GetSummary().GetLlm()
 }

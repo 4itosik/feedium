@@ -140,7 +140,7 @@ func TestIntegration_PostSave(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		saved, err := postRepo.Save(ctx, post)
+		saved, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 		assert.Equal(t, post.ID, saved.ID)
 		assert.Equal(t, sourceID, saved.SourceID)
@@ -166,7 +166,7 @@ func TestIntegration_PostSave(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		saved, err := postRepo.Save(ctx, post)
+		saved, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 		assert.Nil(t, saved.Author)
 	})
@@ -184,7 +184,7 @@ func TestIntegration_PostSave(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		saved, err := postRepo.Save(ctx, post)
+		saved, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 		assert.NotNil(t, saved.Metadata)
 	})
@@ -202,7 +202,7 @@ func TestIntegration_PostSave(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		_, err := postRepo.Save(ctx, post)
+		_, _, err := postRepo.Save(ctx, post)
 		assert.ErrorIs(t, err, biz.ErrPostSourceNotFound)
 	})
 
@@ -221,7 +221,7 @@ func TestIntegration_PostSave(t *testing.T) {
 		}
 
 		// First save
-		first, err := postRepo.Save(ctx, post)
+		first, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 
 		// Second save with same (source_id, external_id) but different text
@@ -236,7 +236,7 @@ func TestIntegration_PostSave(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		second, err := postRepo.Save(ctx, post2)
+		second, _, err := postRepo.Save(ctx, post2)
 		require.NoError(t, err)
 
 		// Should return the first post without modification
@@ -269,7 +269,7 @@ func TestIntegration_PostUpdate(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		saved, err := postRepo.Save(ctx, post)
+		saved, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 
 		// Small delay to ensure UpdatedAt changes
@@ -330,7 +330,7 @@ func TestIntegration_PostUpdate(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		saved, err := postRepo.Save(ctx, post)
+		saved, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 		assert.NotNil(t, saved.Author)
 
@@ -365,7 +365,7 @@ func TestIntegration_PostUpdate(t *testing.T) {
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
-		_, err := postRepo.Save(ctx, post1)
+		_, _, err := postRepo.Save(ctx, post1)
 		require.NoError(t, err)
 
 		// Create second post with different external_id
@@ -379,7 +379,7 @@ func TestIntegration_PostUpdate(t *testing.T) {
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
-		_, err = postRepo.Save(ctx, post2)
+		_, _, err = postRepo.Save(ctx, post2)
 		require.NoError(t, err)
 
 		// Try to update second post to use first post's external_id
@@ -412,7 +412,7 @@ func TestIntegration_PostDelete(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		saved, err := postRepo.Save(ctx, post)
+		saved, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 
 		err = postRepo.Delete(ctx, saved.ID)
@@ -453,7 +453,7 @@ func TestIntegration_PostGet(t *testing.T) {
 			UpdatedAt:   now,
 		}
 
-		saved, err := postRepo.Save(ctx, post)
+		saved, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 
 		fetched, err := postRepo.Get(ctx, saved.ID)
@@ -499,7 +499,7 @@ func TestIntegration_PostList(t *testing.T) {
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
-		_, err := postRepo.Save(ctx, post)
+		_, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 	}
 
@@ -517,7 +517,7 @@ func TestIntegration_PostList(t *testing.T) {
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
-		_, err := postRepo.Save(ctx, post)
+		_, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 	}
 
@@ -654,7 +654,7 @@ func TestIntegration_PostGetSQLCount(t *testing.T) {
 		UpdatedAt:   now,
 	}
 
-	saved, err := postRepo.Save(ctx, post)
+	saved, _, err := postRepo.Save(ctx, post)
 	require.NoError(t, err)
 
 	// Reset counter to only count Get query
@@ -696,7 +696,7 @@ func TestIntegration_PostListSQLCount(t *testing.T) {
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
-		_, err := postRepo.Save(ctx, post)
+		_, _, err := postRepo.Save(ctx, post)
 		require.NoError(t, err)
 	}
 

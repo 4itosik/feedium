@@ -33,6 +33,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeSource holds the string denoting the source edge name in mutations.
 	EdgeSource = "source"
+	// EdgeSummaries holds the string denoting the summaries edge name in mutations.
+	EdgeSummaries = "summaries"
 	// Table holds the table name of the post in the database.
 	Table = "posts"
 	// SourceTable is the table that holds the source relation/edge.
@@ -42,6 +44,13 @@ const (
 	SourceInverseTable = "sources"
 	// SourceColumn is the table column denoting the source relation/edge.
 	SourceColumn = "source_id"
+	// SummariesTable is the table that holds the summaries relation/edge.
+	SummariesTable = "summaries"
+	// SummariesInverseTable is the table name for the Summary entity.
+	// It exists in this package in order to avoid circular dependency with the "summary" package.
+	SummariesInverseTable = "summaries"
+	// SummariesColumn is the table column denoting the summaries relation/edge.
+	SummariesColumn = "post_id"
 )
 
 // Columns holds all SQL columns for post fields.
@@ -133,10 +142,31 @@ func BySourceField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newSourceStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// BySummariesCount orders the results by summaries count.
+func BySummariesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSummariesStep(), opts...)
+	}
+}
+
+// BySummaries orders the results by summaries terms.
+func BySummaries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSummariesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newSourceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SourceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, SourceTable, SourceColumn),
+	)
+}
+func newSummariesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SummariesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SummariesTable, SummariesColumn),
 	)
 }

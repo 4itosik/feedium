@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
 	"github.com/google/uuid"
 )
 
@@ -111,6 +112,21 @@ func (_c *PostCreate) SetNillableID(v *uuid.UUID) *PostCreate {
 // SetSource sets the "source" edge to the Source entity.
 func (_c *PostCreate) SetSource(v *Source) *PostCreate {
 	return _c.SetSourceID(v.ID)
+}
+
+// AddSummaryIDs adds the "summaries" edge to the Summary entity by IDs.
+func (_c *PostCreate) AddSummaryIDs(ids ...uuid.UUID) *PostCreate {
+	_c.mutation.AddSummaryIDs(ids...)
+	return _c
+}
+
+// AddSummaries adds the "summaries" edges to the Summary entity.
+func (_c *PostCreate) AddSummaries(v ...*Summary) *PostCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSummaryIDs(ids...)
 }
 
 // Mutation returns the PostMutation object of the builder.
@@ -280,6 +296,22 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.SourceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SummariesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SummariesTable,
+			Columns: []string{post.SummariesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(summary.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

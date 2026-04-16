@@ -30,15 +30,15 @@ func NewPostRepo(data *Data) *postRepo {
 
 // Save creates a new post in the database using upsert (idempotent).
 // If post with same (source_id, external_id) exists, returns existing without modification.
-func (pr *postRepo) Save(ctx context.Context, post biz.Post) (biz.Post, error) {
+func (pr *postRepo) Save(ctx context.Context, post biz.Post) (biz.Post, bool, error) {
 	sourceID, err := uuid.Parse(post.SourceID)
 	if err != nil {
-		return biz.Post{}, fmt.Errorf("invalid source id: %w", err)
+		return biz.Post{}, false, fmt.Errorf("invalid source id: %w", err)
 	}
 
 	postID, err := uuid.Parse(post.ID)
 	if err != nil {
-		return biz.Post{}, fmt.Errorf("invalid post id: %w", err)
+		return biz.Post{}, false, fmt.Errorf("invalid post id: %w", err)
 	}
 
 	// Ensure metadata is not nil (use empty map as default)
@@ -66,24 +66,25 @@ func (pr *postRepo) Save(ctx context.Context, post biz.Post) (biz.Post, error) {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			// Unique violation - fetch existing post
-			return pr.getBySourceAndExternalID(ctx, sourceID, post.ExternalID)
+			existing, fetchErr := pr.getBySourceAndExternalID(ctx, sourceID, post.ExternalID)
+			return existing, false, fetchErr
 		}
 
 		// Check for FK violation (source doesn't exist)
 		if errors.As(err, &pqErr) && pqErr.Code == "23503" {
-			return biz.Post{}, biz.ErrPostSourceNotFound
+			return biz.Post{}, false, biz.ErrPostSourceNotFound
 		}
 
-		return biz.Post{}, fmt.Errorf("save post: %w", err)
+		return biz.Post{}, false, fmt.Errorf("save post: %w", err)
 	}
 
 	// Get the source info for eager loading
 	src, err := pr.data.Ent.Source.Get(ctx, entPost.SourceID)
 	if err != nil {
-		return biz.Post{}, fmt.Errorf("get source for post: %w", err)
+		return biz.Post{}, false, fmt.Errorf("get source for post: %w", err)
 	}
 
-	return pr.mapEntToDomain(entPost, src), nil
+	return pr.mapEntToDomain(entPost, src), true, nil
 }
 
 // getBySourceAndExternalID fetches existing post by (source_id, external_id) with source info.
@@ -202,6 +203,13 @@ func (pr *postRepo) List(ctx context.Context, filter biz.ListPostsFilter) (biz.L
 			return biz.ListPostsResult{}, fmt.Errorf("invalid source id: %w", err)
 		}
 		query = query.Where(post.SourceIDEQ(sourceID))
+	}
+
+	if filter.CreatedAfter != nil {
+		query = query.Where(post.CreatedAtGTE(*filter.CreatedAfter))
+	}
+	if filter.CreatedBefore != nil {
+		query = query.Where(post.CreatedAtLT(*filter.CreatedBefore))
 	}
 
 	// Get sort field and direction

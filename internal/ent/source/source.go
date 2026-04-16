@@ -25,6 +25,10 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
+	// EdgeSourceSummaries holds the string denoting the source_summaries edge name in mutations.
+	EdgeSourceSummaries = "source_summaries"
+	// EdgeSummaryEvents holds the string denoting the summary_events edge name in mutations.
+	EdgeSummaryEvents = "summary_events"
 	// Table holds the table name of the source in the database.
 	Table = "sources"
 	// PostsTable is the table that holds the posts relation/edge.
@@ -34,6 +38,20 @@ const (
 	PostsInverseTable = "posts"
 	// PostsColumn is the table column denoting the posts relation/edge.
 	PostsColumn = "source_id"
+	// SourceSummariesTable is the table that holds the source_summaries relation/edge.
+	SourceSummariesTable = "summaries"
+	// SourceSummariesInverseTable is the table name for the Summary entity.
+	// It exists in this package in order to avoid circular dependency with the "summary" package.
+	SourceSummariesInverseTable = "summaries"
+	// SourceSummariesColumn is the table column denoting the source_summaries relation/edge.
+	SourceSummariesColumn = "source_id"
+	// SummaryEventsTable is the table that holds the summary_events relation/edge.
+	SummaryEventsTable = "summary_events"
+	// SummaryEventsInverseTable is the table name for the SummaryEvent entity.
+	// It exists in this package in order to avoid circular dependency with the "summaryevent" package.
+	SummaryEventsInverseTable = "summary_events"
+	// SummaryEventsColumn is the table column denoting the summary_events relation/edge.
+	SummaryEventsColumn = "source_summary_events"
 )
 
 // Columns holds all SQL columns for source fields.
@@ -104,10 +122,52 @@ func ByPosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPostsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySourceSummariesCount orders the results by source_summaries count.
+func BySourceSummariesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSourceSummariesStep(), opts...)
+	}
+}
+
+// BySourceSummaries orders the results by source_summaries terms.
+func BySourceSummaries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSourceSummariesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySummaryEventsCount orders the results by summary_events count.
+func BySummaryEventsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSummaryEventsStep(), opts...)
+	}
+}
+
+// BySummaryEvents orders the results by summary_events terms.
+func BySummaryEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSummaryEventsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newPostsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PostsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PostsTable, PostsColumn),
+	)
+}
+func newSourceSummariesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SourceSummariesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SourceSummariesTable, SourceSummariesColumn),
+	)
+}
+func newSummaryEventsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SummaryEventsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SummaryEventsTable, SummaryEventsColumn),
 	)
 }

@@ -46,9 +46,11 @@ type Post struct {
 type PostEdges struct {
 	// Source holds the value of the source edge.
 	Source *Source `json:"source,omitempty"`
+	// Summaries holds the value of the summaries edge.
+	Summaries []*Summary `json:"summaries,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // SourceOrErr returns the Source value or an error if the edge
@@ -60,6 +62,15 @@ func (e PostEdges) SourceOrErr() (*Source, error) {
 		return nil, &NotFoundError{label: source.Label}
 	}
 	return nil, &NotLoadedError{edge: "source"}
+}
+
+// SummariesOrErr returns the Summaries value or an error if the edge
+// was not loaded in eager-loading.
+func (e PostEdges) SummariesOrErr() ([]*Summary, error) {
+	if e.loadedTypes[1] {
+		return e.Summaries, nil
+	}
+	return nil, &NotLoadedError{edge: "summaries"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -163,6 +174,11 @@ func (_m *Post) Value(name string) (ent.Value, error) {
 // QuerySource queries the "source" edge of the Post entity.
 func (_m *Post) QuerySource() *SourceQuery {
 	return NewPostClient(_m.config).QuerySource(_m)
+}
+
+// QuerySummaries queries the "summaries" edge of the Post entity.
+func (_m *Post) QuerySummaries() *SummaryQuery {
+	return NewPostClient(_m.config).QuerySummaries(_m)
 }
 
 // Update returns a builder for updating this Post.

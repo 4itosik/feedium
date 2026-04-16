@@ -86,12 +86,13 @@ func (mr *MockPostRepoMockRecorder) List(ctx, filter any) *gomock.Call {
 }
 
 // Save mocks base method.
-func (m *MockPostRepo) Save(ctx context.Context, post biz.Post) (biz.Post, error) {
+func (m *MockPostRepo) Save(ctx context.Context, post biz.Post) (biz.Post, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Save", ctx, post)
 	ret0, _ := ret[0].(biz.Post)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Save indicates an expected call of Save.

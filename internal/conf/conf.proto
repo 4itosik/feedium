@@ -9,6 +9,7 @@ import "google/protobuf/duration.proto";
 message Bootstrap {
   Server server = 1;
   Data data = 2;
+  Summary summary = 3;
 }
 
 message Server {
@@ -37,4 +38,43 @@ message Database {
   string user = 4;
   string password = 5;
   string sslmode = 6;
+}
+
+message Summary {
+  SummaryWorker worker = 1;
+  SummaryCron cron = 2;
+  SummaryLLM llm = 3;
+  SummaryCumulative cumulative = 4;
+  SummaryOutbox outbox = 5;
+}
+
+message SummaryWorker {
+  google.protobuf.Duration poll_interval = 1;
+  int32 batch_size = 2;
+}
+
+message SummaryCron {
+  google.protobuf.Duration interval = 1;
+}
+
+message SummaryLLM {
+  google.protobuf.Duration timeout = 1;
+  int32 max_retries = 2;
+  string provider = 3;
+  map<string, SummaryLLMProvider> providers = 4;
+}
+
+message SummaryLLMProvider {
+  string api_key = 1;
+  string base_url = 2;
+  string model = 3;
+}
+
+message SummaryCumulative {
+  google.protobuf.Duration max_window = 1;
+  int32 max_input_chars = 2;
+}
+
+message SummaryOutbox {
+  google.protobuf.Duration event_ttl = 1;
 }

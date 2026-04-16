@@ -37,9 +37,13 @@ type Source struct {
 type SourceEdges struct {
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
+	// SourceSummaries holds the value of the source_summaries edge.
+	SourceSummaries []*Summary `json:"source_summaries,omitempty"`
+	// SummaryEvents holds the value of the summary_events edge.
+	SummaryEvents []*SummaryEvent `json:"summary_events,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [3]bool
 }
 
 // PostsOrErr returns the Posts value or an error if the edge
@@ -49,6 +53,24 @@ func (e SourceEdges) PostsOrErr() ([]*Post, error) {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
+}
+
+// SourceSummariesOrErr returns the SourceSummaries value or an error if the edge
+// was not loaded in eager-loading.
+func (e SourceEdges) SourceSummariesOrErr() ([]*Summary, error) {
+	if e.loadedTypes[1] {
+		return e.SourceSummaries, nil
+	}
+	return nil, &NotLoadedError{edge: "source_summaries"}
+}
+
+// SummaryEventsOrErr returns the SummaryEvents value or an error if the edge
+// was not loaded in eager-loading.
+func (e SourceEdges) SummaryEventsOrErr() ([]*SummaryEvent, error) {
+	if e.loadedTypes[2] {
+		return e.SummaryEvents, nil
+	}
+	return nil, &NotLoadedError{edge: "summary_events"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -127,6 +149,16 @@ func (_m *Source) Value(name string) (ent.Value, error) {
 // QueryPosts queries the "posts" edge of the Source entity.
 func (_m *Source) QueryPosts() *PostQuery {
 	return NewSourceClient(_m.config).QueryPosts(_m)
+}
+
+// QuerySourceSummaries queries the "source_summaries" edge of the Source entity.
+func (_m *Source) QuerySourceSummaries() *SummaryQuery {
+	return NewSourceClient(_m.config).QuerySourceSummaries(_m)
+}
+
+// QuerySummaryEvents queries the "summary_events" edge of the Source entity.
+func (_m *Source) QuerySummaryEvents() *SummaryEventQuery {
+	return NewSourceClient(_m.config).QuerySummaryEvents(_m)
 }
 
 // Update returns a builder for updating this Source.

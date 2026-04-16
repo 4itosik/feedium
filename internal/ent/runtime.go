@@ -8,6 +8,8 @@ import (
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/schema"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
+	"github.com/4itosik/feedium/internal/ent/summaryevent"
 	"github.com/google/uuid"
 )
 
@@ -63,4 +65,38 @@ func init() {
 	sourceDescID := sourceFields[0].Descriptor()
 	// source.DefaultID holds the default value on creation for the id field.
 	source.DefaultID = sourceDescID.Default.(func() uuid.UUID)
+	summaryFields := schema.Summary{}.Fields()
+	_ = summaryFields
+	// summaryDescText is the schema descriptor for text field.
+	summaryDescText := summaryFields[3].Descriptor()
+	// summary.TextValidator is a validator for the "text" field. It is called by the builders before save.
+	summary.TextValidator = summaryDescText.Validators[0].(func(string) error)
+	// summaryDescCreatedAt is the schema descriptor for created_at field.
+	summaryDescCreatedAt := summaryFields[5].Descriptor()
+	// summary.DefaultCreatedAt holds the default value on creation for the created_at field.
+	summary.DefaultCreatedAt = summaryDescCreatedAt.Default.(func() time.Time)
+	// summaryDescID is the schema descriptor for id field.
+	summaryDescID := summaryFields[0].Descriptor()
+	// summary.DefaultID holds the default value on creation for the id field.
+	summary.DefaultID = summaryDescID.Default.(func() uuid.UUID)
+	summaryeventFields := schema.SummaryEvent{}.Fields()
+	_ = summaryeventFields
+	// summaryeventDescEventType is the schema descriptor for event_type field.
+	summaryeventDescEventType := summaryeventFields[3].Descriptor()
+	// summaryevent.EventTypeValidator is a validator for the "event_type" field. It is called by the builders before save.
+	summaryevent.EventTypeValidator = summaryeventDescEventType.Validators[0].(func(string) error)
+	// summaryeventDescStatus is the schema descriptor for status field.
+	summaryeventDescStatus := summaryeventFields[4].Descriptor()
+	// summaryevent.DefaultStatus holds the default value on creation for the status field.
+	summaryevent.DefaultStatus = summaryeventDescStatus.Default.(string)
+	// summaryevent.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	summaryevent.StatusValidator = summaryeventDescStatus.Validators[0].(func(string) error)
+	// summaryeventDescCreatedAt is the schema descriptor for created_at field.
+	summaryeventDescCreatedAt := summaryeventFields[7].Descriptor()
+	// summaryevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	summaryevent.DefaultCreatedAt = summaryeventDescCreatedAt.Default.(func() time.Time)
+	// summaryeventDescID is the schema descriptor for id field.
+	summaryeventDescID := summaryeventFields[0].Descriptor()
+	// summaryevent.DefaultID holds the default value on creation for the id field.
+	summaryevent.DefaultID = summaryeventDescID.Default.(func() uuid.UUID)
 }

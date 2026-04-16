@@ -15,17 +15,21 @@ import (
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/predicate"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
+	"github.com/4itosik/feedium/internal/ent/summaryevent"
 	"github.com/google/uuid"
 )
 
 // SourceQuery is the builder for querying Source entities.
 type SourceQuery struct {
 	config
-	ctx        *QueryContext
-	order      []source.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Source
-	withPosts  *PostQuery
+	ctx                 *QueryContext
+	order               []source.OrderOption
+	inters              []Interceptor
+	predicates          []predicate.Source
+	withPosts           *PostQuery
+	withSourceSummaries *SummaryQuery
+	withSummaryEvents   *SummaryEventQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +81,50 @@ func (_q *SourceQuery) QueryPosts() *PostQuery {
 			sqlgraph.From(source.Table, source.FieldID, selector),
 			sqlgraph.To(post.Table, post.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, source.PostsTable, source.PostsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySourceSummaries chains the current query on the "source_summaries" edge.
+func (_q *SourceQuery) QuerySourceSummaries() *SummaryQuery {
+	query := (&SummaryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, selector),
+			sqlgraph.To(summary.Table, summary.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.SourceSummariesTable, source.SourceSummariesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySummaryEvents chains the current query on the "summary_events" edge.
+func (_q *SourceQuery) QuerySummaryEvents() *SummaryEventQuery {
+	query := (&SummaryEventClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, selector),
+			sqlgraph.To(summaryevent.Table, summaryevent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.SummaryEventsTable, source.SummaryEventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -271,12 +319,14 @@ func (_q *SourceQuery) Clone() *SourceQuery {
 		return nil
 	}
 	return &SourceQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]source.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.Source{}, _q.predicates...),
-		withPosts:  _q.withPosts.Clone(),
+		config:              _q.config,
+		ctx:                 _q.ctx.Clone(),
+		order:               append([]source.OrderOption{}, _q.order...),
+		inters:              append([]Interceptor{}, _q.inters...),
+		predicates:          append([]predicate.Source{}, _q.predicates...),
+		withPosts:           _q.withPosts.Clone(),
+		withSourceSummaries: _q.withSourceSummaries.Clone(),
+		withSummaryEvents:   _q.withSummaryEvents.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -291,6 +341,28 @@ func (_q *SourceQuery) WithPosts(opts ...func(*PostQuery)) *SourceQuery {
 		opt(query)
 	}
 	_q.withPosts = query
+	return _q
+}
+
+// WithSourceSummaries tells the query-builder to eager-load the nodes that are connected to
+// the "source_summaries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SourceQuery) WithSourceSummaries(opts ...func(*SummaryQuery)) *SourceQuery {
+	query := (&SummaryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSourceSummaries = query
+	return _q
+}
+
+// WithSummaryEvents tells the query-builder to eager-load the nodes that are connected to
+// the "summary_events" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *SourceQuery) WithSummaryEvents(opts ...func(*SummaryEventQuery)) *SourceQuery {
+	query := (&SummaryEventClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSummaryEvents = query
 	return _q
 }
 
@@ -372,8 +444,10 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 	var (
 		nodes       = []*Source{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [3]bool{
 			_q.withPosts != nil,
+			_q.withSourceSummaries != nil,
+			_q.withSummaryEvents != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,6 +472,20 @@ func (_q *SourceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Sourc
 		if err := _q.loadPosts(ctx, query, nodes,
 			func(n *Source) { n.Edges.Posts = []*Post{} },
 			func(n *Source, e *Post) { n.Edges.Posts = append(n.Edges.Posts, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSourceSummaries; query != nil {
+		if err := _q.loadSourceSummaries(ctx, query, nodes,
+			func(n *Source) { n.Edges.SourceSummaries = []*Summary{} },
+			func(n *Source, e *Summary) { n.Edges.SourceSummaries = append(n.Edges.SourceSummaries, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSummaryEvents; query != nil {
+		if err := _q.loadSummaryEvents(ctx, query, nodes,
+			func(n *Source) { n.Edges.SummaryEvents = []*SummaryEvent{} },
+			func(n *Source, e *SummaryEvent) { n.Edges.SummaryEvents = append(n.Edges.SummaryEvents, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -429,6 +517,67 @@ func (_q *SourceQuery) loadPosts(ctx context.Context, query *PostQuery, nodes []
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *SourceQuery) loadSourceSummaries(ctx context.Context, query *SummaryQuery, nodes []*Source, init func(*Source), assign func(*Source, *Summary)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Source)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(summary.FieldSourceID)
+	}
+	query.Where(predicate.Summary(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(source.SourceSummariesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SourceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "source_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *SourceQuery) loadSummaryEvents(ctx context.Context, query *SummaryEventQuery, nodes []*Source, init func(*Source), assign func(*Source, *SummaryEvent)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Source)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.SummaryEvent(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(source.SummaryEventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.source_summary_events
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "source_summary_events" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "source_summary_events" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

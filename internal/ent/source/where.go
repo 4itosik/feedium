@@ -239,6 +239,52 @@ func HasPostsWith(preds ...predicate.Post) predicate.Source {
 	})
 }
 
+// HasSourceSummaries applies the HasEdge predicate on the "source_summaries" edge.
+func HasSourceSummaries() predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SourceSummariesTable, SourceSummariesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSourceSummariesWith applies the HasEdge predicate on the "source_summaries" edge with a given conditions (other predicates).
+func HasSourceSummariesWith(preds ...predicate.Summary) predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := newSourceSummariesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSummaryEvents applies the HasEdge predicate on the "summary_events" edge.
+func HasSummaryEvents() predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SummaryEventsTable, SummaryEventsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSummaryEventsWith applies the HasEdge predicate on the "summary_events" edge with a given conditions (other predicates).
+func HasSummaryEventsWith(preds ...predicate.SummaryEvent) predicate.Source {
+	return predicate.Source(func(s *sql.Selector) {
+		step := newSummaryEventsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Source) predicate.Source {
 	return predicate.Source(sql.AndPredicates(predicates...))

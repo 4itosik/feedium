@@ -62,6 +62,7 @@ func (Post) Edges() []ent.Edge {
 			Field("source_id").
 			Unique().
 			Required(),
+		edge.To("summaries", Summary.Type),
 	}
 }
 

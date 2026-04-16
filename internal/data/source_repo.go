@@ -129,6 +129,19 @@ func (sr *sourceRepo) List(ctx context.Context, filter biz.ListSourcesFilter) (b
 		query = query.Where(source.TypeEQ(string(filter.Type)))
 	}
 
+	if filter.ProcessingMode != nil {
+		switch *filter.ProcessingMode {
+		case biz.ProcessingModeCumulative:
+			query = query.Where(source.TypeEQ(string(biz.SourceTypeTelegramGroup)))
+		case biz.ProcessingModeSelfContained:
+			query = query.Where(source.TypeIn(
+				string(biz.SourceTypeTelegramChannel),
+				string(biz.SourceTypeRSS),
+				string(biz.SourceTypeHTML),
+			))
+		}
+	}
+
 	// Parse page token if provided
 	var decodedToken *pageTokenData
 

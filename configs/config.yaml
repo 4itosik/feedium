@@ -13,3 +13,23 @@ data:
     user: feedium
     password: feedium
     sslmode: disable
+summary:
+  worker:
+    poll_interval: 5s
+    batch_size: 10
+  cron:
+    interval: 1h
+  llm:
+    timeout: 30s
+    max_retries: 3
+    provider: openrouter
+    providers:
+      openrouter:
+        api_key: "YOUR_OPENROUTER_API_KEY"
+        base_url: "https://openrouter.ai/api/v1"
+        model: "openai/gpt-4o-mini"
+  cumulative:
+    max_window: 72h
+    max_input_chars: 50000
+  outbox:
+    event_ttl: 24h

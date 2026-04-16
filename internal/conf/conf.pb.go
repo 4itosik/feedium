@@ -26,6 +26,7 @@ type Bootstrap struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Server        *Server                `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Summary       *Summary               `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -70,6 +71,13 @@ func (x *Bootstrap) GetServer() *Server {
 func (x *Bootstrap) GetData() *Data {
 	if x != nil {
 		return x.Data
+	}
+	return nil
+}
+
+func (x *Bootstrap) GetSummary() *Summary {
+	if x != nil {
+		return x.Summary
 	}
 	return nil
 }
@@ -358,15 +366,412 @@ func (x *Database) GetSslmode() string {
 	return ""
 }
 
+type Summary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Worker        *SummaryWorker         `protobuf:"bytes,1,opt,name=worker,proto3" json:"worker,omitempty"`
+	Cron          *SummaryCron           `protobuf:"bytes,2,opt,name=cron,proto3" json:"cron,omitempty"`
+	Llm           *SummaryLLM            `protobuf:"bytes,3,opt,name=llm,proto3" json:"llm,omitempty"`
+	Cumulative    *SummaryCumulative     `protobuf:"bytes,4,opt,name=cumulative,proto3" json:"cumulative,omitempty"`
+	Outbox        *SummaryOutbox         `protobuf:"bytes,5,opt,name=outbox,proto3" json:"outbox,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Summary) Reset() {
+	*x = Summary{}
+	mi := &file_internal_conf_conf_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Summary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Summary) ProtoMessage() {}
+
+func (x *Summary) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Summary.ProtoReflect.Descriptor instead.
+func (*Summary) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Summary) GetWorker() *SummaryWorker {
+	if x != nil {
+		return x.Worker
+	}
+	return nil
+}
+
+func (x *Summary) GetCron() *SummaryCron {
+	if x != nil {
+		return x.Cron
+	}
+	return nil
+}
+
+func (x *Summary) GetLlm() *SummaryLLM {
+	if x != nil {
+		return x.Llm
+	}
+	return nil
+}
+
+func (x *Summary) GetCumulative() *SummaryCumulative {
+	if x != nil {
+		return x.Cumulative
+	}
+	return nil
+}
+
+func (x *Summary) GetOutbox() *SummaryOutbox {
+	if x != nil {
+		return x.Outbox
+	}
+	return nil
+}
+
+type SummaryWorker struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PollInterval  *durationpb.Duration   `protobuf:"bytes,1,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"`
+	BatchSize     int32                  `protobuf:"varint,2,opt,name=batch_size,json=batchSize,proto3" json:"batch_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummaryWorker) Reset() {
+	*x = SummaryWorker{}
+	mi := &file_internal_conf_conf_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummaryWorker) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummaryWorker) ProtoMessage() {}
+
+func (x *SummaryWorker) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummaryWorker.ProtoReflect.Descriptor instead.
+func (*SummaryWorker) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SummaryWorker) GetPollInterval() *durationpb.Duration {
+	if x != nil {
+		return x.PollInterval
+	}
+	return nil
+}
+
+func (x *SummaryWorker) GetBatchSize() int32 {
+	if x != nil {
+		return x.BatchSize
+	}
+	return 0
+}
+
+type SummaryCron struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interval      *durationpb.Duration   `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummaryCron) Reset() {
+	*x = SummaryCron{}
+	mi := &file_internal_conf_conf_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummaryCron) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummaryCron) ProtoMessage() {}
+
+func (x *SummaryCron) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummaryCron.ProtoReflect.Descriptor instead.
+func (*SummaryCron) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *SummaryCron) GetInterval() *durationpb.Duration {
+	if x != nil {
+		return x.Interval
+	}
+	return nil
+}
+
+type SummaryLLM struct {
+	state         protoimpl.MessageState         `protogen:"open.v1"`
+	Timeout       *durationpb.Duration           `protobuf:"bytes,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	MaxRetries    int32                          `protobuf:"varint,2,opt,name=max_retries,json=maxRetries,proto3" json:"max_retries,omitempty"`
+	Provider      string                         `protobuf:"bytes,3,opt,name=provider,proto3" json:"provider,omitempty"`
+	Providers     map[string]*SummaryLLMProvider `protobuf:"bytes,4,rep,name=providers,proto3" json:"providers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummaryLLM) Reset() {
+	*x = SummaryLLM{}
+	mi := &file_internal_conf_conf_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummaryLLM) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummaryLLM) ProtoMessage() {}
+
+func (x *SummaryLLM) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummaryLLM.ProtoReflect.Descriptor instead.
+func (*SummaryLLM) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SummaryLLM) GetTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.Timeout
+	}
+	return nil
+}
+
+func (x *SummaryLLM) GetMaxRetries() int32 {
+	if x != nil {
+		return x.MaxRetries
+	}
+	return 0
+}
+
+func (x *SummaryLLM) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *SummaryLLM) GetProviders() map[string]*SummaryLLMProvider {
+	if x != nil {
+		return x.Providers
+	}
+	return nil
+}
+
+type SummaryLLMProvider struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApiKey        string                 `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	BaseUrl       string                 `protobuf:"bytes,2,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
+	Model         string                 `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummaryLLMProvider) Reset() {
+	*x = SummaryLLMProvider{}
+	mi := &file_internal_conf_conf_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummaryLLMProvider) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummaryLLMProvider) ProtoMessage() {}
+
+func (x *SummaryLLMProvider) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummaryLLMProvider.ProtoReflect.Descriptor instead.
+func (*SummaryLLMProvider) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SummaryLLMProvider) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
+	}
+	return ""
+}
+
+func (x *SummaryLLMProvider) GetBaseUrl() string {
+	if x != nil {
+		return x.BaseUrl
+	}
+	return ""
+}
+
+func (x *SummaryLLMProvider) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+type SummaryCumulative struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MaxWindow     *durationpb.Duration   `protobuf:"bytes,1,opt,name=max_window,json=maxWindow,proto3" json:"max_window,omitempty"`
+	MaxInputChars int32                  `protobuf:"varint,2,opt,name=max_input_chars,json=maxInputChars,proto3" json:"max_input_chars,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummaryCumulative) Reset() {
+	*x = SummaryCumulative{}
+	mi := &file_internal_conf_conf_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummaryCumulative) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummaryCumulative) ProtoMessage() {}
+
+func (x *SummaryCumulative) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummaryCumulative.ProtoReflect.Descriptor instead.
+func (*SummaryCumulative) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SummaryCumulative) GetMaxWindow() *durationpb.Duration {
+	if x != nil {
+		return x.MaxWindow
+	}
+	return nil
+}
+
+func (x *SummaryCumulative) GetMaxInputChars() int32 {
+	if x != nil {
+		return x.MaxInputChars
+	}
+	return 0
+}
+
+type SummaryOutbox struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EventTtl      *durationpb.Duration   `protobuf:"bytes,1,opt,name=event_ttl,json=eventTtl,proto3" json:"event_ttl,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummaryOutbox) Reset() {
+	*x = SummaryOutbox{}
+	mi := &file_internal_conf_conf_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummaryOutbox) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummaryOutbox) ProtoMessage() {}
+
+func (x *SummaryOutbox) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummaryOutbox.ProtoReflect.Descriptor instead.
+func (*SummaryOutbox) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SummaryOutbox) GetEventTtl() *durationpb.Duration {
+	if x != nil {
+		return x.EventTtl
+	}
+	return nil
+}
+
 var File_internal_conf_conf_proto protoreflect.FileDescriptor
 
 const file_internal_conf_conf_proto_rawDesc = "" +
 	"\n" +
-	"\x18internal/conf/conf.proto\x12\x04conf\x1a\x1egoogle/protobuf/duration.proto\"Q\n" +
+	"\x18internal/conf/conf.proto\x12\x04conf\x1a\x1egoogle/protobuf/duration.proto\"z\n" +
 	"\tBootstrap\x12$\n" +
 	"\x06server\x18\x01 \x01(\v2\f.conf.ServerR\x06server\x12\x1e\n" +
 	"\x04data\x18\x02 \x01(\v2\n" +
-	".conf.DataR\x04data\"H\n" +
+	".conf.DataR\x04data\x12'\n" +
+	"\asummary\x18\x03 \x01(\v2\r.conf.SummaryR\asummary\"H\n" +
 	"\x06Server\x12\x1e\n" +
 	"\x04http\x18\x01 \x01(\v2\n" +
 	".conf.HTTPR\x04http\x12\x1e\n" +
@@ -386,7 +791,41 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\bdatabase\x18\x03 \x01(\tR\bdatabase\x12\x12\n" +
 	"\x04user\x18\x04 \x01(\tR\x04user\x12\x1a\n" +
 	"\bpassword\x18\x05 \x01(\tR\bpassword\x12\x18\n" +
-	"\asslmode\x18\x06 \x01(\tR\asslmodeB/Z-github.com/4itosik/feedium/internal/conf;confb\x06proto3"
+	"\asslmode\x18\x06 \x01(\tR\asslmode\"\xe7\x01\n" +
+	"\aSummary\x12+\n" +
+	"\x06worker\x18\x01 \x01(\v2\x13.conf.SummaryWorkerR\x06worker\x12%\n" +
+	"\x04cron\x18\x02 \x01(\v2\x11.conf.SummaryCronR\x04cron\x12\"\n" +
+	"\x03llm\x18\x03 \x01(\v2\x10.conf.SummaryLLMR\x03llm\x127\n" +
+	"\n" +
+	"cumulative\x18\x04 \x01(\v2\x17.conf.SummaryCumulativeR\n" +
+	"cumulative\x12+\n" +
+	"\x06outbox\x18\x05 \x01(\v2\x13.conf.SummaryOutboxR\x06outbox\"n\n" +
+	"\rSummaryWorker\x12>\n" +
+	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\x12\x1d\n" +
+	"\n" +
+	"batch_size\x18\x02 \x01(\x05R\tbatchSize\"D\n" +
+	"\vSummaryCron\x125\n" +
+	"\binterval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\binterval\"\x95\x02\n" +
+	"\n" +
+	"SummaryLLM\x123\n" +
+	"\atimeout\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12\x1f\n" +
+	"\vmax_retries\x18\x02 \x01(\x05R\n" +
+	"maxRetries\x12\x1a\n" +
+	"\bprovider\x18\x03 \x01(\tR\bprovider\x12=\n" +
+	"\tproviders\x18\x04 \x03(\v2\x1f.conf.SummaryLLM.ProvidersEntryR\tproviders\x1aV\n" +
+	"\x0eProvidersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
+	"\x05value\x18\x02 \x01(\v2\x18.conf.SummaryLLMProviderR\x05value:\x028\x01\"^\n" +
+	"\x12SummaryLLMProvider\x12\x17\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
+	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12\x14\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\"u\n" +
+	"\x11SummaryCumulative\x128\n" +
+	"\n" +
+	"max_window\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\tmaxWindow\x12&\n" +
+	"\x0fmax_input_chars\x18\x02 \x01(\x05R\rmaxInputChars\"G\n" +
+	"\rSummaryOutbox\x126\n" +
+	"\tevent_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\beventTtlB/Z-github.com/4itosik/feedium/internal/conf;confb\x06proto3"
 
 var (
 	file_internal_conf_conf_proto_rawDescOnce sync.Once
@@ -400,7 +839,7 @@ func file_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_internal_conf_conf_proto_rawDescData
 }
 
-var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: conf.Bootstrap
 	(*Server)(nil),              // 1: conf.Server
@@ -408,21 +847,42 @@ var file_internal_conf_conf_proto_goTypes = []any{
 	(*GRPC)(nil),                // 3: conf.GRPC
 	(*Data)(nil),                // 4: conf.Data
 	(*Database)(nil),            // 5: conf.Database
-	(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
+	(*Summary)(nil),             // 6: conf.Summary
+	(*SummaryWorker)(nil),       // 7: conf.SummaryWorker
+	(*SummaryCron)(nil),         // 8: conf.SummaryCron
+	(*SummaryLLM)(nil),          // 9: conf.SummaryLLM
+	(*SummaryLLMProvider)(nil),  // 10: conf.SummaryLLMProvider
+	(*SummaryCumulative)(nil),   // 11: conf.SummaryCumulative
+	(*SummaryOutbox)(nil),       // 12: conf.SummaryOutbox
+	nil,                         // 13: conf.SummaryLLM.ProvidersEntry
+	(*durationpb.Duration)(nil), // 14: google.protobuf.Duration
 }
 var file_internal_conf_conf_proto_depIdxs = []int32{
-	1, // 0: conf.Bootstrap.server:type_name -> conf.Server
-	4, // 1: conf.Bootstrap.data:type_name -> conf.Data
-	2, // 2: conf.Server.http:type_name -> conf.HTTP
-	3, // 3: conf.Server.grpc:type_name -> conf.GRPC
-	6, // 4: conf.HTTP.timeout:type_name -> google.protobuf.Duration
-	6, // 5: conf.GRPC.timeout:type_name -> google.protobuf.Duration
-	5, // 6: conf.Data.database:type_name -> conf.Database
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1,  // 0: conf.Bootstrap.server:type_name -> conf.Server
+	4,  // 1: conf.Bootstrap.data:type_name -> conf.Data
+	6,  // 2: conf.Bootstrap.summary:type_name -> conf.Summary
+	2,  // 3: conf.Server.http:type_name -> conf.HTTP
+	3,  // 4: conf.Server.grpc:type_name -> conf.GRPC
+	14, // 5: conf.HTTP.timeout:type_name -> google.protobuf.Duration
+	14, // 6: conf.GRPC.timeout:type_name -> google.protobuf.Duration
+	5,  // 7: conf.Data.database:type_name -> conf.Database
+	7,  // 8: conf.Summary.worker:type_name -> conf.SummaryWorker
+	8,  // 9: conf.Summary.cron:type_name -> conf.SummaryCron
+	9,  // 10: conf.Summary.llm:type_name -> conf.SummaryLLM
+	11, // 11: conf.Summary.cumulative:type_name -> conf.SummaryCumulative
+	12, // 12: conf.Summary.outbox:type_name -> conf.SummaryOutbox
+	14, // 13: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
+	14, // 14: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
+	14, // 15: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
+	13, // 16: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
+	14, // 17: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
+	14, // 18: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
+	10, // 19: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_internal_conf_conf_proto_init() }
@@ -436,7 +896,7 @@ func file_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_conf_conf_proto_rawDesc), len(file_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

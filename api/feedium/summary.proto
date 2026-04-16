@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package feedium;
+
+option go_package = "feedium/api/feedium;feedium";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+enum SummaryEventType {
+  SUMMARY_EVENT_TYPE_UNSPECIFIED = 0;
+  SUMMARY_EVENT_TYPE_SUMMARIZE_POST = 1;
+  SUMMARY_EVENT_TYPE_SUMMARIZE_SOURCE = 2;
+}
+
+enum SummaryEventStatus {
+  SUMMARY_EVENT_STATUS_UNSPECIFIED = 0;
+  SUMMARY_EVENT_STATUS_PENDING = 1;
+  SUMMARY_EVENT_STATUS_PROCESSING = 2;
+  SUMMARY_EVENT_STATUS_COMPLETED = 3;
+  SUMMARY_EVENT_STATUS_FAILED = 4;
+  SUMMARY_EVENT_STATUS_EXPIRED = 5;
+}
+
+message Summary {
+  string id = 1;
+  optional string post_id = 2;
+  string source_id = 3;
+  string text = 4;
+  int32 word_count = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message SummaryEvent {
+  string id = 1;
+  string source_id = 2;
+  optional string post_id = 3;
+  SummaryEventType event_type = 4;
+  SummaryEventStatus status = 5;
+  optional string summary_id = 6;
+  optional string error = 7;
+  google.protobuf.Timestamp created_at = 8;
+  optional google.protobuf.Timestamp processed_at = 9;
+}
+
+message V1SummarizeSourceRequest {
+  string source_id = 1;
+}
+
+message V1SummarizeSourceResponse {
+  string task_id = 1;
+  bool existing = 2;
+}
+
+message V1GetSummaryEventRequest {
+  string id = 1;
+}
+
+message V1GetSummaryEventResponse {
+  SummaryEvent event = 1;
+}
+
+message V1ListPostSummariesRequest {
+  string post_id = 1;
+}
+
+message V1ListPostSummariesResponse {
+  repeated Summary summaries = 1;
+}
+
+message V1ListSourceSummariesRequest {
+  string source_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message V1ListSourceSummariesResponse {
+  repeated Summary summaries = 1;
+  string next_page_token = 2;
+}
+
+message V1GetSummaryRequest {
+  string id = 1;
+}
+
+message V1GetSummaryResponse {
+  Summary summary = 1;
+}
+
+service SummaryService {
+  rpc V1SummarizeSource(V1SummarizeSourceRequest) returns (V1SummarizeSourceResponse) {
+    option (google.api.http) = { post: "/v1/sources/{source_id}/summarize" body: "*" };
+  }
+  rpc V1GetSummaryEvent(V1GetSummaryEventRequest) returns (V1GetSummaryEventResponse) {
+    option (google.api.http) = { get: "/v1/summary-events/{id}" };
+  }
+  rpc V1ListPostSummaries(V1ListPostSummariesRequest) returns (V1ListPostSummariesResponse) {
+    option (google.api.http) = { get: "/v1/posts/{post_id}/summaries" };
+  }
+  rpc V1ListSourceSummaries(V1ListSourceSummariesRequest) returns (V1ListSourceSummariesResponse) {
+    option (google.api.http) = { get: "/v1/sources/{source_id}/summaries" };
+  }
+  rpc V1GetSummary(V1GetSummaryRequest) returns (V1GetSummaryResponse) {
+    option (google.api.http) = { get: "/v1/summaries/{id}" };
+  }
+}

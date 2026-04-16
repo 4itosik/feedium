@@ -14,6 +14,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
+	"github.com/4itosik/feedium/internal/ent/summaryevent"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -74,8 +76,10 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			post.Table:   post.ValidColumn,
-			source.Table: source.ValidColumn,
+			post.Table:         post.ValidColumn,
+			source.Table:       source.ValidColumn,
+			summary.Table:      summary.ValidColumn,
+			summaryevent.Table: summaryevent.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

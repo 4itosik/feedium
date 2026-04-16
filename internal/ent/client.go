@@ -18,6 +18,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/source"
+	"github.com/4itosik/feedium/internal/ent/summary"
+	"github.com/4itosik/feedium/internal/ent/summaryevent"
 )
 
 // Client is the client that holds all ent builders.
@@ -29,6 +31,10 @@ type Client struct {
 	Post *PostClient
 	// Source is the client for interacting with the Source builders.
 	Source *SourceClient
+	// Summary is the client for interacting with the Summary builders.
+	Summary *SummaryClient
+	// SummaryEvent is the client for interacting with the SummaryEvent builders.
+	SummaryEvent *SummaryEventClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -42,6 +48,8 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Post = NewPostClient(c.config)
 	c.Source = NewSourceClient(c.config)
+	c.Summary = NewSummaryClient(c.config)
+	c.SummaryEvent = NewSummaryEventClient(c.config)
 }
 
 type (
@@ -132,10 +140,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Post:   NewPostClient(cfg),
-		Source: NewSourceClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Post:         NewPostClient(cfg),
+		Source:       NewSourceClient(cfg),
+		Summary:      NewSummaryClient(cfg),
+		SummaryEvent: NewSummaryEventClient(cfg),
 	}, nil
 }
 
@@ -153,10 +163,12 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Post:   NewPostClient(cfg),
-		Source: NewSourceClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Post:         NewPostClient(cfg),
+		Source:       NewSourceClient(cfg),
+		Summary:      NewSummaryClient(cfg),
+		SummaryEvent: NewSummaryEventClient(cfg),
 	}, nil
 }
 
@@ -187,6 +199,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Post.Use(hooks...)
 	c.Source.Use(hooks...)
+	c.Summary.Use(hooks...)
+	c.SummaryEvent.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
@@ -194,6 +208,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Post.Intercept(interceptors...)
 	c.Source.Intercept(interceptors...)
+	c.Summary.Intercept(interceptors...)
+	c.SummaryEvent.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -203,6 +219,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Post.mutate(ctx, m)
 	case *SourceMutation:
 		return c.Source.mutate(ctx, m)
+	case *SummaryMutation:
+		return c.Summary.mutate(ctx, m)
+	case *SummaryEventMutation:
+		return c.SummaryEvent.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -325,6 +345,22 @@ func (c *PostClient) QuerySource(_m *Post) *SourceQuery {
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(source.Table, source.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, post.SourceTable, post.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySummaries queries the summaries edge of a Post.
+func (c *PostClient) QuerySummaries(_m *Post) *SummaryQuery {
+	query := (&SummaryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(summary.Table, summary.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.SummariesTable, post.SummariesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -481,6 +517,38 @@ func (c *SourceClient) QueryPosts(_m *Source) *PostQuery {
 	return query
 }
 
+// QuerySourceSummaries queries the source_summaries edge of a Source.
+func (c *SourceClient) QuerySourceSummaries(_m *Source) *SummaryQuery {
+	query := (&SummaryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(summary.Table, summary.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.SourceSummariesTable, source.SourceSummariesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySummaryEvents queries the summary_events edge of a Source.
+func (c *SourceClient) QuerySummaryEvents(_m *Source) *SummaryEventQuery {
+	query := (&SummaryEventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(source.Table, source.FieldID, id),
+			sqlgraph.To(summaryevent.Table, summaryevent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, source.SummaryEventsTable, source.SummaryEventsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SourceClient) Hooks() []Hook {
 	return c.hooks.Source
@@ -506,12 +574,326 @@ func (c *SourceClient) mutate(ctx context.Context, m *SourceMutation) (Value, er
 	}
 }
 
+// SummaryClient is a client for the Summary schema.
+type SummaryClient struct {
+	config
+}
+
+// NewSummaryClient returns a client for the Summary from the given config.
+func NewSummaryClient(c config) *SummaryClient {
+	return &SummaryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `summary.Hooks(f(g(h())))`.
+func (c *SummaryClient) Use(hooks ...Hook) {
+	c.hooks.Summary = append(c.hooks.Summary, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `summary.Intercept(f(g(h())))`.
+func (c *SummaryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Summary = append(c.inters.Summary, interceptors...)
+}
+
+// Create returns a builder for creating a Summary entity.
+func (c *SummaryClient) Create() *SummaryCreate {
+	mutation := newSummaryMutation(c.config, OpCreate)
+	return &SummaryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Summary entities.
+func (c *SummaryClient) CreateBulk(builders ...*SummaryCreate) *SummaryCreateBulk {
+	return &SummaryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SummaryClient) MapCreateBulk(slice any, setFunc func(*SummaryCreate, int)) *SummaryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SummaryCreateBulk{err: fmt.Errorf("calling to SummaryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SummaryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SummaryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Summary.
+func (c *SummaryClient) Update() *SummaryUpdate {
+	mutation := newSummaryMutation(c.config, OpUpdate)
+	return &SummaryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SummaryClient) UpdateOne(_m *Summary) *SummaryUpdateOne {
+	mutation := newSummaryMutation(c.config, OpUpdateOne, withSummary(_m))
+	return &SummaryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SummaryClient) UpdateOneID(id uuid.UUID) *SummaryUpdateOne {
+	mutation := newSummaryMutation(c.config, OpUpdateOne, withSummaryID(id))
+	return &SummaryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Summary.
+func (c *SummaryClient) Delete() *SummaryDelete {
+	mutation := newSummaryMutation(c.config, OpDelete)
+	return &SummaryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SummaryClient) DeleteOne(_m *Summary) *SummaryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SummaryClient) DeleteOneID(id uuid.UUID) *SummaryDeleteOne {
+	builder := c.Delete().Where(summary.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SummaryDeleteOne{builder}
+}
+
+// Query returns a query builder for Summary.
+func (c *SummaryClient) Query() *SummaryQuery {
+	return &SummaryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSummary},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Summary entity by its id.
+func (c *SummaryClient) Get(ctx context.Context, id uuid.UUID) (*Summary, error) {
+	return c.Query().Where(summary.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SummaryClient) GetX(ctx context.Context, id uuid.UUID) *Summary {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPost queries the post edge of a Summary.
+func (c *SummaryClient) QueryPost(_m *Summary) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(summary.Table, summary.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, summary.PostTable, summary.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySource queries the source edge of a Summary.
+func (c *SummaryClient) QuerySource(_m *Summary) *SourceQuery {
+	query := (&SourceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(summary.Table, summary.FieldID, id),
+			sqlgraph.To(source.Table, source.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, summary.SourceTable, summary.SourceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SummaryClient) Hooks() []Hook {
+	return c.hooks.Summary
+}
+
+// Interceptors returns the client interceptors.
+func (c *SummaryClient) Interceptors() []Interceptor {
+	return c.inters.Summary
+}
+
+func (c *SummaryClient) mutate(ctx context.Context, m *SummaryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SummaryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SummaryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SummaryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SummaryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Summary mutation op: %q", m.Op())
+	}
+}
+
+// SummaryEventClient is a client for the SummaryEvent schema.
+type SummaryEventClient struct {
+	config
+}
+
+// NewSummaryEventClient returns a client for the SummaryEvent from the given config.
+func NewSummaryEventClient(c config) *SummaryEventClient {
+	return &SummaryEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `summaryevent.Hooks(f(g(h())))`.
+func (c *SummaryEventClient) Use(hooks ...Hook) {
+	c.hooks.SummaryEvent = append(c.hooks.SummaryEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `summaryevent.Intercept(f(g(h())))`.
+func (c *SummaryEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SummaryEvent = append(c.inters.SummaryEvent, interceptors...)
+}
+
+// Create returns a builder for creating a SummaryEvent entity.
+func (c *SummaryEventClient) Create() *SummaryEventCreate {
+	mutation := newSummaryEventMutation(c.config, OpCreate)
+	return &SummaryEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SummaryEvent entities.
+func (c *SummaryEventClient) CreateBulk(builders ...*SummaryEventCreate) *SummaryEventCreateBulk {
+	return &SummaryEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SummaryEventClient) MapCreateBulk(slice any, setFunc func(*SummaryEventCreate, int)) *SummaryEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SummaryEventCreateBulk{err: fmt.Errorf("calling to SummaryEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SummaryEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SummaryEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SummaryEvent.
+func (c *SummaryEventClient) Update() *SummaryEventUpdate {
+	mutation := newSummaryEventMutation(c.config, OpUpdate)
+	return &SummaryEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SummaryEventClient) UpdateOne(_m *SummaryEvent) *SummaryEventUpdateOne {
+	mutation := newSummaryEventMutation(c.config, OpUpdateOne, withSummaryEvent(_m))
+	return &SummaryEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SummaryEventClient) UpdateOneID(id uuid.UUID) *SummaryEventUpdateOne {
+	mutation := newSummaryEventMutation(c.config, OpUpdateOne, withSummaryEventID(id))
+	return &SummaryEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SummaryEvent.
+func (c *SummaryEventClient) Delete() *SummaryEventDelete {
+	mutation := newSummaryEventMutation(c.config, OpDelete)
+	return &SummaryEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SummaryEventClient) DeleteOne(_m *SummaryEvent) *SummaryEventDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SummaryEventClient) DeleteOneID(id uuid.UUID) *SummaryEventDeleteOne {
+	builder := c.Delete().Where(summaryevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SummaryEventDeleteOne{builder}
+}
+
+// Query returns a query builder for SummaryEvent.
+func (c *SummaryEventClient) Query() *SummaryEventQuery {
+	return &SummaryEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSummaryEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SummaryEvent entity by its id.
+func (c *SummaryEventClient) Get(ctx context.Context, id uuid.UUID) (*SummaryEvent, error) {
+	return c.Query().Where(summaryevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SummaryEventClient) GetX(ctx context.Context, id uuid.UUID) *SummaryEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySummary queries the summary edge of a SummaryEvent.
+func (c *SummaryEventClient) QuerySummary(_m *SummaryEvent) *SummaryQuery {
+	query := (&SummaryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(summaryevent.Table, summaryevent.FieldID, id),
+			sqlgraph.To(summary.Table, summary.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, summaryevent.SummaryTable, summaryevent.SummaryColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SummaryEventClient) Hooks() []Hook {
+	return c.hooks.SummaryEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *SummaryEventClient) Interceptors() []Interceptor {
+	return c.inters.SummaryEvent
+}
+
+func (c *SummaryEventClient) mutate(ctx context.Context, m *SummaryEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SummaryEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SummaryEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SummaryEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SummaryEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SummaryEvent mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Post, Source []ent.Hook
+		Post, Source, Summary, SummaryEvent []ent.Hook
 	}
 	inters struct {
-		Post, Source []ent.Interceptor
+		Post, Source, Summary, SummaryEvent []ent.Interceptor
 	}
 )
