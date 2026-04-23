@@ -1,5 +1,6 @@
 .obsidian/
 .DS_Store
+.worktrees/
 
 .playwright-cli/
 
