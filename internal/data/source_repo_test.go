@@ -445,6 +445,13 @@ func TestIntegration_ConfigRoundtrip(t *testing.T) {
 }
 
 func setupTestDB(t *testing.T) (*entgo.Client, func()) {
+	d, cleanup := setupTestData(t)
+	return d.Ent, cleanup
+}
+
+// setupTestData returns a fully-populated *data.Data with both [sql.DB] and Ent client,
+// sharing the same underlying connection pool. Use this for repos that need raw SQL.
+func setupTestData(t *testing.T) (*data.Data, func()) {
 	ctx := context.Background()
 
 	container, err := postgres.Run(ctx,
@@ -491,5 +498,5 @@ func setupTestDB(t *testing.T) (*entgo.Client, func()) {
 		}
 	}
 
-	return entClient, cleanup
+	return &data.Data{DB: db, Ent: entClient}, cleanup
 }

@@ -20,10 +20,17 @@ import (
 	"github.com/google/wire"
 )
 
-func newApp(logger *slog.Logger, hs *http.Server, gs *grpc.Server, sw *task.SummaryWorker, cw *task.CronWorker) *kratos.App {
+func newApp(
+	logger *slog.Logger,
+	hs *http.Server,
+	gs *grpc.Server,
+	pool *task.EventWorkerPool,
+	scheduler *task.SourceDueScheduler,
+	reaper *task.StuckEventReaper,
+) *kratos.App {
 	return kratos.New(
 		kratos.Name("feedium"),
-		kratos.Server(hs, gs, sw, cw),
+		kratos.Server(hs, gs, pool, scheduler, reaper),
 	)
 }
 
@@ -46,6 +53,7 @@ func newSummaryLLMFromBootstrap(bc *conf.Bootstrap) *conf.SummaryLLM {
 	return bc.GetSummary().GetLlm()
 }
 
+//nolint:revive,unused // wire injector shell used at generation time.
 func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), error) {
 	wire.Build(
 		newServerFromBootstrap,

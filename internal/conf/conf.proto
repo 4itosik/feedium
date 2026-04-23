@@ -46,15 +46,32 @@ message Summary {
   SummaryLLM llm = 3;
   SummaryCumulative cumulative = 4;
   SummaryOutbox outbox = 5;
+  SummarySourceScheduler source_scheduler = 6;
+  SummaryReaper reaper = 7;
 }
 
 message SummaryWorker {
   google.protobuf.Duration poll_interval = 1;
-  int32 batch_size = 2;
+  int32 concurrency = 3;
+  google.protobuf.Duration lease_ttl = 4;
+  google.protobuf.Duration heartbeat_interval = 5;
+  google.protobuf.Duration graceful_timeout = 6;
+  int32 max_attempts = 7;
+  google.protobuf.Duration backoff_base = 8;
+  google.protobuf.Duration backoff_max = 9;
 }
 
 message SummaryCron {
   google.protobuf.Duration interval = 1;
+}
+
+message SummarySourceScheduler {
+  google.protobuf.Duration poll_interval = 2;
+}
+
+message SummaryReaper {
+  google.protobuf.Duration interval = 1;
+  google.protobuf.Duration grace = 2;
 }
 
 message SummaryLLM {

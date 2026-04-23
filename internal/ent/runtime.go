@@ -95,6 +95,10 @@ func init() {
 	summaryeventDescCreatedAt := summaryeventFields[7].Descriptor()
 	// summaryevent.DefaultCreatedAt holds the default value on creation for the created_at field.
 	summaryevent.DefaultCreatedAt = summaryeventDescCreatedAt.Default.(func() time.Time)
+	// summaryeventDescAttemptCount is the schema descriptor for attempt_count field.
+	summaryeventDescAttemptCount := summaryeventFields[11].Descriptor()
+	// summaryevent.DefaultAttemptCount holds the default value on creation for the attempt_count field.
+	summaryevent.DefaultAttemptCount = summaryeventDescAttemptCount.Default.(int)
 	// summaryeventDescID is the schema descriptor for id field.
 	summaryeventDescID := summaryeventFields[0].Descriptor()
 	// summaryevent.DefaultID holds the default value on creation for the id field.

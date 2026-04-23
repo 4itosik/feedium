@@ -96,6 +96,26 @@ func ProcessedAt(v time.Time) predicate.SummaryEvent {
 	return predicate.SummaryEvent(sql.FieldEQ(FieldProcessedAt, v))
 }
 
+// LockedUntil applies equality check predicate on the "locked_until" field. It's identical to LockedUntilEQ.
+func LockedUntil(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldLockedUntil, v))
+}
+
+// LockedBy applies equality check predicate on the "locked_by" field. It's identical to LockedByEQ.
+func LockedBy(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldLockedBy, v))
+}
+
+// AttemptCount applies equality check predicate on the "attempt_count" field. It's identical to AttemptCountEQ.
+func AttemptCount(v int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldAttemptCount, v))
+}
+
+// NextAttemptAt applies equality check predicate on the "next_attempt_at" field. It's identical to NextAttemptAtEQ.
+func NextAttemptAt(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldNextAttemptAt, v))
+}
+
 // PostIDEQ applies the EQ predicate on the "post_id" field.
 func PostIDEQ(v uuid.UUID) predicate.SummaryEvent {
 	return predicate.SummaryEvent(sql.FieldEQ(FieldPostID, v))
@@ -509,6 +529,221 @@ func ProcessedAtIsNil() predicate.SummaryEvent {
 // ProcessedAtNotNil applies the NotNil predicate on the "processed_at" field.
 func ProcessedAtNotNil() predicate.SummaryEvent {
 	return predicate.SummaryEvent(sql.FieldNotNull(FieldProcessedAt))
+}
+
+// LockedUntilEQ applies the EQ predicate on the "locked_until" field.
+func LockedUntilEQ(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldLockedUntil, v))
+}
+
+// LockedUntilNEQ applies the NEQ predicate on the "locked_until" field.
+func LockedUntilNEQ(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNEQ(FieldLockedUntil, v))
+}
+
+// LockedUntilIn applies the In predicate on the "locked_until" field.
+func LockedUntilIn(vs ...time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldIn(FieldLockedUntil, vs...))
+}
+
+// LockedUntilNotIn applies the NotIn predicate on the "locked_until" field.
+func LockedUntilNotIn(vs ...time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNotIn(FieldLockedUntil, vs...))
+}
+
+// LockedUntilGT applies the GT predicate on the "locked_until" field.
+func LockedUntilGT(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGT(FieldLockedUntil, v))
+}
+
+// LockedUntilGTE applies the GTE predicate on the "locked_until" field.
+func LockedUntilGTE(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGTE(FieldLockedUntil, v))
+}
+
+// LockedUntilLT applies the LT predicate on the "locked_until" field.
+func LockedUntilLT(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLT(FieldLockedUntil, v))
+}
+
+// LockedUntilLTE applies the LTE predicate on the "locked_until" field.
+func LockedUntilLTE(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLTE(FieldLockedUntil, v))
+}
+
+// LockedUntilIsNil applies the IsNil predicate on the "locked_until" field.
+func LockedUntilIsNil() predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldIsNull(FieldLockedUntil))
+}
+
+// LockedUntilNotNil applies the NotNil predicate on the "locked_until" field.
+func LockedUntilNotNil() predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNotNull(FieldLockedUntil))
+}
+
+// LockedByEQ applies the EQ predicate on the "locked_by" field.
+func LockedByEQ(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldLockedBy, v))
+}
+
+// LockedByNEQ applies the NEQ predicate on the "locked_by" field.
+func LockedByNEQ(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNEQ(FieldLockedBy, v))
+}
+
+// LockedByIn applies the In predicate on the "locked_by" field.
+func LockedByIn(vs ...string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldIn(FieldLockedBy, vs...))
+}
+
+// LockedByNotIn applies the NotIn predicate on the "locked_by" field.
+func LockedByNotIn(vs ...string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNotIn(FieldLockedBy, vs...))
+}
+
+// LockedByGT applies the GT predicate on the "locked_by" field.
+func LockedByGT(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGT(FieldLockedBy, v))
+}
+
+// LockedByGTE applies the GTE predicate on the "locked_by" field.
+func LockedByGTE(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGTE(FieldLockedBy, v))
+}
+
+// LockedByLT applies the LT predicate on the "locked_by" field.
+func LockedByLT(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLT(FieldLockedBy, v))
+}
+
+// LockedByLTE applies the LTE predicate on the "locked_by" field.
+func LockedByLTE(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLTE(FieldLockedBy, v))
+}
+
+// LockedByContains applies the Contains predicate on the "locked_by" field.
+func LockedByContains(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldContains(FieldLockedBy, v))
+}
+
+// LockedByHasPrefix applies the HasPrefix predicate on the "locked_by" field.
+func LockedByHasPrefix(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldHasPrefix(FieldLockedBy, v))
+}
+
+// LockedByHasSuffix applies the HasSuffix predicate on the "locked_by" field.
+func LockedByHasSuffix(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldHasSuffix(FieldLockedBy, v))
+}
+
+// LockedByIsNil applies the IsNil predicate on the "locked_by" field.
+func LockedByIsNil() predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldIsNull(FieldLockedBy))
+}
+
+// LockedByNotNil applies the NotNil predicate on the "locked_by" field.
+func LockedByNotNil() predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNotNull(FieldLockedBy))
+}
+
+// LockedByEqualFold applies the EqualFold predicate on the "locked_by" field.
+func LockedByEqualFold(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEqualFold(FieldLockedBy, v))
+}
+
+// LockedByContainsFold applies the ContainsFold predicate on the "locked_by" field.
+func LockedByContainsFold(v string) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldContainsFold(FieldLockedBy, v))
+}
+
+// AttemptCountEQ applies the EQ predicate on the "attempt_count" field.
+func AttemptCountEQ(v int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldAttemptCount, v))
+}
+
+// AttemptCountNEQ applies the NEQ predicate on the "attempt_count" field.
+func AttemptCountNEQ(v int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNEQ(FieldAttemptCount, v))
+}
+
+// AttemptCountIn applies the In predicate on the "attempt_count" field.
+func AttemptCountIn(vs ...int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldIn(FieldAttemptCount, vs...))
+}
+
+// AttemptCountNotIn applies the NotIn predicate on the "attempt_count" field.
+func AttemptCountNotIn(vs ...int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNotIn(FieldAttemptCount, vs...))
+}
+
+// AttemptCountGT applies the GT predicate on the "attempt_count" field.
+func AttemptCountGT(v int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGT(FieldAttemptCount, v))
+}
+
+// AttemptCountGTE applies the GTE predicate on the "attempt_count" field.
+func AttemptCountGTE(v int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGTE(FieldAttemptCount, v))
+}
+
+// AttemptCountLT applies the LT predicate on the "attempt_count" field.
+func AttemptCountLT(v int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLT(FieldAttemptCount, v))
+}
+
+// AttemptCountLTE applies the LTE predicate on the "attempt_count" field.
+func AttemptCountLTE(v int) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLTE(FieldAttemptCount, v))
+}
+
+// NextAttemptAtEQ applies the EQ predicate on the "next_attempt_at" field.
+func NextAttemptAtEQ(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldEQ(FieldNextAttemptAt, v))
+}
+
+// NextAttemptAtNEQ applies the NEQ predicate on the "next_attempt_at" field.
+func NextAttemptAtNEQ(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNEQ(FieldNextAttemptAt, v))
+}
+
+// NextAttemptAtIn applies the In predicate on the "next_attempt_at" field.
+func NextAttemptAtIn(vs ...time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldIn(FieldNextAttemptAt, vs...))
+}
+
+// NextAttemptAtNotIn applies the NotIn predicate on the "next_attempt_at" field.
+func NextAttemptAtNotIn(vs ...time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNotIn(FieldNextAttemptAt, vs...))
+}
+
+// NextAttemptAtGT applies the GT predicate on the "next_attempt_at" field.
+func NextAttemptAtGT(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGT(FieldNextAttemptAt, v))
+}
+
+// NextAttemptAtGTE applies the GTE predicate on the "next_attempt_at" field.
+func NextAttemptAtGTE(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldGTE(FieldNextAttemptAt, v))
+}
+
+// NextAttemptAtLT applies the LT predicate on the "next_attempt_at" field.
+func NextAttemptAtLT(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLT(FieldNextAttemptAt, v))
+}
+
+// NextAttemptAtLTE applies the LTE predicate on the "next_attempt_at" field.
+func NextAttemptAtLTE(v time.Time) predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldLTE(FieldNextAttemptAt, v))
+}
+
+// NextAttemptAtIsNil applies the IsNil predicate on the "next_attempt_at" field.
+func NextAttemptAtIsNil() predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldIsNull(FieldNextAttemptAt))
+}
+
+// NextAttemptAtNotNil applies the NotNil predicate on the "next_attempt_at" field.
+func NextAttemptAtNotNil() predicate.SummaryEvent {
+	return predicate.SummaryEvent(sql.FieldNotNull(FieldNextAttemptAt))
 }
 
 // HasSummary applies the HasEdge predicate on the "summary" edge.

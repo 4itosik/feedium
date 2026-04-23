@@ -12,6 +12,7 @@ package mock
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	biz "github.com/4itosik/feedium/internal/biz"
 	gomock "go.uber.org/mock/gomock"
@@ -75,6 +76,35 @@ func NewMockSourceRepo(ctrl *gomock.Controller) *MockSourceRepo {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSourceRepo) EXPECT() *MockSourceRepoMockRecorder {
 	return m.recorder
+}
+
+// BumpNextSummaryAt mocks base method.
+func (m *MockSourceRepo) BumpNextSummaryAt(ctx context.Context, sourceID string, nextAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BumpNextSummaryAt", ctx, sourceID, nextAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BumpNextSummaryAt indicates an expected call of BumpNextSummaryAt.
+func (mr *MockSourceRepoMockRecorder) BumpNextSummaryAt(ctx, sourceID, nextAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BumpNextSummaryAt", reflect.TypeOf((*MockSourceRepo)(nil).BumpNextSummaryAt), ctx, sourceID, nextAt)
+}
+
+// ClaimDueCumulative mocks base method.
+func (m *MockSourceRepo) ClaimDueCumulative(ctx context.Context) (biz.Source, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClaimDueCumulative", ctx)
+	ret0, _ := ret[0].(biz.Source)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClaimDueCumulative indicates an expected call of ClaimDueCumulative.
+func (mr *MockSourceRepoMockRecorder) ClaimDueCumulative(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimDueCumulative", reflect.TypeOf((*MockSourceRepo)(nil).ClaimDueCumulative), ctx)
 }
 
 // Delete mocks base method.

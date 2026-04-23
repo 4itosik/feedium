@@ -38,3 +38,4 @@ status: active
 | `FT-003` Source Management | [FT-003-source-management/](FT-003-source-management/) | [PRD-001](../prd/PRD-001-mvp.md) | planned | [brief](FT-003-source-management/brief.md) |
 | `FT-004` Posts Management | [FT-004-posts-management/](FT-004-posts-management/) | [PRD-001](../prd/PRD-001-mvp.md) | planned | [brief](FT-004-posts-management/brief.md) |
 | `FT-005` AI Summarization | [FT-005-ai-summarization/](FT-005-ai-summarization/) | [PRD-001](../prd/PRD-001-mvp.md) | planned | [brief](FT-005-ai-summarization/brief.md) |
+| `FT-007` Scalable Event Processing | [FT-007-scalable-event-processing/](FT-007-scalable-event-processing/) | [PRD-001](../prd/PRD-001-mvp.md) | in_progress | [feature](FT-007-scalable-event-processing/feature.md) · [implementation-plan](FT-007-scalable-event-processing/implementation-plan.md) |

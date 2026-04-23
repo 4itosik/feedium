@@ -118,6 +118,62 @@ func (_c *SummaryEventCreate) SetNillableProcessedAt(v *time.Time) *SummaryEvent
 	return _c
 }
 
+// SetLockedUntil sets the "locked_until" field.
+func (_c *SummaryEventCreate) SetLockedUntil(v time.Time) *SummaryEventCreate {
+	_c.mutation.SetLockedUntil(v)
+	return _c
+}
+
+// SetNillableLockedUntil sets the "locked_until" field if the given value is not nil.
+func (_c *SummaryEventCreate) SetNillableLockedUntil(v *time.Time) *SummaryEventCreate {
+	if v != nil {
+		_c.SetLockedUntil(*v)
+	}
+	return _c
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (_c *SummaryEventCreate) SetLockedBy(v string) *SummaryEventCreate {
+	_c.mutation.SetLockedBy(v)
+	return _c
+}
+
+// SetNillableLockedBy sets the "locked_by" field if the given value is not nil.
+func (_c *SummaryEventCreate) SetNillableLockedBy(v *string) *SummaryEventCreate {
+	if v != nil {
+		_c.SetLockedBy(*v)
+	}
+	return _c
+}
+
+// SetAttemptCount sets the "attempt_count" field.
+func (_c *SummaryEventCreate) SetAttemptCount(v int) *SummaryEventCreate {
+	_c.mutation.SetAttemptCount(v)
+	return _c
+}
+
+// SetNillableAttemptCount sets the "attempt_count" field if the given value is not nil.
+func (_c *SummaryEventCreate) SetNillableAttemptCount(v *int) *SummaryEventCreate {
+	if v != nil {
+		_c.SetAttemptCount(*v)
+	}
+	return _c
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (_c *SummaryEventCreate) SetNextAttemptAt(v time.Time) *SummaryEventCreate {
+	_c.mutation.SetNextAttemptAt(v)
+	return _c
+}
+
+// SetNillableNextAttemptAt sets the "next_attempt_at" field if the given value is not nil.
+func (_c *SummaryEventCreate) SetNillableNextAttemptAt(v *time.Time) *SummaryEventCreate {
+	if v != nil {
+		_c.SetNextAttemptAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SummaryEventCreate) SetID(v uuid.UUID) *SummaryEventCreate {
 	_c.mutation.SetID(v)
@@ -180,6 +236,10 @@ func (_c *SummaryEventCreate) defaults() {
 		v := summaryevent.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
+	if _, ok := _c.mutation.AttemptCount(); !ok {
+		v := summaryevent.DefaultAttemptCount
+		_c.mutation.SetAttemptCount(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := summaryevent.DefaultID()
 		_c.mutation.SetID(v)
@@ -209,6 +269,9 @@ func (_c *SummaryEventCreate) check() error {
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "SummaryEvent.created_at"`)}
+	}
+	if _, ok := _c.mutation.AttemptCount(); !ok {
+		return &ValidationError{Name: "attempt_count", err: errors.New(`ent: missing required field "SummaryEvent.attempt_count"`)}
 	}
 	return nil
 }
@@ -272,6 +335,22 @@ func (_c *SummaryEventCreate) createSpec() (*SummaryEvent, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.ProcessedAt(); ok {
 		_spec.SetField(summaryevent.FieldProcessedAt, field.TypeTime, value)
 		_node.ProcessedAt = &value
+	}
+	if value, ok := _c.mutation.LockedUntil(); ok {
+		_spec.SetField(summaryevent.FieldLockedUntil, field.TypeTime, value)
+		_node.LockedUntil = &value
+	}
+	if value, ok := _c.mutation.LockedBy(); ok {
+		_spec.SetField(summaryevent.FieldLockedBy, field.TypeString, value)
+		_node.LockedBy = &value
+	}
+	if value, ok := _c.mutation.AttemptCount(); ok {
+		_spec.SetField(summaryevent.FieldAttemptCount, field.TypeInt, value)
+		_node.AttemptCount = value
+	}
+	if value, ok := _c.mutation.NextAttemptAt(); ok {
+		_spec.SetField(summaryevent.FieldNextAttemptAt, field.TypeTime, value)
+		_node.NextAttemptAt = &value
 	}
 	if nodes := _c.mutation.SummaryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

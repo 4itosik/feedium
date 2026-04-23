@@ -46,65 +46,6 @@ func TestIntegration_OutboxRepo_SaveAndGet(t *testing.T) {
 	assert.Equal(t, saved.Status, fetched.Status)
 }
 
-func TestIntegration_OutboxRepo_ListPending(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
-
-	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
-	defer cleanup()
-
-	sourceID := createTestSource(ctx, t, client)
-	repo := data.NewSummaryOutboxRepo(&data.Data{Ent: client})
-
-	event1 := biz.NewSummaryEvent(biz.SummaryEventTypeSummarizeSource, sourceID, nil)
-	saved1, err := repo.Save(ctx, event1)
-	require.NoError(t, err)
-
-	postID := uuid.New().String()
-	event2 := biz.NewSummaryEvent(biz.SummaryEventTypeSummarizePost, sourceID, &postID)
-	saved2, err := repo.Save(ctx, event2)
-	require.NoError(t, err)
-
-	err = repo.UpdateStatus(ctx, saved1.ID, biz.SummaryEventStatusCompleted, nil, nil)
-	require.NoError(t, err)
-
-	pending, err := repo.ListPending(ctx, 10)
-	require.NoError(t, err)
-	require.Len(t, pending, 1)
-	assert.Equal(t, saved2.ID, pending[0].ID)
-	assert.Equal(t, biz.SummaryEventStatusPending, pending[0].Status)
-}
-
-func TestIntegration_OutboxRepo_ListPending_SortedByCreatedAt(t *testing.T) {
-	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
-
-	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
-	defer cleanup()
-
-	sourceID1 := createTestSource(ctx, t, client)
-	sourceID2 := createTestSource(ctx, t, client)
-	repo := data.NewSummaryOutboxRepo(&data.Data{Ent: client})
-
-	event1 := biz.NewSummaryEvent(biz.SummaryEventTypeSummarizeSource, sourceID1, nil)
-	saved1, err := repo.Save(ctx, event1)
-	require.NoError(t, err)
-
-	event2 := biz.NewSummaryEvent(biz.SummaryEventTypeSummarizeSource, sourceID2, nil)
-	saved2, err := repo.Save(ctx, event2)
-	require.NoError(t, err)
-
-	pending, err := repo.ListPending(ctx, 10)
-	require.NoError(t, err)
-	require.Len(t, pending, 2)
-	assert.Equal(t, saved1.ID, pending[0].ID)
-	assert.Equal(t, saved2.ID, pending[1].ID)
-	assert.True(
-		t,
-		pending[0].CreatedAt.Before(pending[1].CreatedAt) || pending[0].CreatedAt.Equal(pending[1].CreatedAt),
-	)
-}
-
 func TestIntegration_OutboxRepo_UpdateStatus_Completed(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 

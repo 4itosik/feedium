@@ -58,6 +58,26 @@ func (_u *SourceUpdate) SetUpdatedAt(v time.Time) *SourceUpdate {
 	return _u
 }
 
+// SetNextSummaryAt sets the "next_summary_at" field.
+func (_u *SourceUpdate) SetNextSummaryAt(v time.Time) *SourceUpdate {
+	_u.mutation.SetNextSummaryAt(v)
+	return _u
+}
+
+// SetNillableNextSummaryAt sets the "next_summary_at" field if the given value is not nil.
+func (_u *SourceUpdate) SetNillableNextSummaryAt(v *time.Time) *SourceUpdate {
+	if v != nil {
+		_u.SetNextSummaryAt(*v)
+	}
+	return _u
+}
+
+// ClearNextSummaryAt clears the value of the "next_summary_at" field.
+func (_u *SourceUpdate) ClearNextSummaryAt() *SourceUpdate {
+	_u.mutation.ClearNextSummaryAt()
+	return _u
+}
+
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
 func (_u *SourceUpdate) AddPostIDs(ids ...uuid.UUID) *SourceUpdate {
 	_u.mutation.AddPostIDs(ids...)
@@ -238,6 +258,12 @@ func (_u *SourceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(source.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.NextSummaryAt(); ok {
+		_spec.SetField(source.FieldNextSummaryAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextSummaryAtCleared() {
+		_spec.ClearField(source.FieldNextSummaryAt, field.TypeTime)
+	}
 	if _u.mutation.PostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -416,6 +442,26 @@ func (_u *SourceUpdateOne) SetConfig(v map[string]interface{}) *SourceUpdateOne 
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *SourceUpdateOne) SetUpdatedAt(v time.Time) *SourceUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetNextSummaryAt sets the "next_summary_at" field.
+func (_u *SourceUpdateOne) SetNextSummaryAt(v time.Time) *SourceUpdateOne {
+	_u.mutation.SetNextSummaryAt(v)
+	return _u
+}
+
+// SetNillableNextSummaryAt sets the "next_summary_at" field if the given value is not nil.
+func (_u *SourceUpdateOne) SetNillableNextSummaryAt(v *time.Time) *SourceUpdateOne {
+	if v != nil {
+		_u.SetNextSummaryAt(*v)
+	}
+	return _u
+}
+
+// ClearNextSummaryAt clears the value of the "next_summary_at" field.
+func (_u *SourceUpdateOne) ClearNextSummaryAt() *SourceUpdateOne {
+	_u.mutation.ClearNextSummaryAt()
 	return _u
 }
 
@@ -628,6 +674,12 @@ func (_u *SourceUpdateOne) sqlSave(ctx context.Context) (_node *Source, err erro
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(source.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.NextSummaryAt(); ok {
+		_spec.SetField(source.FieldNextSummaryAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextSummaryAtCleared() {
+		_spec.ClearField(source.FieldNextSummaryAt, field.TypeTime)
 	}
 	if _u.mutation.PostsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -367,14 +367,16 @@ func (x *Database) GetSslmode() string {
 }
 
 type Summary struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Worker        *SummaryWorker         `protobuf:"bytes,1,opt,name=worker,proto3" json:"worker,omitempty"`
-	Cron          *SummaryCron           `protobuf:"bytes,2,opt,name=cron,proto3" json:"cron,omitempty"`
-	Llm           *SummaryLLM            `protobuf:"bytes,3,opt,name=llm,proto3" json:"llm,omitempty"`
-	Cumulative    *SummaryCumulative     `protobuf:"bytes,4,opt,name=cumulative,proto3" json:"cumulative,omitempty"`
-	Outbox        *SummaryOutbox         `protobuf:"bytes,5,opt,name=outbox,proto3" json:"outbox,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState  `protogen:"open.v1"`
+	Worker          *SummaryWorker          `protobuf:"bytes,1,opt,name=worker,proto3" json:"worker,omitempty"`
+	Cron            *SummaryCron            `protobuf:"bytes,2,opt,name=cron,proto3" json:"cron,omitempty"`
+	Llm             *SummaryLLM             `protobuf:"bytes,3,opt,name=llm,proto3" json:"llm,omitempty"`
+	Cumulative      *SummaryCumulative      `protobuf:"bytes,4,opt,name=cumulative,proto3" json:"cumulative,omitempty"`
+	Outbox          *SummaryOutbox          `protobuf:"bytes,5,opt,name=outbox,proto3" json:"outbox,omitempty"`
+	SourceScheduler *SummarySourceScheduler `protobuf:"bytes,6,opt,name=source_scheduler,json=sourceScheduler,proto3" json:"source_scheduler,omitempty"`
+	Reaper          *SummaryReaper          `protobuf:"bytes,7,opt,name=reaper,proto3" json:"reaper,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Summary) Reset() {
@@ -442,12 +444,32 @@ func (x *Summary) GetOutbox() *SummaryOutbox {
 	return nil
 }
 
+func (x *Summary) GetSourceScheduler() *SummarySourceScheduler {
+	if x != nil {
+		return x.SourceScheduler
+	}
+	return nil
+}
+
+func (x *Summary) GetReaper() *SummaryReaper {
+	if x != nil {
+		return x.Reaper
+	}
+	return nil
+}
+
 type SummaryWorker struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PollInterval  *durationpb.Duration   `protobuf:"bytes,1,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"`
-	BatchSize     int32                  `protobuf:"varint,2,opt,name=batch_size,json=batchSize,proto3" json:"batch_size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	PollInterval      *durationpb.Duration   `protobuf:"bytes,1,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"`
+	Concurrency       int32                  `protobuf:"varint,3,opt,name=concurrency,proto3" json:"concurrency,omitempty"`
+	LeaseTtl          *durationpb.Duration   `protobuf:"bytes,4,opt,name=lease_ttl,json=leaseTtl,proto3" json:"lease_ttl,omitempty"`
+	HeartbeatInterval *durationpb.Duration   `protobuf:"bytes,5,opt,name=heartbeat_interval,json=heartbeatInterval,proto3" json:"heartbeat_interval,omitempty"`
+	GracefulTimeout   *durationpb.Duration   `protobuf:"bytes,6,opt,name=graceful_timeout,json=gracefulTimeout,proto3" json:"graceful_timeout,omitempty"`
+	MaxAttempts       int32                  `protobuf:"varint,7,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
+	BackoffBase       *durationpb.Duration   `protobuf:"bytes,8,opt,name=backoff_base,json=backoffBase,proto3" json:"backoff_base,omitempty"`
+	BackoffMax        *durationpb.Duration   `protobuf:"bytes,9,opt,name=backoff_max,json=backoffMax,proto3" json:"backoff_max,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *SummaryWorker) Reset() {
@@ -487,11 +509,53 @@ func (x *SummaryWorker) GetPollInterval() *durationpb.Duration {
 	return nil
 }
 
-func (x *SummaryWorker) GetBatchSize() int32 {
+func (x *SummaryWorker) GetConcurrency() int32 {
 	if x != nil {
-		return x.BatchSize
+		return x.Concurrency
 	}
 	return 0
+}
+
+func (x *SummaryWorker) GetLeaseTtl() *durationpb.Duration {
+	if x != nil {
+		return x.LeaseTtl
+	}
+	return nil
+}
+
+func (x *SummaryWorker) GetHeartbeatInterval() *durationpb.Duration {
+	if x != nil {
+		return x.HeartbeatInterval
+	}
+	return nil
+}
+
+func (x *SummaryWorker) GetGracefulTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.GracefulTimeout
+	}
+	return nil
+}
+
+func (x *SummaryWorker) GetMaxAttempts() int32 {
+	if x != nil {
+		return x.MaxAttempts
+	}
+	return 0
+}
+
+func (x *SummaryWorker) GetBackoffBase() *durationpb.Duration {
+	if x != nil {
+		return x.BackoffBase
+	}
+	return nil
+}
+
+func (x *SummaryWorker) GetBackoffMax() *durationpb.Duration {
+	if x != nil {
+		return x.BackoffMax
+	}
+	return nil
 }
 
 type SummaryCron struct {
@@ -538,6 +602,102 @@ func (x *SummaryCron) GetInterval() *durationpb.Duration {
 	return nil
 }
 
+type SummarySourceScheduler struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PollInterval  *durationpb.Duration   `protobuf:"bytes,2,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummarySourceScheduler) Reset() {
+	*x = SummarySourceScheduler{}
+	mi := &file_internal_conf_conf_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummarySourceScheduler) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummarySourceScheduler) ProtoMessage() {}
+
+func (x *SummarySourceScheduler) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummarySourceScheduler.ProtoReflect.Descriptor instead.
+func (*SummarySourceScheduler) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SummarySourceScheduler) GetPollInterval() *durationpb.Duration {
+	if x != nil {
+		return x.PollInterval
+	}
+	return nil
+}
+
+type SummaryReaper struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interval      *durationpb.Duration   `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	Grace         *durationpb.Duration   `protobuf:"bytes,2,opt,name=grace,proto3" json:"grace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummaryReaper) Reset() {
+	*x = SummaryReaper{}
+	mi := &file_internal_conf_conf_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummaryReaper) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummaryReaper) ProtoMessage() {}
+
+func (x *SummaryReaper) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummaryReaper.ProtoReflect.Descriptor instead.
+func (*SummaryReaper) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SummaryReaper) GetInterval() *durationpb.Duration {
+	if x != nil {
+		return x.Interval
+	}
+	return nil
+}
+
+func (x *SummaryReaper) GetGrace() *durationpb.Duration {
+	if x != nil {
+		return x.Grace
+	}
+	return nil
+}
+
 type SummaryLLM struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
 	Timeout       *durationpb.Duration           `protobuf:"bytes,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
@@ -550,7 +710,7 @@ type SummaryLLM struct {
 
 func (x *SummaryLLM) Reset() {
 	*x = SummaryLLM{}
-	mi := &file_internal_conf_conf_proto_msgTypes[9]
+	mi := &file_internal_conf_conf_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -562,7 +722,7 @@ func (x *SummaryLLM) String() string {
 func (*SummaryLLM) ProtoMessage() {}
 
 func (x *SummaryLLM) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_conf_conf_proto_msgTypes[9]
+	mi := &file_internal_conf_conf_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -575,7 +735,7 @@ func (x *SummaryLLM) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummaryLLM.ProtoReflect.Descriptor instead.
 func (*SummaryLLM) Descriptor() ([]byte, []int) {
-	return file_internal_conf_conf_proto_rawDescGZIP(), []int{9}
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SummaryLLM) GetTimeout() *durationpb.Duration {
@@ -617,7 +777,7 @@ type SummaryLLMProvider struct {
 
 func (x *SummaryLLMProvider) Reset() {
 	*x = SummaryLLMProvider{}
-	mi := &file_internal_conf_conf_proto_msgTypes[10]
+	mi := &file_internal_conf_conf_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -629,7 +789,7 @@ func (x *SummaryLLMProvider) String() string {
 func (*SummaryLLMProvider) ProtoMessage() {}
 
 func (x *SummaryLLMProvider) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_conf_conf_proto_msgTypes[10]
+	mi := &file_internal_conf_conf_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -642,7 +802,7 @@ func (x *SummaryLLMProvider) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummaryLLMProvider.ProtoReflect.Descriptor instead.
 func (*SummaryLLMProvider) Descriptor() ([]byte, []int) {
-	return file_internal_conf_conf_proto_rawDescGZIP(), []int{10}
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SummaryLLMProvider) GetApiKey() string {
@@ -676,7 +836,7 @@ type SummaryCumulative struct {
 
 func (x *SummaryCumulative) Reset() {
 	*x = SummaryCumulative{}
-	mi := &file_internal_conf_conf_proto_msgTypes[11]
+	mi := &file_internal_conf_conf_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -688,7 +848,7 @@ func (x *SummaryCumulative) String() string {
 func (*SummaryCumulative) ProtoMessage() {}
 
 func (x *SummaryCumulative) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_conf_conf_proto_msgTypes[11]
+	mi := &file_internal_conf_conf_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -701,7 +861,7 @@ func (x *SummaryCumulative) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummaryCumulative.ProtoReflect.Descriptor instead.
 func (*SummaryCumulative) Descriptor() ([]byte, []int) {
-	return file_internal_conf_conf_proto_rawDescGZIP(), []int{11}
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SummaryCumulative) GetMaxWindow() *durationpb.Duration {
@@ -727,7 +887,7 @@ type SummaryOutbox struct {
 
 func (x *SummaryOutbox) Reset() {
 	*x = SummaryOutbox{}
-	mi := &file_internal_conf_conf_proto_msgTypes[12]
+	mi := &file_internal_conf_conf_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -739,7 +899,7 @@ func (x *SummaryOutbox) String() string {
 func (*SummaryOutbox) ProtoMessage() {}
 
 func (x *SummaryOutbox) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_conf_conf_proto_msgTypes[12]
+	mi := &file_internal_conf_conf_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -752,7 +912,7 @@ func (x *SummaryOutbox) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummaryOutbox.ProtoReflect.Descriptor instead.
 func (*SummaryOutbox) Descriptor() ([]byte, []int) {
-	return file_internal_conf_conf_proto_rawDescGZIP(), []int{12}
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SummaryOutbox) GetEventTtl() *durationpb.Duration {
@@ -791,7 +951,7 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\bdatabase\x18\x03 \x01(\tR\bdatabase\x12\x12\n" +
 	"\x04user\x18\x04 \x01(\tR\x04user\x12\x1a\n" +
 	"\bpassword\x18\x05 \x01(\tR\bpassword\x12\x18\n" +
-	"\asslmode\x18\x06 \x01(\tR\asslmode\"\xe7\x01\n" +
+	"\asslmode\x18\x06 \x01(\tR\asslmode\"\xdd\x02\n" +
 	"\aSummary\x12+\n" +
 	"\x06worker\x18\x01 \x01(\v2\x13.conf.SummaryWorkerR\x06worker\x12%\n" +
 	"\x04cron\x18\x02 \x01(\v2\x11.conf.SummaryCronR\x04cron\x12\"\n" +
@@ -799,13 +959,26 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\n" +
 	"cumulative\x18\x04 \x01(\v2\x17.conf.SummaryCumulativeR\n" +
 	"cumulative\x12+\n" +
-	"\x06outbox\x18\x05 \x01(\v2\x13.conf.SummaryOutboxR\x06outbox\"n\n" +
+	"\x06outbox\x18\x05 \x01(\v2\x13.conf.SummaryOutboxR\x06outbox\x12G\n" +
+	"\x10source_scheduler\x18\x06 \x01(\v2\x1c.conf.SummarySourceSchedulerR\x0fsourceScheduler\x12+\n" +
+	"\x06reaper\x18\a \x01(\v2\x13.conf.SummaryReaperR\x06reaper\"\xd6\x03\n" +
 	"\rSummaryWorker\x12>\n" +
-	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\x12\x1d\n" +
-	"\n" +
-	"batch_size\x18\x02 \x01(\x05R\tbatchSize\"D\n" +
+	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\x12 \n" +
+	"\vconcurrency\x18\x03 \x01(\x05R\vconcurrency\x126\n" +
+	"\tlease_ttl\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\bleaseTtl\x12H\n" +
+	"\x12heartbeat_interval\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\x11heartbeatInterval\x12D\n" +
+	"\x10graceful_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x0fgracefulTimeout\x12!\n" +
+	"\fmax_attempts\x18\a \x01(\x05R\vmaxAttempts\x12<\n" +
+	"\fbackoff_base\x18\b \x01(\v2\x19.google.protobuf.DurationR\vbackoffBase\x12:\n" +
+	"\vbackoff_max\x18\t \x01(\v2\x19.google.protobuf.DurationR\n" +
+	"backoffMax\"D\n" +
 	"\vSummaryCron\x125\n" +
-	"\binterval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\binterval\"\x95\x02\n" +
+	"\binterval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\binterval\"X\n" +
+	"\x16SummarySourceScheduler\x12>\n" +
+	"\rpoll_interval\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\"w\n" +
+	"\rSummaryReaper\x125\n" +
+	"\binterval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\binterval\x12/\n" +
+	"\x05grace\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x05grace\"\x95\x02\n" +
 	"\n" +
 	"SummaryLLM\x123\n" +
 	"\atimeout\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12\x1f\n" +
@@ -839,23 +1012,25 @@ func file_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_internal_conf_conf_proto_rawDescData
 }
 
-var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_internal_conf_conf_proto_goTypes = []any{
-	(*Bootstrap)(nil),           // 0: conf.Bootstrap
-	(*Server)(nil),              // 1: conf.Server
-	(*HTTP)(nil),                // 2: conf.HTTP
-	(*GRPC)(nil),                // 3: conf.GRPC
-	(*Data)(nil),                // 4: conf.Data
-	(*Database)(nil),            // 5: conf.Database
-	(*Summary)(nil),             // 6: conf.Summary
-	(*SummaryWorker)(nil),       // 7: conf.SummaryWorker
-	(*SummaryCron)(nil),         // 8: conf.SummaryCron
-	(*SummaryLLM)(nil),          // 9: conf.SummaryLLM
-	(*SummaryLLMProvider)(nil),  // 10: conf.SummaryLLMProvider
-	(*SummaryCumulative)(nil),   // 11: conf.SummaryCumulative
-	(*SummaryOutbox)(nil),       // 12: conf.SummaryOutbox
-	nil,                         // 13: conf.SummaryLLM.ProvidersEntry
-	(*durationpb.Duration)(nil), // 14: google.protobuf.Duration
+	(*Bootstrap)(nil),              // 0: conf.Bootstrap
+	(*Server)(nil),                 // 1: conf.Server
+	(*HTTP)(nil),                   // 2: conf.HTTP
+	(*GRPC)(nil),                   // 3: conf.GRPC
+	(*Data)(nil),                   // 4: conf.Data
+	(*Database)(nil),               // 5: conf.Database
+	(*Summary)(nil),                // 6: conf.Summary
+	(*SummaryWorker)(nil),          // 7: conf.SummaryWorker
+	(*SummaryCron)(nil),            // 8: conf.SummaryCron
+	(*SummarySourceScheduler)(nil), // 9: conf.SummarySourceScheduler
+	(*SummaryReaper)(nil),          // 10: conf.SummaryReaper
+	(*SummaryLLM)(nil),             // 11: conf.SummaryLLM
+	(*SummaryLLMProvider)(nil),     // 12: conf.SummaryLLMProvider
+	(*SummaryCumulative)(nil),      // 13: conf.SummaryCumulative
+	(*SummaryOutbox)(nil),          // 14: conf.SummaryOutbox
+	nil,                            // 15: conf.SummaryLLM.ProvidersEntry
+	(*durationpb.Duration)(nil),    // 16: google.protobuf.Duration
 }
 var file_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: conf.Bootstrap.server:type_name -> conf.Server
@@ -863,26 +1038,36 @@ var file_internal_conf_conf_proto_depIdxs = []int32{
 	6,  // 2: conf.Bootstrap.summary:type_name -> conf.Summary
 	2,  // 3: conf.Server.http:type_name -> conf.HTTP
 	3,  // 4: conf.Server.grpc:type_name -> conf.GRPC
-	14, // 5: conf.HTTP.timeout:type_name -> google.protobuf.Duration
-	14, // 6: conf.GRPC.timeout:type_name -> google.protobuf.Duration
+	16, // 5: conf.HTTP.timeout:type_name -> google.protobuf.Duration
+	16, // 6: conf.GRPC.timeout:type_name -> google.protobuf.Duration
 	5,  // 7: conf.Data.database:type_name -> conf.Database
 	7,  // 8: conf.Summary.worker:type_name -> conf.SummaryWorker
 	8,  // 9: conf.Summary.cron:type_name -> conf.SummaryCron
-	9,  // 10: conf.Summary.llm:type_name -> conf.SummaryLLM
-	11, // 11: conf.Summary.cumulative:type_name -> conf.SummaryCumulative
-	12, // 12: conf.Summary.outbox:type_name -> conf.SummaryOutbox
-	14, // 13: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
-	14, // 14: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
-	14, // 15: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
-	13, // 16: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
-	14, // 17: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
-	14, // 18: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
-	10, // 19: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	11, // 10: conf.Summary.llm:type_name -> conf.SummaryLLM
+	13, // 11: conf.Summary.cumulative:type_name -> conf.SummaryCumulative
+	14, // 12: conf.Summary.outbox:type_name -> conf.SummaryOutbox
+	9,  // 13: conf.Summary.source_scheduler:type_name -> conf.SummarySourceScheduler
+	10, // 14: conf.Summary.reaper:type_name -> conf.SummaryReaper
+	16, // 15: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
+	16, // 16: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
+	16, // 17: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
+	16, // 18: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
+	16, // 19: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
+	16, // 20: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
+	16, // 21: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
+	16, // 22: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
+	16, // 23: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
+	16, // 24: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
+	16, // 25: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
+	15, // 26: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
+	16, // 27: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
+	16, // 28: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
+	12, // 29: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_internal_conf_conf_proto_init() }
@@ -896,7 +1081,7 @@ func file_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_conf_conf_proto_rawDesc), len(file_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

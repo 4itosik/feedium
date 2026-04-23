@@ -2,18 +2,39 @@ package biz
 
 import (
 	"context"
+	"time"
+
+	"github.com/4itosik/feedium/internal/conf"
 )
 
 type SummaryUsecase struct {
 	summaryRepo SummaryRepo
 	outboxRepo  SummaryOutboxRepo
 	sourceRepo  SourceRepo
+	txManager   TxManager
+	cfg         *conf.Summary
 }
 
-func NewSummaryUsecase(summaryRepo SummaryRepo, outboxRepo SummaryOutboxRepo, sourceRepo SourceRepo) *SummaryUsecase {
-	return &SummaryUsecase{summaryRepo: summaryRepo, outboxRepo: outboxRepo, sourceRepo: sourceRepo}
+func NewSummaryUsecase(
+	summaryRepo SummaryRepo,
+	outboxRepo SummaryOutboxRepo,
+	sourceRepo SourceRepo,
+	txManager TxManager,
+	cfg *conf.Summary,
+) *SummaryUsecase {
+	return &SummaryUsecase{
+		summaryRepo: summaryRepo,
+		outboxRepo:  outboxRepo,
+		sourceRepo:  sourceRepo,
+		txManager:   txManager,
+		cfg:         cfg,
+	}
 }
 
+// TriggerSourceSummarize enqueues a summarize_source event for a cumulative source and
+// bumps sources.next_summary_at by cron.interval in the same transaction (OQ-02).
+// A manual trigger thus behaves as an early-fired scheduled tick: the next scheduled
+// summarization still lands a full cron.interval after the manual one.
 func (uc *SummaryUsecase) TriggerSourceSummarize(ctx context.Context, sourceID string) (string, bool, error) {
 	source, err := uc.sourceRepo.Get(ctx, sourceID)
 	if err != nil {
@@ -32,13 +53,27 @@ func (uc *SummaryUsecase) TriggerSourceSummarize(ctx context.Context, sourceID s
 		return activeEvent.ID, true, nil
 	}
 
-	event := NewSummaryEvent(SummaryEventTypeSummarizeSource, sourceID, nil)
-	saved, saveErr := uc.outboxRepo.Save(ctx, event)
-	if saveErr != nil {
-		return "", false, saveErr
+	cronInterval := uc.cfg.GetCron().GetInterval().AsDuration()
+	if cronInterval <= 0 {
+		cronInterval = time.Hour
+	}
+	nextAt := time.Now().Add(cronInterval)
+
+	var eventID string
+	txErr := uc.txManager.InTx(ctx, func(txCtx context.Context) error {
+		event := NewSummaryEvent(SummaryEventTypeSummarizeSource, sourceID, nil)
+		saved, saveErr := uc.outboxRepo.Save(txCtx, event)
+		if saveErr != nil {
+			return saveErr
+		}
+		eventID = saved.ID
+		return uc.sourceRepo.BumpNextSummaryAt(txCtx, sourceID, nextAt)
+	})
+	if txErr != nil {
+		return "", false, txErr
 	}
 
-	return saved.ID, false, nil
+	return eventID, false, nil
 }
 
 func (uc *SummaryUsecase) GetSummaryEvent(ctx context.Context, id string) (*SummaryEvent, error) {

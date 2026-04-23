@@ -195,6 +195,12 @@ type SourceRepo interface {
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (Source, error)
 	List(ctx context.Context, filter ListSourcesFilter) (ListSourcesResult, error)
+	// ClaimDueCumulative atomically picks one cumulative source whose
+	// next_summary_at is due (NULL or <= now()), under FOR UPDATE SKIP LOCKED.
+	// Returns ErrNoSourceDue when no source is due.
+	ClaimDueCumulative(ctx context.Context) (Source, error)
+	// BumpNextSummaryAt sets sources.next_summary_at for the given source id.
+	BumpNextSummaryAt(ctx context.Context, sourceID string, nextAt time.Time) error
 }
 
 // SourceUsecase handles business logic for Source operations.

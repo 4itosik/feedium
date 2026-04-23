@@ -50,6 +50,23 @@ func (SummaryEvent) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				dialect.Postgres: "timestamptz",
 			}),
+		field.Time("locked_until").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{
+				dialect.Postgres: "timestamptz",
+			}),
+		field.String("locked_by").
+			Optional().
+			Nillable(),
+		field.Int("attempt_count").
+			Default(0),
+		field.Time("next_attempt_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{
+				dialect.Postgres: "timestamptz",
+			}),
 	}
 }
 

@@ -27,6 +27,8 @@ type Source struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// NextSummaryAt holds the value of the "next_summary_at" field.
+	NextSummaryAt *time.Time `json:"next_summary_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SourceQuery when eager-loading is set.
 	Edges        SourceEdges `json:"edges"`
@@ -82,7 +84,7 @@ func (*Source) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case source.FieldType:
 			values[i] = new(sql.NullString)
-		case source.FieldCreatedAt, source.FieldUpdatedAt:
+		case source.FieldCreatedAt, source.FieldUpdatedAt, source.FieldNextSummaryAt:
 			values[i] = new(sql.NullTime)
 		case source.FieldID:
 			values[i] = new(uuid.UUID)
@@ -132,6 +134,13 @@ func (_m *Source) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case source.FieldNextSummaryAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field next_summary_at", values[i])
+			} else if value.Valid {
+				_m.NextSummaryAt = new(time.Time)
+				*_m.NextSummaryAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -195,6 +204,11 @@ func (_m *Source) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	if v := _m.NextSummaryAt; v != nil {
+		builder.WriteString("next_summary_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

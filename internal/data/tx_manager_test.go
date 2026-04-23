@@ -19,10 +19,9 @@ func TestIntegration_TxManager_Commit(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	d := &data.Data{Ent: client}
 	txMgr := data.NewTxManager(d)
 	sourceRepo := data.NewSourceRepo(d)
 	outboxRepo := data.NewSummaryOutboxRepo(d)
@@ -57,10 +56,9 @@ func TestIntegration_TxManager_Rollback(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	d := &data.Data{Ent: client}
 	txMgr := data.NewTxManager(d)
 	sourceRepo := data.NewSourceRepo(d)
 	outboxRepo := data.NewSummaryOutboxRepo(d)
@@ -93,10 +91,9 @@ func TestIntegration_TxManager_Rollback_PostAndOutbox(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	d := &data.Data{Ent: client}
 	txMgr := data.NewTxManager(d)
 	sourceRepo := data.NewSourceRepo(d)
 	postRepo := data.NewPostRepo(d)

@@ -64,6 +64,20 @@ func (_c *SourceCreate) SetNillableUpdatedAt(v *time.Time) *SourceCreate {
 	return _c
 }
 
+// SetNextSummaryAt sets the "next_summary_at" field.
+func (_c *SourceCreate) SetNextSummaryAt(v time.Time) *SourceCreate {
+	_c.mutation.SetNextSummaryAt(v)
+	return _c
+}
+
+// SetNillableNextSummaryAt sets the "next_summary_at" field if the given value is not nil.
+func (_c *SourceCreate) SetNillableNextSummaryAt(v *time.Time) *SourceCreate {
+	if v != nil {
+		_c.SetNextSummaryAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SourceCreate) SetID(v uuid.UUID) *SourceCreate {
 	_c.mutation.SetID(v)
@@ -241,6 +255,10 @@ func (_c *SourceCreate) createSpec() (*Source, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(source.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.NextSummaryAt(); ok {
+		_spec.SetField(source.FieldNextSummaryAt, field.TypeTime, value)
+		_node.NextSummaryAt = &value
 	}
 	if nodes := _c.mutation.PostsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

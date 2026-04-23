@@ -915,6 +915,7 @@ type SourceMutation struct {
 	_config                 *map[string]interface{}
 	created_at              *time.Time
 	updated_at              *time.Time
+	next_summary_at         *time.Time
 	clearedFields           map[string]struct{}
 	posts                   map[uuid.UUID]struct{}
 	removedposts            map[uuid.UUID]struct{}
@@ -1178,6 +1179,55 @@ func (m *SourceMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetNextSummaryAt sets the "next_summary_at" field.
+func (m *SourceMutation) SetNextSummaryAt(t time.Time) {
+	m.next_summary_at = &t
+}
+
+// NextSummaryAt returns the value of the "next_summary_at" field in the mutation.
+func (m *SourceMutation) NextSummaryAt() (r time.Time, exists bool) {
+	v := m.next_summary_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextSummaryAt returns the old "next_summary_at" field's value of the Source entity.
+// If the Source object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SourceMutation) OldNextSummaryAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextSummaryAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextSummaryAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextSummaryAt: %w", err)
+	}
+	return oldValue.NextSummaryAt, nil
+}
+
+// ClearNextSummaryAt clears the value of the "next_summary_at" field.
+func (m *SourceMutation) ClearNextSummaryAt() {
+	m.next_summary_at = nil
+	m.clearedFields[source.FieldNextSummaryAt] = struct{}{}
+}
+
+// NextSummaryAtCleared returns if the "next_summary_at" field was cleared in this mutation.
+func (m *SourceMutation) NextSummaryAtCleared() bool {
+	_, ok := m.clearedFields[source.FieldNextSummaryAt]
+	return ok
+}
+
+// ResetNextSummaryAt resets all changes to the "next_summary_at" field.
+func (m *SourceMutation) ResetNextSummaryAt() {
+	m.next_summary_at = nil
+	delete(m.clearedFields, source.FieldNextSummaryAt)
+}
+
 // AddPostIDs adds the "posts" edge to the Post entity by ids.
 func (m *SourceMutation) AddPostIDs(ids ...uuid.UUID) {
 	if m.posts == nil {
@@ -1374,7 +1424,7 @@ func (m *SourceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SourceMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m._type != nil {
 		fields = append(fields, source.FieldType)
 	}
@@ -1386,6 +1436,9 @@ func (m *SourceMutation) Fields() []string {
 	}
 	if m.updated_at != nil {
 		fields = append(fields, source.FieldUpdatedAt)
+	}
+	if m.next_summary_at != nil {
+		fields = append(fields, source.FieldNextSummaryAt)
 	}
 	return fields
 }
@@ -1403,6 +1456,8 @@ func (m *SourceMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case source.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case source.FieldNextSummaryAt:
+		return m.NextSummaryAt()
 	}
 	return nil, false
 }
@@ -1420,6 +1475,8 @@ func (m *SourceMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldCreatedAt(ctx)
 	case source.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case source.FieldNextSummaryAt:
+		return m.OldNextSummaryAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Source field %s", name)
 }
@@ -1457,6 +1514,13 @@ func (m *SourceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
+	case source.FieldNextSummaryAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextSummaryAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Source field %s", name)
 }
@@ -1486,7 +1550,11 @@ func (m *SourceMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *SourceMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(source.FieldNextSummaryAt) {
+		fields = append(fields, source.FieldNextSummaryAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1499,6 +1567,11 @@ func (m *SourceMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *SourceMutation) ClearField(name string) error {
+	switch name {
+	case source.FieldNextSummaryAt:
+		m.ClearNextSummaryAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Source nullable field %s", name)
 }
 
@@ -1517,6 +1590,9 @@ func (m *SourceMutation) ResetField(name string) error {
 		return nil
 	case source.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case source.FieldNextSummaryAt:
+		m.ResetNextSummaryAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Source field %s", name)
@@ -2367,22 +2443,27 @@ func (m *SummaryMutation) ResetEdge(name string) error {
 // SummaryEventMutation represents an operation that mutates the SummaryEvent nodes in the graph.
 type SummaryEventMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uuid.UUID
-	post_id        *uuid.UUID
-	source_id      *uuid.UUID
-	event_type     *string
-	status         *string
-	error          *string
-	created_at     *time.Time
-	processed_at   *time.Time
-	clearedFields  map[string]struct{}
-	summary        *uuid.UUID
-	clearedsummary bool
-	done           bool
-	oldValue       func(context.Context) (*SummaryEvent, error)
-	predicates     []predicate.SummaryEvent
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	post_id          *uuid.UUID
+	source_id        *uuid.UUID
+	event_type       *string
+	status           *string
+	error            *string
+	created_at       *time.Time
+	processed_at     *time.Time
+	locked_until     *time.Time
+	locked_by        *string
+	attempt_count    *int
+	addattempt_count *int
+	next_attempt_at  *time.Time
+	clearedFields    map[string]struct{}
+	summary          *uuid.UUID
+	clearedsummary   bool
+	done             bool
+	oldValue         func(context.Context) (*SummaryEvent, error)
+	predicates       []predicate.SummaryEvent
 }
 
 var _ ent.Mutation = (*SummaryEventMutation)(nil)
@@ -2829,6 +2910,209 @@ func (m *SummaryEventMutation) ResetProcessedAt() {
 	delete(m.clearedFields, summaryevent.FieldProcessedAt)
 }
 
+// SetLockedUntil sets the "locked_until" field.
+func (m *SummaryEventMutation) SetLockedUntil(t time.Time) {
+	m.locked_until = &t
+}
+
+// LockedUntil returns the value of the "locked_until" field in the mutation.
+func (m *SummaryEventMutation) LockedUntil() (r time.Time, exists bool) {
+	v := m.locked_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLockedUntil returns the old "locked_until" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldLockedUntil(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLockedUntil is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLockedUntil requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLockedUntil: %w", err)
+	}
+	return oldValue.LockedUntil, nil
+}
+
+// ClearLockedUntil clears the value of the "locked_until" field.
+func (m *SummaryEventMutation) ClearLockedUntil() {
+	m.locked_until = nil
+	m.clearedFields[summaryevent.FieldLockedUntil] = struct{}{}
+}
+
+// LockedUntilCleared returns if the "locked_until" field was cleared in this mutation.
+func (m *SummaryEventMutation) LockedUntilCleared() bool {
+	_, ok := m.clearedFields[summaryevent.FieldLockedUntil]
+	return ok
+}
+
+// ResetLockedUntil resets all changes to the "locked_until" field.
+func (m *SummaryEventMutation) ResetLockedUntil() {
+	m.locked_until = nil
+	delete(m.clearedFields, summaryevent.FieldLockedUntil)
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (m *SummaryEventMutation) SetLockedBy(s string) {
+	m.locked_by = &s
+}
+
+// LockedBy returns the value of the "locked_by" field in the mutation.
+func (m *SummaryEventMutation) LockedBy() (r string, exists bool) {
+	v := m.locked_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLockedBy returns the old "locked_by" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldLockedBy(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLockedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLockedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLockedBy: %w", err)
+	}
+	return oldValue.LockedBy, nil
+}
+
+// ClearLockedBy clears the value of the "locked_by" field.
+func (m *SummaryEventMutation) ClearLockedBy() {
+	m.locked_by = nil
+	m.clearedFields[summaryevent.FieldLockedBy] = struct{}{}
+}
+
+// LockedByCleared returns if the "locked_by" field was cleared in this mutation.
+func (m *SummaryEventMutation) LockedByCleared() bool {
+	_, ok := m.clearedFields[summaryevent.FieldLockedBy]
+	return ok
+}
+
+// ResetLockedBy resets all changes to the "locked_by" field.
+func (m *SummaryEventMutation) ResetLockedBy() {
+	m.locked_by = nil
+	delete(m.clearedFields, summaryevent.FieldLockedBy)
+}
+
+// SetAttemptCount sets the "attempt_count" field.
+func (m *SummaryEventMutation) SetAttemptCount(i int) {
+	m.attempt_count = &i
+	m.addattempt_count = nil
+}
+
+// AttemptCount returns the value of the "attempt_count" field in the mutation.
+func (m *SummaryEventMutation) AttemptCount() (r int, exists bool) {
+	v := m.attempt_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttemptCount returns the old "attempt_count" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldAttemptCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttemptCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttemptCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttemptCount: %w", err)
+	}
+	return oldValue.AttemptCount, nil
+}
+
+// AddAttemptCount adds i to the "attempt_count" field.
+func (m *SummaryEventMutation) AddAttemptCount(i int) {
+	if m.addattempt_count != nil {
+		*m.addattempt_count += i
+	} else {
+		m.addattempt_count = &i
+	}
+}
+
+// AddedAttemptCount returns the value that was added to the "attempt_count" field in this mutation.
+func (m *SummaryEventMutation) AddedAttemptCount() (r int, exists bool) {
+	v := m.addattempt_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAttemptCount resets all changes to the "attempt_count" field.
+func (m *SummaryEventMutation) ResetAttemptCount() {
+	m.attempt_count = nil
+	m.addattempt_count = nil
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (m *SummaryEventMutation) SetNextAttemptAt(t time.Time) {
+	m.next_attempt_at = &t
+}
+
+// NextAttemptAt returns the value of the "next_attempt_at" field in the mutation.
+func (m *SummaryEventMutation) NextAttemptAt() (r time.Time, exists bool) {
+	v := m.next_attempt_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextAttemptAt returns the old "next_attempt_at" field's value of the SummaryEvent entity.
+// If the SummaryEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SummaryEventMutation) OldNextAttemptAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextAttemptAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextAttemptAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextAttemptAt: %w", err)
+	}
+	return oldValue.NextAttemptAt, nil
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (m *SummaryEventMutation) ClearNextAttemptAt() {
+	m.next_attempt_at = nil
+	m.clearedFields[summaryevent.FieldNextAttemptAt] = struct{}{}
+}
+
+// NextAttemptAtCleared returns if the "next_attempt_at" field was cleared in this mutation.
+func (m *SummaryEventMutation) NextAttemptAtCleared() bool {
+	_, ok := m.clearedFields[summaryevent.FieldNextAttemptAt]
+	return ok
+}
+
+// ResetNextAttemptAt resets all changes to the "next_attempt_at" field.
+func (m *SummaryEventMutation) ResetNextAttemptAt() {
+	m.next_attempt_at = nil
+	delete(m.clearedFields, summaryevent.FieldNextAttemptAt)
+}
+
 // ClearSummary clears the "summary" edge to the Summary entity.
 func (m *SummaryEventMutation) ClearSummary() {
 	m.clearedsummary = true
@@ -2890,7 +3174,7 @@ func (m *SummaryEventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SummaryEventMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 12)
 	if m.post_id != nil {
 		fields = append(fields, summaryevent.FieldPostID)
 	}
@@ -2914,6 +3198,18 @@ func (m *SummaryEventMutation) Fields() []string {
 	}
 	if m.processed_at != nil {
 		fields = append(fields, summaryevent.FieldProcessedAt)
+	}
+	if m.locked_until != nil {
+		fields = append(fields, summaryevent.FieldLockedUntil)
+	}
+	if m.locked_by != nil {
+		fields = append(fields, summaryevent.FieldLockedBy)
+	}
+	if m.attempt_count != nil {
+		fields = append(fields, summaryevent.FieldAttemptCount)
+	}
+	if m.next_attempt_at != nil {
+		fields = append(fields, summaryevent.FieldNextAttemptAt)
 	}
 	return fields
 }
@@ -2939,6 +3235,14 @@ func (m *SummaryEventMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case summaryevent.FieldProcessedAt:
 		return m.ProcessedAt()
+	case summaryevent.FieldLockedUntil:
+		return m.LockedUntil()
+	case summaryevent.FieldLockedBy:
+		return m.LockedBy()
+	case summaryevent.FieldAttemptCount:
+		return m.AttemptCount()
+	case summaryevent.FieldNextAttemptAt:
+		return m.NextAttemptAt()
 	}
 	return nil, false
 }
@@ -2964,6 +3268,14 @@ func (m *SummaryEventMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldCreatedAt(ctx)
 	case summaryevent.FieldProcessedAt:
 		return m.OldProcessedAt(ctx)
+	case summaryevent.FieldLockedUntil:
+		return m.OldLockedUntil(ctx)
+	case summaryevent.FieldLockedBy:
+		return m.OldLockedBy(ctx)
+	case summaryevent.FieldAttemptCount:
+		return m.OldAttemptCount(ctx)
+	case summaryevent.FieldNextAttemptAt:
+		return m.OldNextAttemptAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown SummaryEvent field %s", name)
 }
@@ -3029,6 +3341,34 @@ func (m *SummaryEventMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProcessedAt(v)
 		return nil
+	case summaryevent.FieldLockedUntil:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLockedUntil(v)
+		return nil
+	case summaryevent.FieldLockedBy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLockedBy(v)
+		return nil
+	case summaryevent.FieldAttemptCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttemptCount(v)
+		return nil
+	case summaryevent.FieldNextAttemptAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextAttemptAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SummaryEvent field %s", name)
 }
@@ -3036,13 +3376,21 @@ func (m *SummaryEventMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *SummaryEventMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addattempt_count != nil {
+		fields = append(fields, summaryevent.FieldAttemptCount)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *SummaryEventMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case summaryevent.FieldAttemptCount:
+		return m.AddedAttemptCount()
+	}
 	return nil, false
 }
 
@@ -3051,6 +3399,13 @@ func (m *SummaryEventMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SummaryEventMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case summaryevent.FieldAttemptCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAttemptCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SummaryEvent numeric field %s", name)
 }
@@ -3070,6 +3425,15 @@ func (m *SummaryEventMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(summaryevent.FieldProcessedAt) {
 		fields = append(fields, summaryevent.FieldProcessedAt)
+	}
+	if m.FieldCleared(summaryevent.FieldLockedUntil) {
+		fields = append(fields, summaryevent.FieldLockedUntil)
+	}
+	if m.FieldCleared(summaryevent.FieldLockedBy) {
+		fields = append(fields, summaryevent.FieldLockedBy)
+	}
+	if m.FieldCleared(summaryevent.FieldNextAttemptAt) {
+		fields = append(fields, summaryevent.FieldNextAttemptAt)
 	}
 	return fields
 }
@@ -3096,6 +3460,15 @@ func (m *SummaryEventMutation) ClearField(name string) error {
 		return nil
 	case summaryevent.FieldProcessedAt:
 		m.ClearProcessedAt()
+		return nil
+	case summaryevent.FieldLockedUntil:
+		m.ClearLockedUntil()
+		return nil
+	case summaryevent.FieldLockedBy:
+		m.ClearLockedBy()
+		return nil
+	case summaryevent.FieldNextAttemptAt:
+		m.ClearNextAttemptAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SummaryEvent nullable field %s", name)
@@ -3128,6 +3501,18 @@ func (m *SummaryEventMutation) ResetField(name string) error {
 		return nil
 	case summaryevent.FieldProcessedAt:
 		m.ResetProcessedAt()
+		return nil
+	case summaryevent.FieldLockedUntil:
+		m.ResetLockedUntil()
+		return nil
+	case summaryevent.FieldLockedBy:
+		m.ResetLockedBy()
+		return nil
+	case summaryevent.FieldAttemptCount:
+		m.ResetAttemptCount()
+		return nil
+	case summaryevent.FieldNextAttemptAt:
+		m.ResetNextAttemptAt()
 		return nil
 	}
 	return fmt.Errorf("unknown SummaryEvent field %s", name)

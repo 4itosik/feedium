@@ -53,6 +53,7 @@ var (
 		{Name: "config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "next_summary_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 	}
 	// SourcesTable holds the schema information for the "sources" table.
 	SourcesTable = &schema.Table{
@@ -118,6 +119,10 @@ var (
 		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "processed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "locked_until", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "locked_by", Type: field.TypeString, Nullable: true},
+		{Name: "attempt_count", Type: field.TypeInt, Default: 0},
+		{Name: "next_attempt_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "source_summary_events", Type: field.TypeUUID, Nullable: true},
 		{Name: "summary_id", Type: field.TypeUUID, Nullable: true},
 	}
@@ -129,13 +134,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "summary_events_sources_summary_events",
-				Columns:    []*schema.Column{SummaryEventsColumns[8]},
+				Columns:    []*schema.Column{SummaryEventsColumns[12]},
 				RefColumns: []*schema.Column{SourcesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "summary_events_summaries_summary",
-				Columns:    []*schema.Column{SummaryEventsColumns[9]},
+				Columns:    []*schema.Column{SummaryEventsColumns[13]},
 				RefColumns: []*schema.Column{SummariesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
