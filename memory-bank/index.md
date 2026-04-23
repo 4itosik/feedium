@@ -56,6 +56,11 @@ status: active
 - [Testing Policy](engineering/testing-policy.md) — TDD для biz/ (Red-Green-Refactor), тесты-после для data/service/task/, стек (testify, mockgen, testcontainers, goleak), AAA-паттерн, table-driven tests, goroutine leak detection, naming конвенции. Читать при написании любого теста.
 - [Git Workflow](engineering/git-workflow.md) — Conventional Commits (English, present tense, ≤72 chars), squash merge, требования к PR (зелёные проверки, предметный title, body с what/why/risks). Читать при оформлении коммитов и pull requests.
 
+### [Flows — lifecycle и шаблоны](flows/index.md)
+
+- [Feature Flow](flows/feature-flow.md) — lifecycle feature-пакета (Draft → Design Ready → Plan Ready → Execution → Done), transition gates и стабильные идентификаторы (`REQ-*`, `SC-*`, `CHK-*`, `STEP-*` и т.д.). Читать перед созданием нового feature package начиная с FT-006.
+- [Templates](flows/templates/index.md) — эталонные шаблоны feature-документов: `README.md`, `short.md`, `large.md`, `implementation-plan.md`.
+
 ### [PRD — продуктовые инициативы](prd/index.md)
 
 - [PRD-001: Feedium MVP](prd/PRD-001-mvp.md) — MVP initiative: проблема (10+ источников, 80%+ шум), goals (G-01..03), scope (источники, коллекторы, AI-суммаризация, скоринг, React UI, OpenClaw), business rules (BR-01..06), risks (RISK-01..05), downstream features (FT-001..011). Читать перед началом работы над любой фичей.
@@ -63,10 +68,12 @@ status: active
 ### [Features — feature packages](features/index.md)
 
 - [FT-001: Структура проекта](features/FT-001-project-structure/brief.md) — каркас Go-проекта по kratos-layout: go.mod, cmd/, internal/, Wire, Makefile. Артефакты: [brief](features/FT-001-project-structure/brief.md), [spec](features/FT-001-project-structure/spec.md), [implementation-plan](features/FT-001-project-structure/implementation-plan.md). Upstream: PRD-001. Delivery: done.
-- [FT-002: Health Check](features/FT-002-health-check/brief.md) — HTTP health-check эндпоинт + первичный setup PostgreSQL с проверкой доступности БД. Артефакты: [brief](features/FT-002-health-check/brief.md), [spec](features/FT-002-health-check/spec.md), [implementation-plan](features/FT-002-health-check/implementation-plan.md). Upstream: PRD-001. Delivery: planned.
-- [FT-003: Source Management](features/FT-003-source-management/brief.md) — управление источниками (Telegram, RSS, веб-сайты). Артефакты: [brief](features/FT-003-source-management/brief.md). Upstream: PRD-001. Delivery: planned.
-- [FT-004: Posts Management](features/FT-004-posts-management/brief.md) — управление постами: создание, чтение с фильтрацией по дате, изменение, удаление. Артефакты: [brief](features/FT-004-posts-management/brief.md). Upstream: PRD-001. Delivery: planned.
-- [FT-005: AI Summarization](features/FT-005-ai-summarization/brief.md) — AI-суммаризация постов и переписок: self-contained (сразу) и cumulative (по крону), outbox-паттерн, LLM-генерация саммари. Артефакты: [brief](features/FT-005-ai-summarization/brief.md). Upstream: PRD-001. Delivery: planned.
+- [FT-002: Health Check](features/FT-002-health-check/brief.md) — HTTP health-check эндпоинт + первичный setup PostgreSQL с проверкой доступности БД. Артефакты: [brief](features/FT-002-health-check/brief.md), [spec](features/FT-002-health-check/spec.md), [implementation-plan](features/FT-002-health-check/implementation-plan.md). Upstream: PRD-001. Delivery: done.
+- [FT-003: Source Management](features/FT-003-source-management/brief.md) — управление источниками (Telegram, RSS, веб-сайты). Артефакты: [brief](features/FT-003-source-management/brief.md), [spec](features/FT-003-source-management/spec.md), [implement](features/FT-003-source-management/implement.md). Upstream: PRD-001. Delivery: done.
+- [FT-004: Posts Management](features/FT-004-posts-management/brief.md) — управление постами: создание, чтение с фильтрацией по дате, изменение, удаление. Артефакты: [brief](features/FT-004-posts-management/brief.md), [spec](features/FT-004-posts-management/spec.md), [implement](features/FT-004-posts-management/implement.md). Upstream: PRD-001. Delivery: done.
+- [FT-005: AI Summarization](features/FT-005-ai-summarization/brief.md) — AI-суммаризация постов и переписок: self-contained (сразу) и cumulative (по крону), outbox-паттерн, LLM-генерация саммари. Артефакты: [brief](features/FT-005-ai-summarization/brief.md), [spec](features/FT-005-ai-summarization/spec.md), [implement](features/FT-005-ai-summarization/implement.md). Upstream: PRD-001. Delivery: done.
+
+> С FT-006 новые фичи ведутся по [feature-flow](flows/feature-flow.md): package = `README.md` + `feature.md` (+ `implementation-plan.md` после Design Ready). Формат brief+spec замёрз для FT-001..005.
 
 ### [ADR — архитектурные решения](adr/index.md)
 

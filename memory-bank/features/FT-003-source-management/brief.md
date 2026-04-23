@@ -6,7 +6,7 @@ derived_from:
   - ../../prd/PRD-001-mvp.md
   - ../../domain/architecture.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # FT-003: Source Management

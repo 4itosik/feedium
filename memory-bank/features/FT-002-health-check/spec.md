@@ -7,7 +7,7 @@ derived_from:
   - ../../domain/architecture.md
   - ../../engineering/database.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # FT-002: Health Check — Spec

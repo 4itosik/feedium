@@ -5,7 +5,7 @@ purpose: "Пошаговый план реализации FT-002: health-check 
 derived_from:
   - spec.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # FT-002: Implementation Plan

@@ -5,7 +5,7 @@ purpose: "Пошаговый план реализации FT-005: AI-сумма
 derived_from:
   - spec.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # FT-005: Implementation Plan

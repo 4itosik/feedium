@@ -10,7 +10,7 @@ derived_from:
   - ../../engineering/api-contracts.md
   - ../FT-003-source-management/spec.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # FT-004: Posts Management

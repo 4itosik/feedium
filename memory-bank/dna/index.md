@@ -17,3 +17,4 @@ DNA — конституция проектной документации. Оп
 - [Document Lifecycle](lifecycle.md) — maintenance rules, sync checklist.
 - [Cross-references](cross-references.md) — правила двусторонней навигации code ↔ docs.
 - [Dependency Tree](dependency-tree.md) — визуализация дерева зависимостей (derived_from) всех governed-документов.
+- [Feature Flow](../flows/feature-flow.md) — lifecycle и stable identifiers для feature-пакетов (derived from governance, frontmatter).

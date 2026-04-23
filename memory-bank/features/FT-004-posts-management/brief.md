@@ -7,7 +7,7 @@ derived_from:
   - ../../domain/architecture.md
   - ../../domain/glossary.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # FT-004: Posts Management

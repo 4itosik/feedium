@@ -26,6 +26,8 @@ principles.md                          ← ROOT, не имеет derived_from
 │   ├── domain/architecture.md
 │   ├── domain/glossary.md
 │   ├── dna/dependency-tree.md
+│   ├── flows/feature-flow.md            (derived_from: governance.md, frontmatter.md)
+│   │   └── flows/templates/feature/{README,short,large,implementation-plan}.md
 │   ├── engineering/index.md
 │   ├── engineering/go-style.md
 │   ├── engineering/coding-style.md
@@ -83,3 +85,10 @@ principles.md                          ← ROOT, не имеет derived_from
 | `features/FT-002-health-check/brief.md` | `prd/PRD-001-mvp.md`, `domain/architecture.md` |
 | `features/FT-002-health-check/spec.md` | `brief.md`, `domain/architecture.md`, `engineering/database.md` |
 | `features/FT-002-health-check/implementation-plan.md` | `spec.md` |
+| `flows/index.md` | `dna/governance.md`, `flows/feature-flow.md` |
+| `flows/feature-flow.md` | `dna/governance.md`, `dna/frontmatter.md` |
+| `flows/templates/index.md` | `dna/governance.md`, feature-templates |
+| `flows/templates/feature/README.md` | `flows/feature-flow.md`, `dna/frontmatter.md` |
+| `flows/templates/feature/short.md` | `flows/feature-flow.md`, `dna/frontmatter.md`, `engineering/testing-policy.md` |
+| `flows/templates/feature/large.md` | `flows/feature-flow.md`, `dna/frontmatter.md`, `engineering/testing-policy.md` |
+| `flows/templates/feature/implementation-plan.md` | `flows/feature-flow.md`, `dna/frontmatter.md`, `engineering/testing-policy.md` |

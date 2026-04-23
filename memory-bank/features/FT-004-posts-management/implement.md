@@ -9,7 +9,7 @@ derived_from:
   - ../../engineering/database.md
   - ../../engineering/api-contracts.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # Implementation Plan — FT-004: Posts Management
