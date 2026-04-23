@@ -35,6 +35,14 @@ type SummaryEvent struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// ProcessedAt holds the value of the "processed_at" field.
 	ProcessedAt *time.Time `json:"processed_at,omitempty"`
+	// LockedUntil holds the value of the "locked_until" field.
+	LockedUntil *time.Time `json:"locked_until,omitempty"`
+	// LockedBy holds the value of the "locked_by" field.
+	LockedBy *string `json:"locked_by,omitempty"`
+	// AttemptCount holds the value of the "attempt_count" field.
+	AttemptCount int `json:"attempt_count,omitempty"`
+	// NextAttemptAt holds the value of the "next_attempt_at" field.
+	NextAttemptAt *time.Time `json:"next_attempt_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SummaryEventQuery when eager-loading is set.
 	Edges                 SummaryEventEdges `json:"edges"`
@@ -69,9 +77,11 @@ func (*SummaryEvent) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case summaryevent.FieldPostID, summaryevent.FieldSummaryID:
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case summaryevent.FieldEventType, summaryevent.FieldStatus, summaryevent.FieldError:
+		case summaryevent.FieldAttemptCount:
+			values[i] = new(sql.NullInt64)
+		case summaryevent.FieldEventType, summaryevent.FieldStatus, summaryevent.FieldError, summaryevent.FieldLockedBy:
 			values[i] = new(sql.NullString)
-		case summaryevent.FieldCreatedAt, summaryevent.FieldProcessedAt:
+		case summaryevent.FieldCreatedAt, summaryevent.FieldProcessedAt, summaryevent.FieldLockedUntil, summaryevent.FieldNextAttemptAt:
 			values[i] = new(sql.NullTime)
 		case summaryevent.FieldID, summaryevent.FieldSourceID:
 			values[i] = new(uuid.UUID)
@@ -150,6 +160,33 @@ func (_m *SummaryEvent) assignValues(columns []string, values []any) error {
 				_m.ProcessedAt = new(time.Time)
 				*_m.ProcessedAt = value.Time
 			}
+		case summaryevent.FieldLockedUntil:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field locked_until", values[i])
+			} else if value.Valid {
+				_m.LockedUntil = new(time.Time)
+				*_m.LockedUntil = value.Time
+			}
+		case summaryevent.FieldLockedBy:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field locked_by", values[i])
+			} else if value.Valid {
+				_m.LockedBy = new(string)
+				*_m.LockedBy = value.String
+			}
+		case summaryevent.FieldAttemptCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field attempt_count", values[i])
+			} else if value.Valid {
+				_m.AttemptCount = int(value.Int64)
+			}
+		case summaryevent.FieldNextAttemptAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field next_attempt_at", values[i])
+			} else if value.Valid {
+				_m.NextAttemptAt = new(time.Time)
+				*_m.NextAttemptAt = value.Time
+			}
 		case summaryevent.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field source_summary_events", values[i])
@@ -227,6 +264,24 @@ func (_m *SummaryEvent) String() string {
 	builder.WriteString(", ")
 	if v := _m.ProcessedAt; v != nil {
 		builder.WriteString("processed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.LockedUntil; v != nil {
+		builder.WriteString("locked_until=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.LockedBy; v != nil {
+		builder.WriteString("locked_by=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("attempt_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AttemptCount))
+	builder.WriteString(", ")
+	if v := _m.NextAttemptAt; v != nil {
+		builder.WriteString("next_attempt_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')

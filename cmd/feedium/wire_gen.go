@@ -42,7 +42,8 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	postUsecase := biz.NewPostUsecase(postRepo, txManager, summaryOutboxRepo, sourceRepo)
 	postService := post.NewPostService(postUsecase)
 	summaryRepo := data.NewSummaryRepo(dataData)
-	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo)
+	confSummary := newSummaryConfigFromBootstrap(bc)
+	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, txManager, confSummary)
 	summaryService := summary.NewService(summaryUsecase)
 	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, summaryService, logger)
 	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, summaryService, logger)
@@ -52,10 +53,10 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		cleanup()
 		return nil, nil, err
 	}
-	confSummary := newSummaryConfigFromBootstrap(bc)
-	summaryWorker := task.NewSummaryWorker(summaryOutboxRepo, postRepo, summaryRepo, openRouterProvider, confSummary, logger)
-	cronWorker := task.NewCronWorker(summaryOutboxRepo, sourceRepo, summaryRepo, postRepo, confSummary, logger)
-	app := newApp(logger, httpServer, grpcServer, summaryWorker, cronWorker)
+	eventWorkerPool := task.NewEventWorkerPool(summaryOutboxRepo, postRepo, summaryRepo, openRouterProvider, confSummary, logger)
+	sourceDueScheduler := task.NewSourceDueScheduler(summaryOutboxRepo, sourceRepo, summaryRepo, postRepo, txManager, confSummary, logger)
+	stuckEventReaper := task.NewStuckEventReaper(summaryOutboxRepo, confSummary, logger)
+	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper)
 	return app, func() {
 		cleanup()
 	}, nil
@@ -63,8 +64,15 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 
 // wire.go:
 
-func newApp(logger *slog.Logger, hs *http.Server, gs *grpc.Server, sw *task.SummaryWorker, cw *task.CronWorker) *kratos.App {
-	return kratos.New(kratos.Name("feedium"), kratos.Server(hs, gs, sw, cw))
+func newApp(
+	logger *slog.Logger,
+	hs *http.Server,
+	gs *grpc.Server,
+	pool *task.EventWorkerPool,
+	scheduler *task.SourceDueScheduler,
+	reaper *task.StuckEventReaper,
+) *kratos.App {
+	return kratos.New(kratos.Name("feedium"), kratos.Server(hs, gs, pool, scheduler, reaper))
 }
 
 func newDataFromBootstrap(bc *conf.Bootstrap) *conf.Data {

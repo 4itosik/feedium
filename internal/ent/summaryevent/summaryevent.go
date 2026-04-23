@@ -31,6 +31,14 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldProcessedAt holds the string denoting the processed_at field in the database.
 	FieldProcessedAt = "processed_at"
+	// FieldLockedUntil holds the string denoting the locked_until field in the database.
+	FieldLockedUntil = "locked_until"
+	// FieldLockedBy holds the string denoting the locked_by field in the database.
+	FieldLockedBy = "locked_by"
+	// FieldAttemptCount holds the string denoting the attempt_count field in the database.
+	FieldAttemptCount = "attempt_count"
+	// FieldNextAttemptAt holds the string denoting the next_attempt_at field in the database.
+	FieldNextAttemptAt = "next_attempt_at"
 	// EdgeSummary holds the string denoting the summary edge name in mutations.
 	EdgeSummary = "summary"
 	// Table holds the table name of the summaryevent in the database.
@@ -55,6 +63,10 @@ var Columns = []string{
 	FieldError,
 	FieldCreatedAt,
 	FieldProcessedAt,
+	FieldLockedUntil,
+	FieldLockedBy,
+	FieldAttemptCount,
+	FieldNextAttemptAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "summary_events"
@@ -87,6 +99,8 @@ var (
 	StatusValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultAttemptCount holds the default value on creation for the "attempt_count" field.
+	DefaultAttemptCount int
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -137,6 +151,26 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByProcessedAt orders the results by the processed_at field.
 func ByProcessedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProcessedAt, opts...).ToFunc()
+}
+
+// ByLockedUntil orders the results by the locked_until field.
+func ByLockedUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLockedUntil, opts...).ToFunc()
+}
+
+// ByLockedBy orders the results by the locked_by field.
+func ByLockedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLockedBy, opts...).ToFunc()
+}
+
+// ByAttemptCount orders the results by the attempt_count field.
+func ByAttemptCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAttemptCount, opts...).ToFunc()
+}
+
+// ByNextAttemptAt orders the results by the next_attempt_at field.
+func ByNextAttemptAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNextAttemptAt, opts...).ToFunc()
 }
 
 // BySummaryField orders the results by summary field.

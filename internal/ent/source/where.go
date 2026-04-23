@@ -71,6 +71,11 @@ func UpdatedAt(v time.Time) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// NextSummaryAt applies equality check predicate on the "next_summary_at" field. It's identical to NextSummaryAtEQ.
+func NextSummaryAt(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldNextSummaryAt, v))
+}
+
 // TypeEQ applies the EQ predicate on the "type" field.
 func TypeEQ(v string) predicate.Source {
 	return predicate.Source(sql.FieldEQ(FieldType, v))
@@ -214,6 +219,56 @@ func UpdatedAtLT(v time.Time) predicate.Source {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.Source {
 	return predicate.Source(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// NextSummaryAtEQ applies the EQ predicate on the "next_summary_at" field.
+func NextSummaryAtEQ(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldEQ(FieldNextSummaryAt, v))
+}
+
+// NextSummaryAtNEQ applies the NEQ predicate on the "next_summary_at" field.
+func NextSummaryAtNEQ(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldNEQ(FieldNextSummaryAt, v))
+}
+
+// NextSummaryAtIn applies the In predicate on the "next_summary_at" field.
+func NextSummaryAtIn(vs ...time.Time) predicate.Source {
+	return predicate.Source(sql.FieldIn(FieldNextSummaryAt, vs...))
+}
+
+// NextSummaryAtNotIn applies the NotIn predicate on the "next_summary_at" field.
+func NextSummaryAtNotIn(vs ...time.Time) predicate.Source {
+	return predicate.Source(sql.FieldNotIn(FieldNextSummaryAt, vs...))
+}
+
+// NextSummaryAtGT applies the GT predicate on the "next_summary_at" field.
+func NextSummaryAtGT(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldGT(FieldNextSummaryAt, v))
+}
+
+// NextSummaryAtGTE applies the GTE predicate on the "next_summary_at" field.
+func NextSummaryAtGTE(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldGTE(FieldNextSummaryAt, v))
+}
+
+// NextSummaryAtLT applies the LT predicate on the "next_summary_at" field.
+func NextSummaryAtLT(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldLT(FieldNextSummaryAt, v))
+}
+
+// NextSummaryAtLTE applies the LTE predicate on the "next_summary_at" field.
+func NextSummaryAtLTE(v time.Time) predicate.Source {
+	return predicate.Source(sql.FieldLTE(FieldNextSummaryAt, v))
+}
+
+// NextSummaryAtIsNil applies the IsNil predicate on the "next_summary_at" field.
+func NextSummaryAtIsNil() predicate.Source {
+	return predicate.Source(sql.FieldIsNull(FieldNextSummaryAt))
+}
+
+// NextSummaryAtNotNil applies the NotNil predicate on the "next_summary_at" field.
+func NextSummaryAtNotNil() predicate.Source {
+	return predicate.Source(sql.FieldNotNull(FieldNextSummaryAt))
 }
 
 // HasPosts applies the HasEdge predicate on the "posts" edge.

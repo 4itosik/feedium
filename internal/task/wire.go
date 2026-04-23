@@ -4,4 +4,11 @@ import (
 	"github.com/google/wire"
 )
 
-var ProviderSet = wire.NewSet(NewSummaryWorker, NewCronWorker) //nolint:gochecknoglobals // wire dependency injection
+// ProviderSet wires the FT-007 workers: an event worker pool for pull-based
+// processing, a per-source scheduler for cumulative sources, and a reaper that
+// terminates events whose attempt budget is exhausted.
+var ProviderSet = wire.NewSet( //nolint:gochecknoglobals // wire dependency injection
+	NewEventWorkerPool,
+	NewSourceDueScheduler,
+	NewStuckEventReaper,
+)

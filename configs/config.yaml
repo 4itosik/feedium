@@ -16,7 +16,18 @@ data:
 summary:
   worker:
     poll_interval: 5s
-    batch_size: 10
+    concurrency: 4 # увеличить под нагрузку; ограничено LLM rate limits и БД connection pool
+    lease_ttl: 5m
+    heartbeat_interval: 1m
+    graceful_timeout: 10s
+    max_attempts: 5
+    backoff_base: 10s
+    backoff_max: 10m
+  source_scheduler:
+    poll_interval: 5s
+  reaper:
+    interval: 1m
+    grace: 30s
   cron:
     interval: 1h
   llm:

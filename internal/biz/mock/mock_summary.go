@@ -12,6 +12,7 @@ package mock
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	biz "github.com/4itosik/feedium/internal/biz"
 	gomock "go.uber.org/mock/gomock"
@@ -178,6 +179,49 @@ func (m *MockSummaryOutboxRepo) EXPECT() *MockSummaryOutboxRepoMockRecorder {
 	return m.recorder
 }
 
+// ClaimOne mocks base method.
+func (m *MockSummaryOutboxRepo) ClaimOne(ctx context.Context, workerID string, leaseTTL time.Duration) (biz.SummaryEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClaimOne", ctx, workerID, leaseTTL)
+	ret0, _ := ret[0].(biz.SummaryEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClaimOne indicates an expected call of ClaimOne.
+func (mr *MockSummaryOutboxRepoMockRecorder) ClaimOne(ctx, workerID, leaseTTL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimOne", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).ClaimOne), ctx, workerID, leaseTTL)
+}
+
+// ExtendLease mocks base method.
+func (m *MockSummaryOutboxRepo) ExtendLease(ctx context.Context, eventID, workerID string, leaseTTL time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExtendLease", ctx, eventID, workerID, leaseTTL)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ExtendLease indicates an expected call of ExtendLease.
+func (mr *MockSummaryOutboxRepoMockRecorder) ExtendLease(ctx, eventID, workerID, leaseTTL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendLease", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).ExtendLease), ctx, eventID, workerID, leaseTTL)
+}
+
+// FinalizeWithLease mocks base method.
+func (m *MockSummaryOutboxRepo) FinalizeWithLease(ctx context.Context, eventID, workerID string, status biz.SummaryEventStatus, summaryID, errText *string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinalizeWithLease", ctx, eventID, workerID, status, summaryID, errText)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FinalizeWithLease indicates an expected call of FinalizeWithLease.
+func (mr *MockSummaryOutboxRepoMockRecorder) FinalizeWithLease(ctx, eventID, workerID, status, summaryID, errText any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeWithLease", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).FinalizeWithLease), ctx, eventID, workerID, status, summaryID, errText)
+}
+
 // Get mocks base method.
 func (m *MockSummaryOutboxRepo) Get(ctx context.Context, id string) (biz.SummaryEvent, error) {
 	m.ctrl.T.Helper()
@@ -209,19 +253,33 @@ func (mr *MockSummaryOutboxRepoMockRecorder) HasActiveEvent(ctx, sourceID, event
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasActiveEvent", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).HasActiveEvent), ctx, sourceID, eventType)
 }
 
-// ListPending mocks base method.
-func (m *MockSummaryOutboxRepo) ListPending(ctx context.Context, limit int) ([]biz.SummaryEvent, error) {
+// ListLeaseExpired mocks base method.
+func (m *MockSummaryOutboxRepo) ListLeaseExpired(ctx context.Context, grace time.Duration, limit int) ([]biz.SummaryEvent, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListPending", ctx, limit)
+	ret := m.ctrl.Call(m, "ListLeaseExpired", ctx, grace, limit)
 	ret0, _ := ret[0].([]biz.SummaryEvent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListPending indicates an expected call of ListPending.
-func (mr *MockSummaryOutboxRepoMockRecorder) ListPending(ctx, limit any) *gomock.Call {
+// ListLeaseExpired indicates an expected call of ListLeaseExpired.
+func (mr *MockSummaryOutboxRepoMockRecorder) ListLeaseExpired(ctx, grace, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPending", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).ListPending), ctx, limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLeaseExpired", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).ListLeaseExpired), ctx, grace, limit)
+}
+
+// MarkForRetry mocks base method.
+func (m *MockSummaryOutboxRepo) MarkForRetry(ctx context.Context, eventID, workerID string, retryAt time.Time, errText string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkForRetry", ctx, eventID, workerID, retryAt, errText)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkForRetry indicates an expected call of MarkForRetry.
+func (mr *MockSummaryOutboxRepoMockRecorder) MarkForRetry(ctx, eventID, workerID, retryAt, errText any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkForRetry", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).MarkForRetry), ctx, eventID, workerID, retryAt, errText)
 }
 
 // Save mocks base method.

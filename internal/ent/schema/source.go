@@ -41,6 +41,12 @@ func (Source) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				dialect.Postgres: "timestamptz",
 			}),
+		field.Time("next_summary_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{
+				dialect.Postgres: "timestamptz",
+			}),
 	}
 }
 

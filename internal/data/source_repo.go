@@ -2,8 +2,11 @@ package data
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -203,6 +206,85 @@ func (sr *sourceRepo) List(ctx context.Context, filter biz.ListSourcesFilter) (b
 	}
 
 	return result, nil
+}
+
+// ClaimDueCumulative atomically picks one cumulative source whose next_summary_at is due
+// (NULL or <= now()) under FOR UPDATE SKIP LOCKED. Returns ErrNoSourceDue when nothing is due.
+func (sr *sourceRepo) ClaimDueCumulative(ctx context.Context) (biz.Source, error) {
+	ex := sqlExecerFromContext(ctx, sr.data.DB)
+
+	// Cumulative mode is derived from source.type (telegram_group) — see ProcessingModeForType.
+	// We can't SKIP LOCKED on a JOIN, but a plain CTE here is enough.
+	query := `
+WITH picked AS (
+    SELECT id FROM sources
+    WHERE type = $1
+      AND (next_summary_at IS NULL OR next_summary_at <= now())
+    ORDER BY COALESCE(next_summary_at, created_at) ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED
+)
+SELECT s.id, s.type, s.config, s.created_at, s.updated_at
+FROM sources s
+JOIN picked p ON p.id = s.id
+`
+	row := ex.QueryRowContext(ctx, query, string(biz.SourceTypeTelegramGroup))
+
+	var (
+		id        uuid.UUID
+		typ       string
+		configRaw []byte
+		createdAt time.Time
+		updatedAt time.Time
+	)
+	if err := row.Scan(&id, &typ, &configRaw, &createdAt, &updatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return biz.Source{}, biz.ErrNoSourceDue
+		}
+		return biz.Source{}, fmt.Errorf("claim due cumulative: %w", err)
+	}
+
+	var cfgMap map[string]any
+	if unmarshalErr := json.Unmarshal(configRaw, &cfgMap); unmarshalErr != nil {
+		return biz.Source{}, fmt.Errorf("unmarshal config: %w", unmarshalErr)
+	}
+
+	cfg, cfgErr := sr.deserializeConfig(biz.SourceType(typ), cfgMap)
+	if cfgErr != nil {
+		return biz.Source{}, fmt.Errorf("deserialize config: %w", cfgErr)
+	}
+
+	return biz.Source{
+		ID:             id.String(),
+		Type:           biz.SourceType(typ),
+		ProcessingMode: biz.ProcessingModeForType(biz.SourceType(typ)),
+		Config:         cfg,
+		CreatedAt:      createdAt,
+		UpdatedAt:      updatedAt,
+	}, nil
+}
+
+// BumpNextSummaryAt sets sources.next_summary_at for the given source id.
+func (sr *sourceRepo) BumpNextSummaryAt(ctx context.Context, sourceID string, nextAt time.Time) error {
+	ex := sqlExecerFromContext(ctx, sr.data.DB)
+
+	sid, err := uuid.Parse(sourceID)
+	if err != nil {
+		return fmt.Errorf("invalid source id: %w", err)
+	}
+
+	res, err := ex.ExecContext(ctx, `UPDATE sources SET next_summary_at = $1 WHERE id = $2`, nextAt, sid)
+	if err != nil {
+		return fmt.Errorf("bump next_summary_at: %w", err)
+	}
+	affected, affErr := res.RowsAffected()
+	if affErr != nil {
+		return fmt.Errorf("bump rows affected: %w", affErr)
+	}
+	if affected == 0 {
+		return biz.ErrSourceNotFound
+	}
+	return nil
 }
 
 // mapEntToDomain converts an ent.Source to a biz.Source.

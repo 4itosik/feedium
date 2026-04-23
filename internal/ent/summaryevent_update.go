@@ -152,6 +152,87 @@ func (_u *SummaryEventUpdate) ClearProcessedAt() *SummaryEventUpdate {
 	return _u
 }
 
+// SetLockedUntil sets the "locked_until" field.
+func (_u *SummaryEventUpdate) SetLockedUntil(v time.Time) *SummaryEventUpdate {
+	_u.mutation.SetLockedUntil(v)
+	return _u
+}
+
+// SetNillableLockedUntil sets the "locked_until" field if the given value is not nil.
+func (_u *SummaryEventUpdate) SetNillableLockedUntil(v *time.Time) *SummaryEventUpdate {
+	if v != nil {
+		_u.SetLockedUntil(*v)
+	}
+	return _u
+}
+
+// ClearLockedUntil clears the value of the "locked_until" field.
+func (_u *SummaryEventUpdate) ClearLockedUntil() *SummaryEventUpdate {
+	_u.mutation.ClearLockedUntil()
+	return _u
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (_u *SummaryEventUpdate) SetLockedBy(v string) *SummaryEventUpdate {
+	_u.mutation.SetLockedBy(v)
+	return _u
+}
+
+// SetNillableLockedBy sets the "locked_by" field if the given value is not nil.
+func (_u *SummaryEventUpdate) SetNillableLockedBy(v *string) *SummaryEventUpdate {
+	if v != nil {
+		_u.SetLockedBy(*v)
+	}
+	return _u
+}
+
+// ClearLockedBy clears the value of the "locked_by" field.
+func (_u *SummaryEventUpdate) ClearLockedBy() *SummaryEventUpdate {
+	_u.mutation.ClearLockedBy()
+	return _u
+}
+
+// SetAttemptCount sets the "attempt_count" field.
+func (_u *SummaryEventUpdate) SetAttemptCount(v int) *SummaryEventUpdate {
+	_u.mutation.ResetAttemptCount()
+	_u.mutation.SetAttemptCount(v)
+	return _u
+}
+
+// SetNillableAttemptCount sets the "attempt_count" field if the given value is not nil.
+func (_u *SummaryEventUpdate) SetNillableAttemptCount(v *int) *SummaryEventUpdate {
+	if v != nil {
+		_u.SetAttemptCount(*v)
+	}
+	return _u
+}
+
+// AddAttemptCount adds value to the "attempt_count" field.
+func (_u *SummaryEventUpdate) AddAttemptCount(v int) *SummaryEventUpdate {
+	_u.mutation.AddAttemptCount(v)
+	return _u
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (_u *SummaryEventUpdate) SetNextAttemptAt(v time.Time) *SummaryEventUpdate {
+	_u.mutation.SetNextAttemptAt(v)
+	return _u
+}
+
+// SetNillableNextAttemptAt sets the "next_attempt_at" field if the given value is not nil.
+func (_u *SummaryEventUpdate) SetNillableNextAttemptAt(v *time.Time) *SummaryEventUpdate {
+	if v != nil {
+		_u.SetNextAttemptAt(*v)
+	}
+	return _u
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (_u *SummaryEventUpdate) ClearNextAttemptAt() *SummaryEventUpdate {
+	_u.mutation.ClearNextAttemptAt()
+	return _u
+}
+
 // SetSummary sets the "summary" edge to the Summary entity.
 func (_u *SummaryEventUpdate) SetSummary(v *Summary) *SummaryEventUpdate {
 	return _u.SetSummaryID(v.ID)
@@ -248,6 +329,30 @@ func (_u *SummaryEventUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.ProcessedAtCleared() {
 		_spec.ClearField(summaryevent.FieldProcessedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LockedUntil(); ok {
+		_spec.SetField(summaryevent.FieldLockedUntil, field.TypeTime, value)
+	}
+	if _u.mutation.LockedUntilCleared() {
+		_spec.ClearField(summaryevent.FieldLockedUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LockedBy(); ok {
+		_spec.SetField(summaryevent.FieldLockedBy, field.TypeString, value)
+	}
+	if _u.mutation.LockedByCleared() {
+		_spec.ClearField(summaryevent.FieldLockedBy, field.TypeString)
+	}
+	if value, ok := _u.mutation.AttemptCount(); ok {
+		_spec.SetField(summaryevent.FieldAttemptCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAttemptCount(); ok {
+		_spec.AddField(summaryevent.FieldAttemptCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.NextAttemptAt(); ok {
+		_spec.SetField(summaryevent.FieldNextAttemptAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextAttemptAtCleared() {
+		_spec.ClearField(summaryevent.FieldNextAttemptAt, field.TypeTime)
 	}
 	if _u.mutation.SummaryCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -420,6 +525,87 @@ func (_u *SummaryEventUpdateOne) ClearProcessedAt() *SummaryEventUpdateOne {
 	return _u
 }
 
+// SetLockedUntil sets the "locked_until" field.
+func (_u *SummaryEventUpdateOne) SetLockedUntil(v time.Time) *SummaryEventUpdateOne {
+	_u.mutation.SetLockedUntil(v)
+	return _u
+}
+
+// SetNillableLockedUntil sets the "locked_until" field if the given value is not nil.
+func (_u *SummaryEventUpdateOne) SetNillableLockedUntil(v *time.Time) *SummaryEventUpdateOne {
+	if v != nil {
+		_u.SetLockedUntil(*v)
+	}
+	return _u
+}
+
+// ClearLockedUntil clears the value of the "locked_until" field.
+func (_u *SummaryEventUpdateOne) ClearLockedUntil() *SummaryEventUpdateOne {
+	_u.mutation.ClearLockedUntil()
+	return _u
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (_u *SummaryEventUpdateOne) SetLockedBy(v string) *SummaryEventUpdateOne {
+	_u.mutation.SetLockedBy(v)
+	return _u
+}
+
+// SetNillableLockedBy sets the "locked_by" field if the given value is not nil.
+func (_u *SummaryEventUpdateOne) SetNillableLockedBy(v *string) *SummaryEventUpdateOne {
+	if v != nil {
+		_u.SetLockedBy(*v)
+	}
+	return _u
+}
+
+// ClearLockedBy clears the value of the "locked_by" field.
+func (_u *SummaryEventUpdateOne) ClearLockedBy() *SummaryEventUpdateOne {
+	_u.mutation.ClearLockedBy()
+	return _u
+}
+
+// SetAttemptCount sets the "attempt_count" field.
+func (_u *SummaryEventUpdateOne) SetAttemptCount(v int) *SummaryEventUpdateOne {
+	_u.mutation.ResetAttemptCount()
+	_u.mutation.SetAttemptCount(v)
+	return _u
+}
+
+// SetNillableAttemptCount sets the "attempt_count" field if the given value is not nil.
+func (_u *SummaryEventUpdateOne) SetNillableAttemptCount(v *int) *SummaryEventUpdateOne {
+	if v != nil {
+		_u.SetAttemptCount(*v)
+	}
+	return _u
+}
+
+// AddAttemptCount adds value to the "attempt_count" field.
+func (_u *SummaryEventUpdateOne) AddAttemptCount(v int) *SummaryEventUpdateOne {
+	_u.mutation.AddAttemptCount(v)
+	return _u
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (_u *SummaryEventUpdateOne) SetNextAttemptAt(v time.Time) *SummaryEventUpdateOne {
+	_u.mutation.SetNextAttemptAt(v)
+	return _u
+}
+
+// SetNillableNextAttemptAt sets the "next_attempt_at" field if the given value is not nil.
+func (_u *SummaryEventUpdateOne) SetNillableNextAttemptAt(v *time.Time) *SummaryEventUpdateOne {
+	if v != nil {
+		_u.SetNextAttemptAt(*v)
+	}
+	return _u
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (_u *SummaryEventUpdateOne) ClearNextAttemptAt() *SummaryEventUpdateOne {
+	_u.mutation.ClearNextAttemptAt()
+	return _u
+}
+
 // SetSummary sets the "summary" edge to the Summary entity.
 func (_u *SummaryEventUpdateOne) SetSummary(v *Summary) *SummaryEventUpdateOne {
 	return _u.SetSummaryID(v.ID)
@@ -546,6 +732,30 @@ func (_u *SummaryEventUpdateOne) sqlSave(ctx context.Context) (_node *SummaryEve
 	}
 	if _u.mutation.ProcessedAtCleared() {
 		_spec.ClearField(summaryevent.FieldProcessedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LockedUntil(); ok {
+		_spec.SetField(summaryevent.FieldLockedUntil, field.TypeTime, value)
+	}
+	if _u.mutation.LockedUntilCleared() {
+		_spec.ClearField(summaryevent.FieldLockedUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LockedBy(); ok {
+		_spec.SetField(summaryevent.FieldLockedBy, field.TypeString, value)
+	}
+	if _u.mutation.LockedByCleared() {
+		_spec.ClearField(summaryevent.FieldLockedBy, field.TypeString)
+	}
+	if value, ok := _u.mutation.AttemptCount(); ok {
+		_spec.SetField(summaryevent.FieldAttemptCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAttemptCount(); ok {
+		_spec.AddField(summaryevent.FieldAttemptCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.NextAttemptAt(); ok {
+		_spec.SetField(summaryevent.FieldNextAttemptAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextAttemptAtCleared() {
+		_spec.ClearField(summaryevent.FieldNextAttemptAt, field.TypeTime)
 	}
 	if _u.mutation.SummaryCleared() {
 		edge := &sqlgraph.EdgeSpec{
