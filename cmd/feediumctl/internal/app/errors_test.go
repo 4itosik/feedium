@@ -42,5 +42,5 @@ func TestWrapRPCError_Error(t *testing.T) {
 }
 
 func TestWrapRPCError_Nil(t *testing.T) {
-	assert.Nil(t, app.WrapRPCError(nil))
+	assert.NoError(t, app.WrapRPCError(nil))
 }

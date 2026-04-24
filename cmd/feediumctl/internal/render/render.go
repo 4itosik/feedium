@@ -7,10 +7,11 @@ import (
 	"io"
 	"strings"
 
-	feediumapi "github.com/4itosik/feedium/api/feedium"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"sigs.k8s.io/yaml"
+
+	feediumapi "github.com/4itosik/feedium/api/feedium"
 )
 
 // Format identifies an output format. Use the constants below.
@@ -21,21 +22,25 @@ const (
 )
 
 // jsonMarshaler is the single source of truth for protojson options (FR-10).
-// Kept as a package-level value so JSON and YAML renderers produce
-// byte-identical intermediate JSON (INV-06).
-var jsonMarshaler = protojson.MarshalOptions{
-	Multiline:       true,
-	Indent:          "  ",
-	UseProtoNames:   true,
-	EmitUnpopulated: false,
+// Returned as a function so every call gets a fresh value and the renderer
+// avoids shared mutable package-level state (INV-06).
+func jsonMarshaler() protojson.MarshalOptions {
+	return protojson.MarshalOptions{
+		Multiline:       true,
+		Indent:          "  ",
+		UseProtoNames:   true,
+		EmitUnpopulated: false,
+	}
 }
 
 // listItemMarshaler is a compact (non-multiline) marshaler used for individual
 // Source items inside the list JSON/YAML array. Key order and field filtering
 // are identical to jsonMarshaler; only the multiline formatting differs.
-var listItemMarshaler = protojson.MarshalOptions{
-	UseProtoNames:   true,
-	EmitUnpopulated: false,
+func listItemMarshaler() protojson.MarshalOptions {
+	return protojson.MarshalOptions{
+		UseProtoNames:   true,
+		EmitUnpopulated: false,
+	}
 }
 
 // Write serialises msg to w in the requested format. The format is assumed
@@ -62,7 +67,7 @@ func writeJSON(w io.Writer, msg proto.Message) error {
 	if resp, ok := msg.(*feediumapi.V1ListSourcesResponse); ok {
 		return writeSourceListJSON(w, resp)
 	}
-	data, err := jsonMarshaler.Marshal(msg)
+	data, err := jsonMarshaler().Marshal(msg)
 	if err != nil {
 		return err
 	}
@@ -126,7 +131,7 @@ func writeSourceListJSON(w io.Writer, resp *feediumapi.V1ListSourcesResponse) er
 	}
 	parts := make([]string, len(items))
 	for i, item := range items {
-		data, err := listItemMarshaler.Marshal(item)
+		data, err := listItemMarshaler().Marshal(item)
 		if err != nil {
 			return err
 		}
@@ -145,7 +150,7 @@ func writeSourceListYAML(w io.Writer, resp *feediumapi.V1ListSourcesResponse) er
 	}
 	parts := make([]string, len(items))
 	for i, item := range items {
-		data, err := listItemMarshaler.Marshal(item)
+		data, err := listItemMarshaler().Marshal(item)
 		if err != nil {
 			return err
 		}

@@ -13,11 +13,13 @@ import (
 // entry describes one CLI source type.
 type entry struct {
 	protoType     feediumapi.SourceType
-	requiredFlags []string      // sorted lexicographically
+	requiredFlags []string // sorted lexicographically
 	allowedFlags  map[string]bool
 }
 
 // registry maps the CLI dash-case type name to its descriptor.
+//
+//nolint:gochecknoglobals // read-only lookup table
 var registry = map[string]entry{
 	"telegram-channel": {
 		protoType:     feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL,
@@ -42,6 +44,8 @@ var registry = map[string]entry{
 }
 
 // allTypeNames is the stable sorted list of CLI type names (for EC-E messages).
+//
+//nolint:gochecknoglobals // derived once from read-only registry
 var allTypeNames = func() string {
 	names := make([]string, 0, len(registry))
 	for k := range registry {
@@ -53,6 +57,8 @@ var allTypeNames = func() string {
 
 // allSourceFlags is the complete sorted list of source-related flag names.
 // Used to iterate flags in a deterministic order for EC-I checks.
+//
+//nolint:gochecknoglobals // read-only ordering
 var allSourceFlags = []string{"feed-url", "tg-id", "url", "username"}
 
 // Lookup validates a positional <type> argument (create) and returns the proto
@@ -79,6 +85,8 @@ func LookupFlag(name string) (feediumapi.SourceType, error) {
 
 // enumShortRegistry maps enum short names (without SOURCE_TYPE_ prefix) to
 // SourceType, used for the list --type flag (EC-G).
+//
+//nolint:gochecknoglobals // read-only lookup table
 var enumShortRegistry = map[string]feediumapi.SourceType{
 	"UNSPECIFIED":      feediumapi.SourceType_SOURCE_TYPE_UNSPECIFIED,
 	"TELEGRAM_CHANNEL": feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL,

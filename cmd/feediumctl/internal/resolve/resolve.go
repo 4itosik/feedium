@@ -130,8 +130,8 @@ func parsePageSize(raw string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("flag: invalid page size %q: %s", raw, err.Error())
 	}
-	if err := checkPageSizeRange(n, raw); err != nil {
-		return 0, err
+	if rangeErr := checkPageSizeRange(n, raw); rangeErr != nil {
+		return 0, rangeErr
 	}
 	return n, nil
 }

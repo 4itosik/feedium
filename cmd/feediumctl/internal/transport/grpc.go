@@ -3,6 +3,7 @@
 package transport
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -32,7 +33,7 @@ func Dial(endpoint string) (*grpc.ClientConn, error) {
 func validateEndpoint(endpoint string) error {
 	trimmed := strings.TrimSpace(endpoint)
 	if trimmed == "" {
-		return fmt.Errorf("endpoint: empty")
+		return errors.New("endpoint: empty")
 	}
 	if strings.ContainsAny(trimmed, " \t\r\n") {
 		return fmt.Errorf("endpoint: whitespace not allowed in %q", endpoint)

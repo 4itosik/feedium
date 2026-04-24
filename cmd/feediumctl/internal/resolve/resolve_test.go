@@ -11,7 +11,11 @@ import (
 	"github.com/4itosik/feedium/cmd/feediumctl/internal/resolve"
 )
 
-func ptr[T any](v T) *T { return &v }
+func ptr[T any](v T) *T {
+	p := new(T)
+	*p = v
+	return p
+}
 
 func emptyGetenv(string) string { return "" }
 
@@ -103,7 +107,6 @@ func TestResolve_Priority(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := resolve.Resolve(tt.flags, tt.cfg, envFromMap(tt.env))
 			require.NoError(t, err)
@@ -159,7 +162,7 @@ func TestResolve_InvalidValues(t *testing.T) {
 
 func TestValidateOutput(t *testing.T) {
 	for _, v := range []string{"table", "json", "yaml"} {
-		assert.NoError(t, resolve.ValidateOutput(v), v)
+		require.NoError(t, resolve.ValidateOutput(v), v)
 	}
 	err := resolve.ValidateOutput("xml")
 	require.Error(t, err)

@@ -146,7 +146,7 @@ func TestCheckFlags_EC_I_BeforeEC_D(t *testing.T) {
 func TestBuildConfig_TelegramChannel(t *testing.T) {
 	cfg := sourcetype.BuildConfig("telegram-channel", sourcetype.Flags{TgID: 42, Username: "foo"})
 	require.NotNil(t, cfg)
-	tc, ok := cfg.Config.(*feediumapi.SourceConfig_TelegramChannel)
+	tc, ok := cfg.GetConfig().(*feediumapi.SourceConfig_TelegramChannel)
 	require.True(t, ok, "expected TelegramChannel oneof")
 	assert.Equal(t, int64(42), tc.TelegramChannel.GetTgId())
 	assert.Equal(t, "foo", tc.TelegramChannel.GetUsername())
@@ -155,7 +155,7 @@ func TestBuildConfig_TelegramChannel(t *testing.T) {
 func TestBuildConfig_TelegramGroup(t *testing.T) {
 	cfg := sourcetype.BuildConfig("telegram-group", sourcetype.Flags{TgID: 7, Username: "bar"})
 	require.NotNil(t, cfg)
-	tg, ok := cfg.Config.(*feediumapi.SourceConfig_TelegramGroup)
+	tg, ok := cfg.GetConfig().(*feediumapi.SourceConfig_TelegramGroup)
 	require.True(t, ok, "expected TelegramGroup oneof")
 	assert.Equal(t, int64(7), tg.TelegramGroup.GetTgId())
 	assert.Equal(t, "bar", tg.TelegramGroup.GetUsername())
@@ -164,7 +164,7 @@ func TestBuildConfig_TelegramGroup(t *testing.T) {
 func TestBuildConfig_RSS(t *testing.T) {
 	cfg := sourcetype.BuildConfig("rss", sourcetype.Flags{FeedURL: "https://example.com/feed"})
 	require.NotNil(t, cfg)
-	r, ok := cfg.Config.(*feediumapi.SourceConfig_Rss)
+	r, ok := cfg.GetConfig().(*feediumapi.SourceConfig_Rss)
 	require.True(t, ok, "expected RSS oneof")
 	assert.Equal(t, "https://example.com/feed", r.Rss.GetFeedUrl())
 }
@@ -172,7 +172,7 @@ func TestBuildConfig_RSS(t *testing.T) {
 func TestBuildConfig_HTML(t *testing.T) {
 	cfg := sourcetype.BuildConfig("html", sourcetype.Flags{URL: "https://example.com"})
 	require.NotNil(t, cfg)
-	h, ok := cfg.Config.(*feediumapi.SourceConfig_Html)
+	h, ok := cfg.GetConfig().(*feediumapi.SourceConfig_Html)
 	require.True(t, ok, "expected HTML oneof")
 	assert.Equal(t, "https://example.com", h.Html.GetUrl())
 }

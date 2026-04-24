@@ -1,5 +1,3 @@
-// Package mock contains gomock-generated mocks for the gRPC clients consumed
-// by the feediumctl app package (testing-policy: go.uber.org/mock, no hand-written mocks).
 package mock
 
 //go:generate go run go.uber.org/mock/mockgen -destination=mock_health_client.go -package=mock github.com/4itosik/feedium/api/feedium HealthServiceClient

@@ -91,9 +91,9 @@ func runSourceList(
 
 	var typeFilter *feediumapi.SourceType
 	if typeSet {
-		t, err := sourcetype.LookupEnumFlag(typeFlag)
-		if err != nil {
-			return err
+		t, lookupErr := sourcetype.LookupEnumFlag(typeFlag)
+		if lookupErr != nil {
+			return lookupErr
 		}
 		typeFilter = t.Enum()
 	}
@@ -108,7 +108,8 @@ func runSourceList(
 	defer cancel()
 
 	resp, err := client.V1ListSources(callCtx, &feediumapi.V1ListSourcesRequest{
-		PageSize:  int32(settings.PageSize),
+		// PageSize is bounds-checked in resolve.checkPageSizeRange (0..MaxInt32).
+		PageSize:  int32(settings.PageSize), //nolint:gosec // range-checked upstream
 		PageToken: "",
 		Type:      typeFilter,
 	})
@@ -214,8 +215,8 @@ func runSourceCreate(
 	if err != nil {
 		return err
 	}
-	if err := sourcetype.CheckFlags(typeName, setFlags); err != nil {
-		return err
+	if checkErr := sourcetype.CheckFlags(typeName, setFlags); checkErr != nil {
+		return checkErr
 	}
 
 	settings, err := resolveAndValidate(root, g)
@@ -300,8 +301,8 @@ func runSourceUpdate(
 	if err != nil {
 		return err
 	}
-	if err := sourcetype.CheckFlags(typeFlag, setFlags); err != nil {
-		return err
+	if checkErr := sourcetype.CheckFlags(typeFlag, setFlags); checkErr != nil {
+		return checkErr
 	}
 
 	settings, err := resolveAndValidate(root, g)
