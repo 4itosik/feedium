@@ -43,7 +43,7 @@ func TestIntegration_StuckEventReaper_TerminatesAtMaxAttempts(t *testing.T) {
 		Grace:    durationpb.New(10 * time.Millisecond),
 	}
 
-	reaper := task.NewStuckEventReaper(outbox, cfg, testLogger())
+	reaper := task.NewStuckEventReaper(newTestUsecase(t, d, cfg, nil), cfg, testLogger())
 	require.NoError(t, reaper.Start(ctx))
 
 	require.Eventually(t, func() bool {
@@ -84,7 +84,7 @@ func TestIntegration_StuckEventReaper_BelowMaxAttempts_NoTerminal(t *testing.T) 
 		Grace:    durationpb.New(10 * time.Millisecond),
 	}
 
-	reaper := task.NewStuckEventReaper(outbox, cfg, testLogger())
+	reaper := task.NewStuckEventReaper(newTestUsecase(t, d, cfg, nil), cfg, testLogger())
 	require.NoError(t, reaper.Start(ctx))
 	time.Sleep(200 * time.Millisecond)
 	require.NoError(t, reaper.Stop(ctx))

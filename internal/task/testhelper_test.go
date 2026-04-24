@@ -170,3 +170,18 @@ func (f *fakeLLM) CallCount() int {
 	defer f.mu.Unlock()
 	return f.calls
 }
+
+// newTestUsecase wires a real biz.SummaryUsecase against the supplied data stack,
+// so integration tests exercise the same code path as production.
+func newTestUsecase(t *testing.T, d *data.Data, cfg *conf.Summary, llm biz.LLMProvider) *biz.SummaryUsecase {
+	t.Helper()
+	return biz.NewSummaryUsecase(
+		data.NewSummaryRepo(d),
+		data.NewSummaryOutboxRepo(d),
+		data.NewSourceRepo(d),
+		data.NewPostRepo(d),
+		llm,
+		data.NewTxManager(d),
+		cfg,
+	)
+}

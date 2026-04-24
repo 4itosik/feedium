@@ -64,6 +64,12 @@ var (
 	// ErrNoSourceDue indicates ClaimDueCumulative found no source whose
 	// next_summary_at is due.
 	ErrNoSourceDue = errors.New("no source due")
+	// ErrSummaryEventExpired indicates the event is older than outbox.event_ttl and
+	// must be terminally marked Expired (no retry, no LLM call).
+	ErrSummaryEventExpired = errors.New("summary event expired")
+	// ErrSummarySourceNoPosts indicates a cumulative source has no new posts in the
+	// current window; the event should be finalized as Completed without a Summary.
+	ErrSummarySourceNoPosts = errors.New("summary source has no new posts")
 )
 
 func NewSummaryEvent(eventType SummaryEventType, sourceID string, postID *string) SummaryEvent {

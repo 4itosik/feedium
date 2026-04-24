@@ -6,46 +6,42 @@ import (
 	"sync"
 	"time"
 
-	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/conf"
 )
 
-const (
-	defaultReaperGrace = 30 * time.Second
-	reaperBatchLimit   = 100
-)
+const defaultReaperInterval = time.Minute
 
-// StuckEventReaper implements REQ-07: periodically inspects events whose lease
-// expired (status='processing' AND locked_until < now() - grace). If attempt_count
-// has reached max_attempts, the event is terminally marked failed with a
-// 'max attempts exceeded' error. Otherwise the reaper just logs — a worker's
-// claim-loop will pick the event back up via ClaimOne's expired-lease path.
+// StuckReaper is the task-level view of biz.SummaryUsecase.ReapStuckEvents.
+type StuckReaper interface {
+	ReapStuckEvents(ctx context.Context) (int, error)
+}
+
+// StuckEventReaper implements REQ-07: periodically asks the usecase to terminate
+// events whose lease expired past grace AND attempt_count reached the retry
+// budget. The usecase uses a guarded UPDATE (see FailExpired) so concurrent
+// claims are not stomped. This worker owns only the ticking lifecycle.
 type StuckEventReaper struct {
-	outboxRepo biz.SummaryOutboxRepo
-	cfg        *conf.Summary
-	log        *slog.Logger
+	reaper StuckReaper
+	cfg    *conf.Summary
+	log    *slog.Logger
 
 	done     chan struct{}
 	doneOnce sync.Once
 }
 
-func NewStuckEventReaper(
-	outboxRepo biz.SummaryOutboxRepo,
-	cfg *conf.Summary,
-	logger *slog.Logger,
-) *StuckEventReaper {
+func NewStuckEventReaper(reaper StuckReaper, cfg *conf.Summary, logger *slog.Logger) *StuckEventReaper {
 	return &StuckEventReaper{
-		outboxRepo: outboxRepo,
-		cfg:        cfg,
-		log:        logger,
-		done:       make(chan struct{}),
+		reaper: reaper,
+		cfg:    cfg,
+		log:    logger,
+		done:   make(chan struct{}),
 	}
 }
 
 func (r *StuckEventReaper) Start(ctx context.Context) error {
 	interval := r.cfg.GetReaper().GetInterval().AsDuration()
 	if interval <= 0 {
-		interval = time.Minute
+		interval = defaultReaperInterval
 	}
 	go r.run(ctx, interval)
 	return nil
@@ -66,7 +62,12 @@ func (r *StuckEventReaper) run(ctx context.Context, interval time.Duration) {
 		default:
 		}
 
-		r.tick(ctx)
+		terminated, err := r.reaper.ReapStuckEvents(ctx)
+		if err != nil {
+			r.log.ErrorContext(ctx, "reap stuck events failed", "err", err)
+		} else if terminated > 0 {
+			r.log.WarnContext(ctx, "stuck events terminally failed", "count", terminated)
+		}
 
 		select {
 		case <-time.After(interval):
@@ -75,50 +76,5 @@ func (r *StuckEventReaper) run(ctx context.Context, interval time.Duration) {
 		case <-r.done:
 			return
 		}
-	}
-}
-
-func (r *StuckEventReaper) tick(ctx context.Context) {
-	grace := r.cfg.GetReaper().GetGrace().AsDuration()
-	if grace <= 0 {
-		grace = defaultReaperGrace
-	}
-
-	maxAttempts := int(r.cfg.GetWorker().GetMaxAttempts())
-	if maxAttempts <= 0 {
-		maxAttempts = defaultMaxAttempts
-	}
-
-	events, err := r.outboxRepo.ListLeaseExpired(ctx, grace, reaperBatchLimit)
-	if err != nil {
-		r.log.ErrorContext(ctx, "list lease expired failed", "err", err)
-		return
-	}
-
-	for _, ev := range events {
-		if ev.AttemptCount >= maxAttempts {
-			// FailExpired is guarded on status='processing' AND attempt_count>=max
-			// AND locked_until<now()-grace; if a worker re-claimed the row between
-			// ListLeaseExpired and this call, terminated=false — we skip without
-			// stomping on the new lease.
-			terminated, termErr := r.outboxRepo.FailExpired(
-				ctx, ev.ID, maxAttempts, grace, "max attempts exceeded",
-			)
-			if termErr != nil {
-				r.log.ErrorContext(ctx, "fail expired errored",
-					"summary_event_id", ev.ID, "err", termErr)
-				continue
-			}
-			if terminated {
-				r.log.WarnContext(ctx, "stuck event terminally failed",
-					"summary_event_id", ev.ID, "attempt_count", ev.AttemptCount)
-			} else {
-				r.log.InfoContext(ctx, "stuck event re-claimed between enumeration and termination",
-					"summary_event_id", ev.ID, "attempt_count", ev.AttemptCount)
-			}
-			continue
-		}
-		r.log.WarnContext(ctx, "stuck event detected; awaiting re-claim",
-			"summary_event_id", ev.ID, "attempt_count", ev.AttemptCount, "max_attempts", maxAttempts)
 	}
 }
