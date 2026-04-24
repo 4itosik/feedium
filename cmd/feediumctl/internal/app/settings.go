@@ -10,6 +10,8 @@ import (
 )
 
 // osGetenv is a package-level indirection to keep tests side-effect-free.
+//
+//nolint:gochecknoglobals // test seam for env lookup
 var osGetenv = os.Getenv
 
 func loadConfig(flagValue string) (config.File, error) {

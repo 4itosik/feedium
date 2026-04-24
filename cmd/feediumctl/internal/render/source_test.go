@@ -27,6 +27,9 @@ func TestWriteDelete_Table(t *testing.T) {
 func TestWriteDelete_JSON(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, render.WriteDelete(&buf, render.FormatJSON, snapshotID))
+	// AC-S4 requires byte-exact output (key order, spacing, trailing \n);
+	// JSONEq would treat semantically equal but reordered output as equal.
+	//nolint:testifylint // byte-exact check is intentional for AC-S4
 	assert.Equal(t, `{"deleted":true,"id":"`+snapshotID+`"}`+"\n", buf.String())
 }
 
@@ -135,11 +138,36 @@ func TestWriteSourceGet_Table_EnumShortNames(t *testing.T) {
 		wantType string
 		wantMode string
 	}{
-		{feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL, feediumapi.ProcessingMode_PROCESSING_MODE_SELF_CONTAINED, "TELEGRAM_CHANNEL", "SELF_CONTAINED"},
-		{feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_GROUP, feediumapi.ProcessingMode_PROCESSING_MODE_CUMULATIVE, "TELEGRAM_GROUP", "CUMULATIVE"},
-		{feediumapi.SourceType_SOURCE_TYPE_RSS, feediumapi.ProcessingMode_PROCESSING_MODE_UNSPECIFIED, "RSS", "UNSPECIFIED"},
-		{feediumapi.SourceType_SOURCE_TYPE_HTML, feediumapi.ProcessingMode_PROCESSING_MODE_UNSPECIFIED, "HTML", "UNSPECIFIED"},
-		{feediumapi.SourceType_SOURCE_TYPE_UNSPECIFIED, feediumapi.ProcessingMode_PROCESSING_MODE_UNSPECIFIED, "UNSPECIFIED", "UNSPECIFIED"},
+		{
+			feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL,
+			feediumapi.ProcessingMode_PROCESSING_MODE_SELF_CONTAINED,
+			"TELEGRAM_CHANNEL",
+			"SELF_CONTAINED",
+		},
+		{
+			feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_GROUP,
+			feediumapi.ProcessingMode_PROCESSING_MODE_CUMULATIVE,
+			"TELEGRAM_GROUP",
+			"CUMULATIVE",
+		},
+		{
+			feediumapi.SourceType_SOURCE_TYPE_RSS,
+			feediumapi.ProcessingMode_PROCESSING_MODE_UNSPECIFIED,
+			"RSS",
+			"UNSPECIFIED",
+		},
+		{
+			feediumapi.SourceType_SOURCE_TYPE_HTML,
+			feediumapi.ProcessingMode_PROCESSING_MODE_UNSPECIFIED,
+			"HTML",
+			"UNSPECIFIED",
+		},
+		{
+			feediumapi.SourceType_SOURCE_TYPE_UNSPECIFIED,
+			feediumapi.ProcessingMode_PROCESSING_MODE_UNSPECIFIED,
+			"UNSPECIFIED",
+			"UNSPECIFIED",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.wantType, func(t *testing.T) {

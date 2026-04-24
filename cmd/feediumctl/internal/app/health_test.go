@@ -18,14 +18,14 @@ import (
 	"github.com/4itosik/feedium/cmd/feediumctl/internal/app/mock"
 )
 
-func runHealthCLI(t *testing.T, client feediumapi.HealthServiceClient, args ...string) (stdout string, err error) {
+func runHealthCLI(t *testing.T, client feediumapi.HealthServiceClient, args ...string) (string, error) {
 	t.Helper()
 	cmd := app.NewRootCommandWithHealth(app.FactoryFromHealth(client))
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs(args)
-	err = cmd.ExecuteContext(context.Background())
+	err := cmd.ExecuteContext(context.Background())
 	return buf.String(), err
 }
 
@@ -98,17 +98,15 @@ func TestHealth_ContextHasTimeout(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := mock.NewMockHealthServiceClient(ctrl)
 
-	var observed context.Context
+	var hasDeadline bool
 	client.EXPECT().
 		V1Check(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(ctx context.Context, _ *feediumapi.V1CheckRequest, _ ...grpc.CallOption) (*feediumapi.V1CheckResponse, error) {
-			observed = ctx
+			_, hasDeadline = ctx.Deadline()
 			return &feediumapi.V1CheckResponse{Status: "SERVING"}, nil
 		})
 
 	_, err := runHealthCLI(t, client, "health", "--timeout=5s")
 	require.NoError(t, err)
-	require.NotNil(t, observed)
-	_, ok := observed.Deadline()
-	assert.True(t, ok, "per-RPC context must carry a deadline (INV-04)")
+	assert.True(t, hasDeadline, "per-RPC context must carry a deadline (INV-04)")
 }

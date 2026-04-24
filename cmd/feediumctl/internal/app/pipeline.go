@@ -25,8 +25,8 @@ func resolveAndValidate(root *cobra.Command, g *globalFlags) (resolve.Settings, 
 	if err != nil {
 		return resolve.Settings{}, err
 	}
-	if err := resolve.ValidateOutput(settings.Output); err != nil {
-		return resolve.Settings{}, err
+	if outErr := resolve.ValidateOutput(settings.Output); outErr != nil {
+		return resolve.Settings{}, outErr
 	}
 	return settings, nil
 }

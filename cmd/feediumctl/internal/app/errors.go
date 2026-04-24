@@ -40,12 +40,6 @@ func WrapRPCError(err error) error {
 	return &rpcError{wrapped: err}
 }
 
-// allowedLocalPrefixes enumerates the closed list of local-error prefixes
-// permitted by NFR-03. Any error whose string does not already start with one
-// of these prefixes (and is not an RPC error starting with "code=") must be
-// classified as a "flag:" error by FormatError.
-var allowedLocalPrefixes = []string{"config: ", "flag: ", "output: ", "endpoint: "}
-
 // FormatError classifies an error for stderr output per NFR-03:
 //   - RPC errors already shaped by WrapRPCError ("code=… message=…") pass through;
 //   - errors already prefixed with one of the allowed local prefixes pass through;
@@ -58,6 +52,8 @@ func FormatError(err error) string {
 	if err == nil {
 		return ""
 	}
+	// allowedLocalPrefixes enumerates the closed list permitted by NFR-03.
+	allowedLocalPrefixes := [...]string{"config: ", "flag: ", "output: ", "endpoint: "}
 	s := strings.TrimRight(err.Error(), "\r\n\t ")
 	if strings.HasPrefix(s, "code=") {
 		return s

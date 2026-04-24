@@ -28,22 +28,26 @@ func newSourceMock(t *testing.T) *mock.MockSourceServiceClient {
 	return mock.NewMockSourceServiceClient(ctrl)
 }
 
-func runSource(t *testing.T, client feediumapi.SourceServiceClient, args ...string) (stdout string, stderr string, err error) {
+func runSource(
+	t *testing.T,
+	client feediumapi.SourceServiceClient,
+	args ...string,
+) (string, error) {
 	t.Helper()
 	cmd := app.NewRootCommandWithSource(app.FactoryFromSource(client))
 	var outBuf, errBuf bytes.Buffer
 	cmd.SetOut(&outBuf)
 	cmd.SetErr(&errBuf)
 	cmd.SetArgs(args)
-	err = cmd.ExecuteContext(context.Background())
-	return outBuf.String(), errBuf.String(), err
+	err := cmd.ExecuteContext(context.Background())
+	return outBuf.String(), err
 }
 
 // ── source --help (AC-S6, INV-03) ────────────────────────────────────────
 
 func TestSourceHelp(t *testing.T) {
 	client := newSourceMock(t) // no EXPECT: gomock fails on any RPC call
-	stdout, _, err := runSource(t, client, "source", "--help")
+	stdout, err := runSource(t, client, "source", "--help")
 	require.NoError(t, err)
 	for _, sub := range []string{"list", "get", "create", "update", "delete"} {
 		assert.Contains(t, stdout, sub, "help must mention subcommand %q", sub)
@@ -52,7 +56,7 @@ func TestSourceHelp(t *testing.T) {
 
 func TestSource_UnknownSubcommand_EC(t *testing.T) {
 	client := newSourceMock(t)
-	stdout, _, err := runSource(t, client, "source", "bogus")
+	stdout, err := runSource(t, client, "source", "bogus")
 	require.Error(t, err)
 	assert.Empty(t, stdout, "stdout must be empty on error (INV-02)")
 	assert.Contains(t, app.FormatError(err), "flag: unknown subcommand")
@@ -70,11 +74,11 @@ func TestSourceList_Request_PageSize(t *testing.T) {
 			return &feediumapi.V1ListSourcesResponse{}, nil
 		})
 
-	stdout, _, err := runSource(t, client, "source", "list", "--page-size=25")
+	stdout, err := runSource(t, client, "source", "list", "--page-size=25")
 	require.NoError(t, err)
 	require.NotNil(t, captured)
 	assert.Equal(t, int32(25), captured.GetPageSize())
-	assert.Equal(t, "", captured.GetPageToken(), "page_token must be empty (SR-01)")
+	assert.Empty(t, captured.GetPageToken(), "page_token must be empty (SR-01)")
 	assert.Nil(t, captured.Type, "--type not set → Type must be nil")
 	assert.Contains(t, stdout, "ID | TYPE")
 }
@@ -89,11 +93,11 @@ func TestSourceList_TypeFilter(t *testing.T) {
 			return &feediumapi.V1ListSourcesResponse{}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "list", "--type=RSS")
+	_, err := runSource(t, client, "source", "list", "--type=RSS")
 	require.NoError(t, err)
 	require.NotNil(t, captured)
 	require.NotNil(t, captured.Type)
-	assert.Equal(t, feediumapi.SourceType_SOURCE_TYPE_RSS, *captured.Type)
+	assert.Equal(t, feediumapi.SourceType_SOURCE_TYPE_RSS, captured.GetType())
 }
 
 func TestSourceList_EmptyItems_Table_EC_C(t *testing.T) {
@@ -102,7 +106,7 @@ func TestSourceList_EmptyItems_Table_EC_C(t *testing.T) {
 		V1ListSources(gomock.Any(), gomock.Any()).
 		Return(&feediumapi.V1ListSourcesResponse{}, nil)
 
-	stdout, _, err := runSource(t, client, "source", "list")
+	stdout, err := runSource(t, client, "source", "list")
 	require.NoError(t, err)
 	assert.Equal(t, "ID | TYPE | MODE | CONFIG | CREATED_AT\n", stdout)
 }
@@ -113,7 +117,7 @@ func TestSourceList_EmptyItems_JSON_EC_C(t *testing.T) {
 		V1ListSources(gomock.Any(), gomock.Any()).
 		Return(&feediumapi.V1ListSourcesResponse{}, nil)
 
-	stdout, _, err := runSource(t, client, "source", "list", "--output=json")
+	stdout, err := runSource(t, client, "source", "list", "--output=json")
 	require.NoError(t, err)
 	assert.Equal(t, "[]\n", stdout)
 }
@@ -124,14 +128,14 @@ func TestSourceList_EmptyItems_YAML_EC_C(t *testing.T) {
 		V1ListSources(gomock.Any(), gomock.Any()).
 		Return(&feediumapi.V1ListSourcesResponse{}, nil)
 
-	stdout, _, err := runSource(t, client, "source", "list", "--output=yaml")
+	stdout, err := runSource(t, client, "source", "list", "--output=yaml")
 	require.NoError(t, err)
 	assert.Equal(t, "[]\n", stdout)
 }
 
 func TestSourceList_UnknownType_EC_G(t *testing.T) {
 	client := newSourceMock(t) // no EXPECT: RPC must not fire
-	stdout, _, err := runSource(t, client, "source", "list", "--type=unknown_type")
+	stdout, err := runSource(t, client, "source", "list", "--type=unknown_type")
 	require.Error(t, err)
 	assert.Empty(t, stdout, "stdout must be empty on error (INV-02)")
 	assert.Equal(t, `flag: unknown --type "unknown_type"`, app.FormatError(err))
@@ -151,7 +155,7 @@ func TestSourceGet_Request(t *testing.T) {
 			}, nil
 		})
 
-	stdout, _, err := runSource(t, client, "source", "get", "my-uuid-123")
+	stdout, err := runSource(t, client, "source", "get", "my-uuid-123")
 	require.NoError(t, err)
 	require.NotNil(t, captured)
 	assert.Equal(t, "my-uuid-123", captured.GetId())
@@ -165,7 +169,7 @@ func TestSourceGet_NotFound_EC_A(t *testing.T) {
 		V1GetSource(gomock.Any(), gomock.Any()).
 		Return(nil, status.Error(codes.NotFound, "source not found"))
 
-	stdout, _, err := runSource(t, client, "source", "get", "no-such-id")
+	stdout, err := runSource(t, client, "source", "get", "no-such-id")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.Equal(t, "code=NotFound message=source not found", app.FormatError(err))
@@ -185,7 +189,7 @@ func TestSourceCreate_TelegramChannel(t *testing.T) {
 			}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "create", "telegram-channel", "--tg-id=99", "--username=chan")
+	_, err := runSource(t, client, "source", "create", "telegram-channel", "--tg-id=99", "--username=chan")
 	require.NoError(t, err)
 	require.NotNil(t, captured)
 	assert.Equal(t, feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL, captured.GetType())
@@ -205,7 +209,7 @@ func TestSourceCreate_TelegramGroup(t *testing.T) {
 			return &feediumapi.V1CreateSourceResponse{Source: &feediumapi.Source{Id: "g"}}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "create", "telegram-group", "--tg-id=7", "--username=grp")
+	_, err := runSource(t, client, "source", "create", "telegram-group", "--tg-id=7", "--username=grp")
 	require.NoError(t, err)
 	assert.Equal(t, feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_GROUP, captured.GetType())
 	tg, ok := captured.GetConfig().GetConfig().(*feediumapi.SourceConfig_TelegramGroup)
@@ -223,7 +227,7 @@ func TestSourceCreate_RSS(t *testing.T) {
 			return &feediumapi.V1CreateSourceResponse{Source: &feediumapi.Source{Id: "r"}}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "create", "rss", "--feed-url=https://x.com/feed")
+	_, err := runSource(t, client, "source", "create", "rss", "--feed-url=https://x.com/feed")
 	require.NoError(t, err)
 	assert.Equal(t, feediumapi.SourceType_SOURCE_TYPE_RSS, captured.GetType())
 	r, ok := captured.GetConfig().GetConfig().(*feediumapi.SourceConfig_Rss)
@@ -241,7 +245,7 @@ func TestSourceCreate_HTML(t *testing.T) {
 			return &feediumapi.V1CreateSourceResponse{Source: &feediumapi.Source{Id: "h"}}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "create", "html", "--url=https://x.com")
+	_, err := runSource(t, client, "source", "create", "html", "--url=https://x.com")
 	require.NoError(t, err)
 	assert.Equal(t, feediumapi.SourceType_SOURCE_TYPE_HTML, captured.GetType())
 	h, ok := captured.GetConfig().GetConfig().(*feediumapi.SourceConfig_Html)
@@ -251,15 +255,19 @@ func TestSourceCreate_HTML(t *testing.T) {
 
 func TestSourceCreate_UnknownType_EC_E(t *testing.T) {
 	client := newSourceMock(t) // no EXPECT: RPC must not fire
-	stdout, _, err := runSource(t, client, "source", "create", "ftp", "--feed-url=x")
+	stdout, err := runSource(t, client, "source", "create", "ftp", "--feed-url=x")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
-	assert.Equal(t, `flag: unknown source type "ftp" (allowed: html,rss,telegram-channel,telegram-group)`, app.FormatError(err))
+	assert.Equal(
+		t,
+		`flag: unknown source type "ftp" (allowed: html,rss,telegram-channel,telegram-group)`,
+		app.FormatError(err),
+	)
 }
 
 func TestSourceCreate_MissingRequired_EC_D(t *testing.T) {
 	client := newSourceMock(t)
-	stdout, _, err := runSource(t, client, "source", "create", "rss")
+	stdout, err := runSource(t, client, "source", "create", "rss")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.Equal(t, `flag: --feed-url is required for type "rss"`, app.FormatError(err))
@@ -267,7 +275,7 @@ func TestSourceCreate_MissingRequired_EC_D(t *testing.T) {
 
 func TestSourceCreate_DisallowedFlag_EC_I(t *testing.T) {
 	client := newSourceMock(t)
-	stdout, _, err := runSource(t, client, "source", "create", "rss", "--tg-id=42", "--feed-url=https://x")
+	stdout, err := runSource(t, client, "source", "create", "rss", "--tg-id=42", "--feed-url=https://x")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.Equal(t, `flag: --tg-id is not allowed for type "rss"`, app.FormatError(err))
@@ -282,10 +290,12 @@ func TestSourceUpdate_RSS(t *testing.T) {
 		V1UpdateSource(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, req *feediumapi.V1UpdateSourceRequest, _ ...grpc.CallOption) (*feediumapi.V1UpdateSourceResponse, error) {
 			captured = req
-			return &feediumapi.V1UpdateSourceResponse{Source: &feediumapi.Source{Id: req.GetId(), Type: req.GetType()}}, nil
+			return &feediumapi.V1UpdateSourceResponse{
+				Source: &feediumapi.Source{Id: req.GetId(), Type: req.GetType()},
+			}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "update", "uuid-upd", "--type=rss", "--feed-url=https://upd.com")
+	_, err := runSource(t, client, "source", "update", "uuid-upd", "--type=rss", "--feed-url=https://upd.com")
 	require.NoError(t, err)
 	require.NotNil(t, captured)
 	assert.Equal(t, "uuid-upd", captured.GetId())
@@ -305,14 +315,14 @@ func TestSourceUpdate_TelegramChannel(t *testing.T) {
 			return &feediumapi.V1UpdateSourceResponse{Source: &feediumapi.Source{Id: req.GetId()}}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "update", "uid", "--type=telegram-channel", "--tg-id=5", "--username=u")
+	_, err := runSource(t, client, "source", "update", "uid", "--type=telegram-channel", "--tg-id=5", "--username=u")
 	require.NoError(t, err)
 	assert.Equal(t, feediumapi.SourceType_SOURCE_TYPE_TELEGRAM_CHANNEL, captured.GetType())
 }
 
 func TestSourceUpdate_UnknownType_EC_G(t *testing.T) {
 	client := newSourceMock(t)
-	stdout, _, err := runSource(t, client, "source", "update", "uid", "--type=ftp", "--feed-url=x")
+	stdout, err := runSource(t, client, "source", "update", "uid", "--type=ftp", "--feed-url=x")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.Equal(t, `flag: unknown --type "ftp"`, app.FormatError(err))
@@ -321,7 +331,16 @@ func TestSourceUpdate_UnknownType_EC_G(t *testing.T) {
 func TestSourceUpdate_DisallowedFlag_EC_I(t *testing.T) {
 	client := newSourceMock(t)
 	// rss does not allow --username
-	stdout, _, err := runSource(t, client, "source", "update", "uid", "--type=rss", "--username=foo", "--feed-url=https://x")
+	stdout, err := runSource(
+		t,
+		client,
+		"source",
+		"update",
+		"uid",
+		"--type=rss",
+		"--username=foo",
+		"--feed-url=https://x",
+	)
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.Equal(t, `flag: --username is not allowed for type "rss"`, app.FormatError(err))
@@ -331,7 +350,7 @@ func TestSourceUpdate_MissingTypeFlag_FormattedAsFlag(t *testing.T) {
 	// Cobra-generated "required flag(s) ... not set" must be remapped to
 	// the "flag:" prefix by FormatError (NFR-03).
 	client := newSourceMock(t)
-	stdout, _, err := runSource(t, client, "source", "update", "uid")
+	stdout, err := runSource(t, client, "source", "update", "uid")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.True(t, strings.HasPrefix(app.FormatError(err), "flag: "),
@@ -361,19 +380,19 @@ func readFixture(t *testing.T, name string) string {
 }
 
 func TestSourceDelete_Snapshot_Table_AC_S4(t *testing.T) {
-	stdout, _, err := runSource(t, deleteOKClient(t), "source", "delete", deleteSnapshotID)
+	stdout, err := runSource(t, deleteOKClient(t), "source", "delete", deleteSnapshotID)
 	require.NoError(t, err)
 	assert.Equal(t, readFixture(t, "table.txt"), stdout)
 }
 
 func TestSourceDelete_Snapshot_JSON_AC_S4(t *testing.T) {
-	stdout, _, err := runSource(t, deleteOKClient(t), "source", "delete", deleteSnapshotID, "--output=json")
+	stdout, err := runSource(t, deleteOKClient(t), "source", "delete", deleteSnapshotID, "--output=json")
 	require.NoError(t, err)
 	assert.Equal(t, readFixture(t, "json.txt"), stdout)
 }
 
 func TestSourceDelete_Snapshot_YAML_AC_S4(t *testing.T) {
-	stdout, _, err := runSource(t, deleteOKClient(t), "source", "delete", deleteSnapshotID, "--output=yaml")
+	stdout, err := runSource(t, deleteOKClient(t), "source", "delete", deleteSnapshotID, "--output=yaml")
 	require.NoError(t, err)
 	assert.Equal(t, readFixture(t, "yaml.txt"), stdout)
 	// SR-10: UUID must not be quoted in YAML
@@ -390,7 +409,7 @@ func TestSourceDelete_Request(t *testing.T) {
 			return &feediumapi.V1DeleteSourceResponse{}, nil
 		})
 
-	_, _, err := runSource(t, client, "source", "delete", "target-id")
+	_, err := runSource(t, client, "source", "delete", "target-id")
 	require.NoError(t, err)
 	require.NotNil(t, captured)
 	assert.Equal(t, "target-id", captured.GetId())
@@ -402,7 +421,7 @@ func TestSourceDelete_NotFound_EC_F(t *testing.T) {
 		V1DeleteSource(gomock.Any(), gomock.Any()).
 		Return(nil, status.Error(codes.NotFound, "no such source"))
 
-	stdout, _, err := runSource(t, client, "source", "delete", "ghost-id")
+	stdout, err := runSource(t, client, "source", "delete", "ghost-id")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.Equal(t, "code=NotFound message=no such source", app.FormatError(err))
@@ -416,7 +435,7 @@ func TestSourceGet_DeadlineExceeded_EC_B(t *testing.T) {
 		V1GetSource(gomock.Any(), gomock.Any()).
 		Return(nil, status.Error(codes.DeadlineExceeded, "context deadline exceeded"))
 
-	stdout, _, err := runSource(t, client, "source", "get", "some-id")
+	stdout, err := runSource(t, client, "source", "get", "some-id")
 	require.Error(t, err)
 	assert.Empty(t, stdout)
 	assert.Equal(t, "code=DeadlineExceeded message=context deadline exceeded", app.FormatError(err))
@@ -446,7 +465,7 @@ func TestSource_StdoutEmptyOnError_INV02(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(client)
 			}
-			stdout, _, err := runSource(t, client, tc.args...)
+			stdout, err := runSource(t, client, tc.args...)
 			require.Error(t, err)
 			assert.Empty(t, stdout, "stdout must be empty on error (INV-02)")
 		})
@@ -465,7 +484,7 @@ func TestSourceList_NilConfig_Table_EC_H(t *testing.T) {
 			},
 		}, nil)
 
-	stdout, _, err := runSource(t, client, "source", "list")
+	stdout, err := runSource(t, client, "source", "list")
 	require.NoError(t, err)
 	lines := strings.Split(strings.TrimRight(stdout, "\n"), "\n")
 	require.Len(t, lines, 2)
@@ -484,7 +503,7 @@ func TestSourceCreate_JSON_Output(t *testing.T) {
 			Source: &feediumapi.Source{Id: "json-id", Type: feediumapi.SourceType_SOURCE_TYPE_RSS},
 		}, nil)
 
-	stdout, _, err := runSource(t, client, "source", "create", "rss", "--feed-url=https://x", "--output=json")
+	stdout, err := runSource(t, client, "source", "create", "rss", "--feed-url=https://x", "--output=json")
 	require.NoError(t, err)
 	assert.Contains(t, stdout, `"id"`)
 	assert.Contains(t, stdout, "json-id")
@@ -499,7 +518,7 @@ func TestSourceCreate_YAML_Output(t *testing.T) {
 			Source: &feediumapi.Source{Id: "yaml-id", Type: feediumapi.SourceType_SOURCE_TYPE_HTML},
 		}, nil)
 
-	stdout, _, err := runSource(t, client, "source", "create", "html", "--url=https://x", "--output=yaml")
+	stdout, err := runSource(t, client, "source", "create", "html", "--url=https://x", "--output=yaml")
 	require.NoError(t, err)
 	assert.Contains(t, stdout, "id:")
 	assert.Contains(t, stdout, "yaml-id")
@@ -519,7 +538,7 @@ func TestSource_CobraErrors_RemappedToFlagPrefix(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := newSourceMock(t)
-			stdout, _, err := runSource(t, client, tc.args...)
+			stdout, err := runSource(t, client, tc.args...)
 			require.Error(t, err)
 			assert.Empty(t, stdout, "stdout must be empty on error (INV-02)")
 			assert.True(t, strings.HasPrefix(app.FormatError(err), "flag: "),

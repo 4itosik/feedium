@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
-	feediumapi "github.com/4itosik/feedium/api/feedium"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	feediumapi "github.com/4itosik/feedium/api/feedium"
 )
 
 const sourceTableHeader = "ID | TYPE | MODE | CONFIG | CREATED_AT"
@@ -50,7 +51,7 @@ func formatSourceConfig(cfg *feediumapi.SourceConfig) string {
 	if cfg == nil {
 		return ""
 	}
-	switch v := cfg.Config.(type) {
+	switch v := cfg.GetConfig().(type) {
 	case *feediumapi.SourceConfig_TelegramChannel:
 		c := v.TelegramChannel
 		return fmt.Sprintf("tg_id=%d,username=%s", c.GetTgId(), c.GetUsername())

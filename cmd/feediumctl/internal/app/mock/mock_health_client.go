@@ -13,9 +13,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	feedium "github.com/4itosik/feedium/api/feedium"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
+
+	feedium "github.com/4itosik/feedium/api/feedium"
 )
 
 // MockHealthServiceClient is a mock of HealthServiceClient interface.
