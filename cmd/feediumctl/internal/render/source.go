@@ -83,7 +83,10 @@ func writeSourceListTable(w io.Writer, resp *feediumapi.V1ListSourcesResponse) e
 // writeSourceSingleTable prints the header and a single source row (SR-09).
 func writeSourceSingleTable(w io.Writer, s *feediumapi.Source) error {
 	if s == nil {
-		return fmt.Errorf("render: nil Source in response")
+		// Server contract guarantees a non-nil Source in get/create/update
+		// responses. Panicking here surfaces a protocol bug instead of
+		// leaking a non-NFR-03 prefix.
+		panic("render: unreachable nil Source in response")
 	}
 	if _, err := fmt.Fprintln(w, sourceTableHeader); err != nil {
 		return err
