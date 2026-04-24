@@ -208,6 +208,21 @@ func (mr *MockSummaryOutboxRepoMockRecorder) ExtendLease(ctx, eventID, workerID,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendLease", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).ExtendLease), ctx, eventID, workerID, leaseTTL)
 }
 
+// FailExpired mocks base method.
+func (m *MockSummaryOutboxRepo) FailExpired(ctx context.Context, eventID string, maxAttempts int, grace time.Duration, errText string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FailExpired", ctx, eventID, maxAttempts, grace, errText)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FailExpired indicates an expected call of FailExpired.
+func (mr *MockSummaryOutboxRepoMockRecorder) FailExpired(ctx, eventID, maxAttempts, grace, errText any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FailExpired", reflect.TypeOf((*MockSummaryOutboxRepo)(nil).FailExpired), ctx, eventID, maxAttempts, grace, errText)
+}
+
 // FinalizeWithLease mocks base method.
 func (m *MockSummaryOutboxRepo) FinalizeWithLease(ctx context.Context, eventID, workerID string, status biz.SummaryEventStatus, summaryID, errText *string) error {
 	m.ctrl.T.Helper()
