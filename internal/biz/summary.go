@@ -131,6 +131,18 @@ type SummaryOutboxRepo interface {
 	// ListLeaseExpired returns up to `limit` events in status='processing' whose
 	// locked_until < now() - grace (i.e. stuck leases ready for reaping).
 	ListLeaseExpired(ctx context.Context, grace time.Duration, limit int) ([]SummaryEvent, error)
+	// FailExpired atomically terminates a stuck event: status→failed only when
+	// the row is still status='processing', its lease is past grace, and attempt_count
+	// has reached maxAttempts. Returns true when the row was terminated; false means
+	// a concurrent worker claimed the row between enumeration and termination — no
+	// write happened, the new claim keeps its lease.
+	FailExpired(
+		ctx context.Context,
+		eventID string,
+		maxAttempts int,
+		grace time.Duration,
+		errText string,
+	) (bool, error)
 }
 
 type LLMProvider interface {

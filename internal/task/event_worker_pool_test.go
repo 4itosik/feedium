@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/data"
@@ -240,4 +241,51 @@ func TestIntegration_EventWorkerPool_IdempotentOnExistingSummary(t *testing.T) {
 
 	assert.Zero(t, llm.CallCount(), "LLM must not be called for an already-summarized post")
 	_ = preSum
+}
+
+// TestIntegration_EventWorkerPool_GracefulTimeoutDoesNotFailEvent asserts that when
+// Stop exceeds graceful_timeout, the in-flight event is NOT written as permanent
+// Failed via FinalizeWithLease — instead the worker abandons, lease eventually expires
+// and the event is eligible for re-claim. Regression guard for H1.
+func TestIntegration_EventWorkerPool_GracefulTimeoutDoesNotFailEvent(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	ctx := context.Background()
+	d, cleanup := setupTestStack(t)
+	defer cleanup()
+
+	sourceID := createTestGroupSource(ctx, t, d)
+	post := createTestPost(ctx, t, d, sourceID, "content that takes long to summarize")
+
+	outboxRepo := data.NewSummaryOutboxRepo(d)
+	postRepo := data.NewPostRepo(d)
+	summaryRepo := data.NewSummaryRepo(d)
+
+	postIDRef := post.ID
+	saved, err := outboxRepo.Save(ctx, biz.NewSummaryEvent(biz.SummaryEventTypeSummarizePost, sourceID, &postIDRef))
+	require.NoError(t, err)
+
+	// LLM delay >> graceful_timeout so Stop is guaranteed to cancel the handler mid-call.
+	llm := &fakeLLM{reply: "should-never-be-saved", delay: 3 * time.Second}
+	cfg := testSummaryCfg()
+	cfg.Worker.Concurrency = 1
+	cfg.Worker.GracefulTimeout = durationpb.New(150 * time.Millisecond)
+
+	pool := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
+	require.NoError(t, pool.Start(ctx))
+
+	// Give the worker time to claim and enter LLM call.
+	time.Sleep(200 * time.Millisecond)
+
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer stopCancel()
+	require.NoError(t, pool.Stop(stopCtx))
+
+	fetched, err := outboxRepo.Get(ctx, saved.ID)
+	require.NoError(t, err)
+	assert.NotEqual(t, biz.SummaryEventStatusFailed, fetched.Status,
+		"graceful-timeout cancel must not mark event as Failed; lease should be left to expire")
+	summaries, err := summaryRepo.ListByPost(ctx, post.ID)
+	require.NoError(t, err)
+	assert.Empty(t, summaries, "handler was cancelled mid-LLM; no Summary should be saved")
 }

@@ -311,6 +311,47 @@ WHERE id = $3 AND locked_by = $4 AND status = 'processing' AND locked_until > no
 	return nil
 }
 
+// FailExpired atomically terminates a stuck event only if its lease is still expired
+// past grace AND attempt_count has reached maxAttempts. Protects against the race where
+// a worker claims the row between ListLeaseExpired and the terminal write.
+func (r *summaryOutboxRepo) FailExpired(
+	ctx context.Context,
+	eventID string,
+	maxAttempts int,
+	grace time.Duration,
+	errText string,
+) (bool, error) {
+	ex := sqlExecerFromContext(ctx, r.data.DB)
+
+	eid, err := uuid.Parse(eventID)
+	if err != nil {
+		return false, fmt.Errorf("invalid event id: %w", err)
+	}
+
+	query := `
+UPDATE summary_events
+SET
+    status = 'failed',
+    error = $1,
+    processed_at = now(),
+    locked_until = NULL,
+    locked_by = NULL
+WHERE id = $2
+  AND status = 'processing'
+  AND attempt_count >= $3
+  AND locked_until < now() - ($4::bigint || ' microseconds')::interval
+`
+	res, err := ex.ExecContext(ctx, query, errText, eid, maxAttempts, grace.Microseconds())
+	if err != nil {
+		return false, fmt.Errorf("fail expired: %w", err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("fail expired rows affected: %w", err)
+	}
+	return affected > 0, nil
+}
+
 // ListLeaseExpired returns processing events whose lease has been expired for
 // at least `grace`. Used by the reaper to detect stuck leases.
 func (r *summaryOutboxRepo) ListLeaseExpired(

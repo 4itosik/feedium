@@ -281,6 +281,17 @@ func (p *EventWorkerPool) finalize(
 		return
 	}
 
+	// Handler interrupted by context cancellation (graceful-timeout expiry, parent
+	// shutdown, or heartbeat lease-loss that cancelled processCtx). Abandoning
+	// the row without writing aligns with FM-01: lease will expire, another worker
+	// re-claims via the expired-lease path. Marking it as permanent Failed here
+	// would swallow the event despite FT-005 idempotency invariant (CON-02).
+	if errors.Is(handlerErr, context.Canceled) || errors.Is(handlerErr, context.DeadlineExceeded) {
+		logger.WarnContext(ctx, "handler cancelled; abandoning for lease expiry",
+			"duration", time.Since(start), "err", handlerErr)
+		return
+	}
+
 	// Use a fresh background-derived context so we can finalize even if the parent
 	// context was cancelled (e.g. graceful shutdown).
 	finCtx, cancel := context.WithTimeout(context.Background(), finalizeTimeout)

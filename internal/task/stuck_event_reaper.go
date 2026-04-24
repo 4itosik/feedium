@@ -97,16 +97,25 @@ func (r *StuckEventReaper) tick(ctx context.Context) {
 
 	for _, ev := range events {
 		if ev.AttemptCount >= maxAttempts {
-			errText := "max attempts exceeded"
-			if termErr := r.outboxRepo.UpdateStatus(
-				ctx, ev.ID, biz.SummaryEventStatusFailed, nil, &errText,
-			); termErr != nil {
-				r.log.ErrorContext(ctx, "terminal update failed",
+			// FailExpired is guarded on status='processing' AND attempt_count>=max
+			// AND locked_until<now()-grace; if a worker re-claimed the row between
+			// ListLeaseExpired and this call, terminated=false — we skip without
+			// stomping on the new lease.
+			terminated, termErr := r.outboxRepo.FailExpired(
+				ctx, ev.ID, maxAttempts, grace, "max attempts exceeded",
+			)
+			if termErr != nil {
+				r.log.ErrorContext(ctx, "fail expired errored",
 					"summary_event_id", ev.ID, "err", termErr)
 				continue
 			}
-			r.log.WarnContext(ctx, "stuck event terminally failed",
-				"summary_event_id", ev.ID, "attempt_count", ev.AttemptCount)
+			if terminated {
+				r.log.WarnContext(ctx, "stuck event terminally failed",
+					"summary_event_id", ev.ID, "attempt_count", ev.AttemptCount)
+			} else {
+				r.log.InfoContext(ctx, "stuck event re-claimed between enumeration and termination",
+					"summary_event_id", ev.ID, "attempt_count", ev.AttemptCount)
+			}
 			continue
 		}
 		r.log.WarnContext(ctx, "stuck event detected; awaiting re-claim",
