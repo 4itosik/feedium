@@ -1,7 +1,10 @@
-.PHONY: build run lint test test-coverage coverage proto wire generate migrate
+.PHONY: build run lint test test-coverage coverage proto wire generate migrate feediumctl
 
 build:
 	go build -o bin/feedium ./cmd/feedium
+
+feediumctl:
+	go build -o bin/feediumctl ./cmd/feediumctl
 
 run:
 	./bin/feedium -conf configs/
