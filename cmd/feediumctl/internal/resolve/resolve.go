@@ -4,6 +4,7 @@ package resolve
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 
@@ -110,21 +111,41 @@ func pickTimeout(flagValue string, flagSet bool, envValue string, cfgValue *time
 
 func pickPageSize(flagValue string, flagSet bool, envValue string, cfgValue *int) (int, error) {
 	if flagSet {
-		n, err := strconv.Atoi(flagValue)
-		if err != nil {
-			return 0, fmt.Errorf("flag: invalid page size %q: %s", flagValue, err.Error())
-		}
-		return n, nil
+		return parsePageSize(flagValue)
 	}
 	if envValue != "" {
-		n, err := strconv.Atoi(envValue)
-		if err != nil {
-			return 0, fmt.Errorf("flag: invalid page size %q: %s", envValue, err.Error())
-		}
-		return n, nil
+		return parsePageSize(envValue)
 	}
 	if cfgValue != nil {
+		if err := checkPageSizeRange(*cfgValue, strconv.Itoa(*cfgValue)); err != nil {
+			return 0, err
+		}
 		return *cfgValue, nil
 	}
 	return DefaultPageSize, nil
+}
+
+func parsePageSize(raw string) (int, error) {
+	n, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, fmt.Errorf("flag: invalid page size %q: %s", raw, err.Error())
+	}
+	if err := checkPageSizeRange(n, raw); err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// checkPageSizeRange guards against int32 truncation on the wire (page_size
+// is int32 in the proto). Negative values and values above MaxInt32 are
+// rejected locally; the upper bound for valid pages is still validated by
+// the server (FR-03).
+func checkPageSizeRange(n int, raw string) error {
+	if n < 0 {
+		return fmt.Errorf("flag: invalid page size %q: must be non-negative", raw)
+	}
+	if n > math.MaxInt32 {
+		return fmt.Errorf("flag: invalid page size %q: out of range", raw)
+	}
+	return nil
 }

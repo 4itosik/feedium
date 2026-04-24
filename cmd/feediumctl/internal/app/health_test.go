@@ -8,16 +8,19 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	feediumapi "github.com/4itosik/feedium/api/feedium"
 	"github.com/4itosik/feedium/cmd/feediumctl/internal/app"
+	"github.com/4itosik/feedium/cmd/feediumctl/internal/app/mock"
 )
 
-func runCLI(t *testing.T, factory app.HealthClientFactory, args ...string) (stdout string, err error) {
+func runHealthCLI(t *testing.T, client feediumapi.HealthServiceClient, args ...string) (stdout string, err error) {
 	t.Helper()
-	cmd := app.NewRootCommandWithHealth(factory)
+	cmd := app.NewRootCommandWithHealth(app.FactoryFromHealth(client))
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(io.Discard)
@@ -27,12 +30,18 @@ func runCLI(t *testing.T, factory app.HealthClientFactory, args ...string) (stdo
 }
 
 func TestHealth_HappyPath_Table(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	client := mock.NewMockHealthServiceClient(ctrl)
+
 	var captured *feediumapi.V1CheckRequest
-	factory := app.StubHealthFactory(func(_ context.Context, in *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error) {
-		captured = in
-		return &feediumapi.V1CheckResponse{Status: "SERVING"}, nil
-	})
-	out, err := runCLI(t, factory, "health")
+	client.EXPECT().
+		V1Check(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, in *feediumapi.V1CheckRequest, _ ...grpc.CallOption) (*feediumapi.V1CheckResponse, error) {
+			captured = in
+			return &feediumapi.V1CheckResponse{Status: "SERVING"}, nil
+		})
+
+	out, err := runHealthCLI(t, client, "health")
 	require.NoError(t, err)
 	assert.Equal(t, "FIELD | VALUE\nstatus | SERVING\n", out)
 	require.NotNil(t, captured, "V1CheckRequest must be dispatched to the client")
@@ -40,54 +49,64 @@ func TestHealth_HappyPath_Table(t *testing.T) {
 }
 
 func TestHealth_HappyPath_JSON(t *testing.T) {
-	factory := app.StubHealthFactory(func(_ context.Context, _ *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error) {
-		return &feediumapi.V1CheckResponse{Status: "SERVING"}, nil
-	})
-	out, err := runCLI(t, factory, "health", "--output=json")
+	ctrl := gomock.NewController(t)
+	client := mock.NewMockHealthServiceClient(ctrl)
+	client.EXPECT().
+		V1Check(gomock.Any(), gomock.Any()).
+		Return(&feediumapi.V1CheckResponse{Status: "SERVING"}, nil)
+
+	out, err := runHealthCLI(t, client, "health", "--output=json")
 	require.NoError(t, err)
 	assert.Contains(t, out, `"status"`)
 	assert.Contains(t, out, `"SERVING"`)
 }
 
 func TestHealth_UnavailableRoutedThroughRPCFormatter(t *testing.T) {
-	factory := app.StubHealthFactory(func(_ context.Context, _ *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error) {
-		return nil, status.Error(codes.Unavailable, "connection refused")
-	})
-	out, err := runCLI(t, factory, "health")
+	ctrl := gomock.NewController(t)
+	client := mock.NewMockHealthServiceClient(ctrl)
+	client.EXPECT().
+		V1Check(gomock.Any(), gomock.Any()).
+		Return(nil, status.Error(codes.Unavailable, "connection refused"))
+
+	out, err := runHealthCLI(t, client, "health")
 	require.Error(t, err)
 	assert.Empty(t, out, "stdout must be empty on error (INV-02)")
-	assert.Equal(t, "code=Unavailable message=connection refused", err.Error())
+	assert.Equal(t, "code=Unavailable message=connection refused", app.FormatError(err))
 }
 
 func TestHealth_OutputValidation(t *testing.T) {
-	factory := app.StubHealthFactory(func(_ context.Context, _ *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error) {
-		t.Fatal("V1Check must not be called when --output is invalid")
-		return nil, nil
-	})
-	out, err := runCLI(t, factory, "health", "--output=xml")
+	ctrl := gomock.NewController(t)
+	client := mock.NewMockHealthServiceClient(ctrl) // no EXPECT: any V1Check call fails the test
+
+	out, err := runHealthCLI(t, client, "health", "--output=xml")
 	require.Error(t, err)
 	assert.Empty(t, out)
-	assert.Equal(t, `output: invalid value "xml" (allowed: table,json,yaml)`, err.Error())
+	assert.Equal(t, `output: invalid value "xml" (allowed: table,json,yaml)`, app.FormatError(err))
 }
 
 func TestHealth_InvalidTimeoutFlag(t *testing.T) {
-	factory := app.StubHealthFactory(func(_ context.Context, _ *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error) {
-		t.Fatal("V1Check must not be called when --timeout is invalid")
-		return nil, nil
-	})
-	out, err := runCLI(t, factory, "health", "--timeout=abc")
+	ctrl := gomock.NewController(t)
+	client := mock.NewMockHealthServiceClient(ctrl)
+
+	out, err := runHealthCLI(t, client, "health", "--timeout=abc")
 	require.Error(t, err)
 	assert.Empty(t, out)
-	assert.Contains(t, err.Error(), `flag: invalid timeout "abc":`)
+	assert.Contains(t, app.FormatError(err), `flag: invalid timeout "abc":`)
 }
 
 func TestHealth_ContextHasTimeout(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	client := mock.NewMockHealthServiceClient(ctrl)
+
 	var observed context.Context
-	factory := app.StubHealthFactory(func(ctx context.Context, _ *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error) {
-		observed = ctx
-		return &feediumapi.V1CheckResponse{Status: "SERVING"}, nil
-	})
-	_, err := runCLI(t, factory, "health", "--timeout=5s")
+	client.EXPECT().
+		V1Check(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ *feediumapi.V1CheckRequest, _ ...grpc.CallOption) (*feediumapi.V1CheckResponse, error) {
+			observed = ctx
+			return &feediumapi.V1CheckResponse{Status: "SERVING"}, nil
+		})
+
+	_, err := runHealthCLI(t, client, "health", "--timeout=5s")
 	require.NoError(t, err)
 	require.NotNil(t, observed)
 	_, ok := observed.Deadline()

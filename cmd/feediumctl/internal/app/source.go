@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -33,6 +34,16 @@ func newSourceCommand(root *cobra.Command, g *globalFlags, factory sourceClientF
 		Long:          "Create, read, update, and delete Feedium sources.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Without RunE cobra silently prints help for an unknown
+			// subcommand (exit 0), which would violate INV-03. Reject
+			// any invocation with positional args here and fall back
+			// to --help for `feediumctl source` with no args.
+			if len(args) > 0 {
+				return fmt.Errorf("flag: unknown subcommand %q for %q", args[0], cmd.CommandPath())
+			}
+			return cmd.Help()
+		},
 	}
 	cmd.AddCommand(newSourceListCommand(root, g, factory))
 	cmd.AddCommand(newSourceGetCommand(root, g, factory))

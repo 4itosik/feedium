@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc/status"
 )
@@ -37,4 +38,34 @@ func WrapRPCError(err error) error {
 		return err
 	}
 	return &rpcError{wrapped: err}
+}
+
+// allowedLocalPrefixes enumerates the closed list of local-error prefixes
+// permitted by NFR-03. Any error whose string does not already start with one
+// of these prefixes (and is not an RPC error starting with "code=") must be
+// classified as a "flag:" error by FormatError.
+var allowedLocalPrefixes = []string{"config: ", "flag: ", "output: ", "endpoint: "}
+
+// FormatError classifies an error for stderr output per NFR-03:
+//   - RPC errors already shaped by WrapRPCError ("code=… message=…") pass through;
+//   - errors already prefixed with one of the allowed local prefixes pass through;
+//   - anything else (cobra built-in errors, unknown sources) is remapped to
+//     "flag: <reason>" so the closed list of prefixes is preserved.
+//
+// The error string is also trimmed of trailing whitespace/newlines to keep the
+// single-line invariant.
+func FormatError(err error) string {
+	if err == nil {
+		return ""
+	}
+	s := strings.TrimRight(err.Error(), "\r\n\t ")
+	if strings.HasPrefix(s, "code=") {
+		return s
+	}
+	for _, p := range allowedLocalPrefixes {
+		if strings.HasPrefix(s, p) {
+			return s
+		}
+	}
+	return "flag: " + s
 }

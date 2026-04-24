@@ -50,7 +50,10 @@ func Write(w io.Writer, format string, msg proto.Message) error {
 	case FormatTable:
 		return writeTable(w, msg)
 	default:
-		return fmt.Errorf("render: unsupported format %q", format)
+		// Unreachable: resolve.ValidateOutput rejects any other value
+		// before we reach the renderer. A panic flags the broken
+		// invariant instead of leaking a non-NFR-03 prefix to stderr.
+		panic(fmt.Sprintf("render: unreachable format %q", format))
 	}
 }
 
@@ -102,7 +105,9 @@ func writeTable(w io.Writer, msg proto.Message) error {
 	case *feediumapi.V1UpdateSourceResponse:
 		return writeSourceSingleTable(w, m.GetSource())
 	default:
-		return fmt.Errorf("render: table format is not supported for %T", msg)
+		// Unreachable: every proto message rendered by CLI is listed
+		// above. Panicking preserves the NFR-03 prefix contract.
+		panic(fmt.Sprintf("render: unreachable message type %T for table format", msg))
 	}
 }
 
@@ -170,7 +175,8 @@ func WriteDelete(w io.Writer, format, id string) error {
 		_, err := fmt.Fprintf(w, "deleted: true\nid: %s\n", id)
 		return err
 	default:
-		return fmt.Errorf("render: unsupported format %q", format)
+		// Unreachable: resolve.ValidateOutput guards this path.
+		panic(fmt.Sprintf("render: unreachable format %q", format))
 	}
 }
 

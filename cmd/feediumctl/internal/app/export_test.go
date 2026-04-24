@@ -1,10 +1,7 @@
 package app
 
 import (
-	"context"
-
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
 
 	feediumapi "github.com/4itosik/feedium/api/feedium"
 )
@@ -12,7 +9,7 @@ import (
 // ── Source client DI (handoff §2.5, Step 6) ───────────────────────────────
 
 // SourceClientFactory is the exported alias of the unexported sourceClientFactory
-// type, allowing tests to inject stub clients.
+// type, allowing tests to inject gomock clients.
 type SourceClientFactory = sourceClientFactory
 
 // NewRootCommandWithSource creates a root command whose "source" subcommands
@@ -34,16 +31,16 @@ func NewRootCommandWithSource(factory SourceClientFactory) *cobra.Command {
 	return cmd
 }
 
-// StubSourceFactory wraps any SourceServiceClient as a factory that returns it
+// FactoryFromSource wraps any SourceServiceClient as a factory that returns it
 // for every endpoint (no real connection opened).
-func StubSourceFactory(stub feediumapi.SourceServiceClient) SourceClientFactory {
+func FactoryFromSource(client feediumapi.SourceServiceClient) SourceClientFactory {
 	return func(string) (feediumapi.SourceServiceClient, func() error, error) {
-		return stub, func() error { return nil }, nil
+		return client, func() error { return nil }, nil
 	}
 }
 
-// HealthClientFactory is an alias of the unexported healthClientFactory
-// type, exported for tests to inject mock clients.
+// HealthClientFactory is an alias of the unexported healthClientFactory type,
+// exported for tests to inject gomock clients.
 type HealthClientFactory = healthClientFactory
 
 // NewRootCommandWithHealth builds a root command whose "health" subcommand
@@ -75,17 +72,10 @@ func NewRootCommandWithHealth(factory HealthClientFactory) *cobra.Command {
 	return cmd
 }
 
-// StubHealthFactory builds a factory that returns a synchronous stub client.
-func StubHealthFactory(fn func(context.Context, *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error)) HealthClientFactory {
+// FactoryFromHealth wraps any HealthServiceClient as a factory that returns it
+// for every endpoint (no real connection opened).
+func FactoryFromHealth(client feediumapi.HealthServiceClient) HealthClientFactory {
 	return func(string) (feediumapi.HealthServiceClient, func() error, error) {
-		return stubHealthClient{fn: fn}, func() error { return nil }, nil
+		return client, func() error { return nil }, nil
 	}
-}
-
-type stubHealthClient struct {
-	fn func(context.Context, *feediumapi.V1CheckRequest) (*feediumapi.V1CheckResponse, error)
-}
-
-func (s stubHealthClient) V1Check(ctx context.Context, in *feediumapi.V1CheckRequest, _ ...grpc.CallOption) (*feediumapi.V1CheckResponse, error) {
-	return s.fn(ctx, in)
 }
