@@ -313,13 +313,13 @@ func TestHealthService_WithKratosHTTPServer(t *testing.T) {
 	srv := kratoshttp.NewServer(kratoshttp.Address(":0"))
 	srv.Handle("/healthz", health.HTTPHandler(hs))
 
-	go srv.Start(ctx)
-	defer srv.Stop(ctx)
-
-	time.Sleep(100 * time.Millisecond)
-
+	// Resolve endpoint on the main goroutine before Start() to avoid a data race:
+	// both Endpoint() and Start() lazily init s.lis/s.endpoint without synchronization.
 	u, err := srv.Endpoint()
 	require.NoError(t, err)
+
+	go srv.Start(ctx)
+	defer srv.Stop(ctx)
 
 	resp, err := stdhttp.Get(fmt.Sprintf("http://%s/healthz", u.Host))
 	require.NoError(t, err)
@@ -350,13 +350,13 @@ func TestHealthService_WithKratosGRPCServer(t *testing.T) {
 	srv := kratosgrpc.NewServer(kratosgrpc.Address(":0"))
 	feediumv1.RegisterHealthServiceServer(srv, hs)
 
-	go srv.Start(ctx)
-	defer srv.Stop(ctx)
-
-	time.Sleep(100 * time.Millisecond)
-
+	// Resolve endpoint on the main goroutine before Start() to avoid a data race:
+	// both Endpoint() and Start() lazily init s.lis/s.endpoint without synchronization.
 	u, err := srv.Endpoint()
 	require.NoError(t, err)
+
+	go srv.Start(ctx)
+	defer srv.Stop(ctx)
 
 	conn, err := kratosgrpc.DialInsecure(ctx, kratosgrpc.WithEndpoint(u.Host))
 	require.NoError(t, err)

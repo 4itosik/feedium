@@ -207,7 +207,9 @@ func TestIntegration_PostSave(t *testing.T) {
 	})
 
 	t.Run("idempotent save returns existing post", func(t *testing.T) {
-		now := time.Now()
+		// Truncate to microsecond: Postgres timestamptz stores µs precision,
+		// so input with ns precision won't round-trip equal on the idempotent path.
+		now := time.Now().UTC().Truncate(time.Microsecond)
 		externalID := "ext-idempotent"
 		post := biz.Post{
 			ID:          uuid.Must(uuid.NewV7()).String(),
@@ -257,7 +259,9 @@ func TestIntegration_PostUpdate(t *testing.T) {
 	sourceID := createTestSource(ctx, t, client)
 
 	t.Run("update valid post", func(t *testing.T) {
-		now := time.Now().UTC()
+		// Truncate to microsecond: Postgres timestamptz drops ns precision,
+		// so saved.CreatedAt (in-memory) must match updated.CreatedAt (DB-truncated).
+		now := time.Now().UTC().Truncate(time.Microsecond)
 		post := biz.Post{
 			ID:          uuid.Must(uuid.NewV7()).String(),
 			SourceID:    sourceID,
