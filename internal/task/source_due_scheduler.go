@@ -2,53 +2,39 @@ package task
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/conf"
 )
 
 const defaultSourceSchedulerPoll = 5 * time.Second
 
-// SourceDueScheduler implements REQ-06: per-source due-time planning for cumulative
-// sources. On each tick it claims one due source under FOR UPDATE SKIP LOCKED,
-// checks HasActiveEvent / presence of new posts, enqueues a summarize_source event
-// and bumps next_summary_at by cron.interval. Replaces the in-process CronWorker
-// ticker from FT-005.
+// SourceScheduler is the task-level view of biz.SummaryUsecase.ScheduleNextCumulative.
+type SourceScheduler interface {
+	ScheduleNextCumulative(ctx context.Context) (bool, error)
+}
+
+// SourceDueScheduler implements REQ-06: per-source due-time planning. On each
+// tick it delegates to the usecase, which atomically claims one due source
+// (FOR UPDATE SKIP LOCKED), bumps next_summary_at, and enqueues an event when
+// new posts exist. Replaces the in-process CronWorker ticker from FT-005.
 type SourceDueScheduler struct {
-	outboxRepo  biz.SummaryOutboxRepo
-	sourceRepo  biz.SourceRepo
-	summaryRepo biz.SummaryRepo
-	postRepo    biz.PostRepo
-	txManager   biz.TxManager
-	cfg         *conf.Summary
-	log         *slog.Logger
+	scheduler SourceScheduler
+	cfg       *conf.Summary
+	log       *slog.Logger
 
 	done     chan struct{}
 	doneOnce sync.Once
 }
 
-func NewSourceDueScheduler(
-	outboxRepo biz.SummaryOutboxRepo,
-	sourceRepo biz.SourceRepo,
-	summaryRepo biz.SummaryRepo,
-	postRepo biz.PostRepo,
-	txManager biz.TxManager,
-	cfg *conf.Summary,
-	logger *slog.Logger,
-) *SourceDueScheduler {
+func NewSourceDueScheduler(scheduler SourceScheduler, cfg *conf.Summary, logger *slog.Logger) *SourceDueScheduler {
 	return &SourceDueScheduler{
-		outboxRepo:  outboxRepo,
-		sourceRepo:  sourceRepo,
-		summaryRepo: summaryRepo,
-		postRepo:    postRepo,
-		txManager:   txManager,
-		cfg:         cfg,
-		log:         logger,
-		done:        make(chan struct{}),
+		scheduler: scheduler,
+		cfg:       cfg,
+		log:       logger,
+		done:      make(chan struct{}),
 	}
 }
 
@@ -57,7 +43,6 @@ func (s *SourceDueScheduler) Start(ctx context.Context) error {
 	if pollInterval <= 0 {
 		pollInterval = defaultSourceSchedulerPoll
 	}
-
 	go s.run(ctx, pollInterval)
 	return nil
 }
@@ -89,6 +74,9 @@ func (s *SourceDueScheduler) run(ctx context.Context, pollInterval time.Duration
 	}
 }
 
+// tick drains all currently-due sources, one per usecase call. The usecase
+// returns scheduled=false either when nothing is due or when the claimed source
+// has no new posts — both break us out of the drain loop.
 func (s *SourceDueScheduler) tick(ctx context.Context) {
 	for {
 		select {
@@ -99,75 +87,13 @@ func (s *SourceDueScheduler) tick(ctx context.Context) {
 		default:
 		}
 
-		txErr := s.txManager.InTx(ctx, func(txCtx context.Context) error {
-			source, claimErr := s.sourceRepo.ClaimDueCumulative(txCtx)
-			if claimErr != nil {
-				return claimErr
-			}
-			return s.processClaimedSource(txCtx, source)
-		})
-		if txErr != nil {
-			if errors.Is(txErr, biz.ErrNoSourceDue) {
-				return
-			}
-			s.log.ErrorContext(ctx, "source scheduler tick failed", "error", txErr)
+		scheduled, err := s.scheduler.ScheduleNextCumulative(ctx)
+		if err != nil {
+			s.log.ErrorContext(ctx, "source scheduler tick failed", "err", err)
+			return
+		}
+		if !scheduled {
 			return
 		}
 	}
-}
-
-func (s *SourceDueScheduler) processClaimedSource(ctx context.Context, source biz.Source) error {
-	cronInterval := s.cfg.GetCron().GetInterval().AsDuration()
-	if cronInterval <= 0 {
-		cronInterval = time.Hour
-	}
-	next := time.Now().Add(cronInterval)
-
-	if err := s.sourceRepo.BumpNextSummaryAt(ctx, source.ID, next); err != nil {
-		return err
-	}
-
-	active, _, err := s.outboxRepo.HasActiveEvent(ctx, source.ID, biz.SummaryEventTypeSummarizeSource)
-	if err != nil {
-		return err
-	}
-	if active {
-		return nil
-	}
-
-	lastSummary, err := s.summaryRepo.GetLastBySource(ctx, source.ID)
-	if err != nil {
-		return err
-	}
-
-	var createdAfter *time.Time
-	if lastSummary != nil {
-		createdAfter = &lastSummary.CreatedAt
-	}
-	now := time.Now()
-	posts, err := s.postRepo.List(ctx, biz.ListPostsFilter{
-		SourceID:      source.ID,
-		PageSize:      1,
-		OrderBy:       biz.SortByCreatedAt,
-		OrderDir:      biz.SortDesc,
-		CreatedAfter:  createdAfter,
-		CreatedBefore: &now,
-	})
-	if err != nil {
-		return err
-	}
-	if len(posts.Items) == 0 {
-		return nil
-	}
-
-	event := biz.NewSummaryEvent(biz.SummaryEventTypeSummarizeSource, source.ID, nil)
-	if _, saveErr := s.outboxRepo.Save(ctx, event); saveErr != nil {
-		if errors.Is(saveErr, biz.ErrSummaryAlreadyProcessing) {
-			return nil
-		}
-		return saveErr
-	}
-	s.log.InfoContext(ctx, "source scheduled for summarization",
-		"source_id", source.ID, "next_summary_at", next)
-	return nil
 }

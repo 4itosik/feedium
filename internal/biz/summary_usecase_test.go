@@ -66,7 +66,7 @@ func TestSummaryUsecase_TriggerSourceSummarize_BumpsNextSummaryAtInTx(t *testing
 			return nil
 		})
 
-	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, txMgr, cfg)
+	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, nil, nil, txMgr, cfg)
 
 	id, existed, err := uc.TriggerSourceSummarize(context.Background(), sourceID)
 	require.NoError(t, err)
@@ -98,7 +98,7 @@ func TestSummaryUsecase_TriggerSourceSummarize_ExistingEventNoTx(t *testing.T) {
 		Return(true, existing, nil)
 	// InTx / Save / Bump must NOT be called — gomock strict controller fails otherwise.
 
-	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, txMgr, cfg)
+	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, nil, nil, txMgr, cfg)
 	id, existed, err := uc.TriggerSourceSummarize(context.Background(), sourceID)
 	require.NoError(t, err)
 	assert.True(t, existed)

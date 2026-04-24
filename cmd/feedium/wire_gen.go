@@ -43,19 +43,19 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	postService := post.NewPostService(postUsecase)
 	summaryRepo := data.NewSummaryRepo(dataData)
 	confSummary := newSummaryConfigFromBootstrap(bc)
-	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, txManager, confSummary)
-	summaryService := summary.NewService(summaryUsecase)
-	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, summaryService, logger)
-	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, summaryService, logger)
 	summaryLLM := newSummaryLLMFromBootstrap(bc)
 	openRouterProvider, err := data.NewOpenRouterProvider(summaryLLM, logger)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	eventWorkerPool := task.NewEventWorkerPool(summaryOutboxRepo, postRepo, summaryRepo, openRouterProvider, confSummary, logger)
-	sourceDueScheduler := task.NewSourceDueScheduler(summaryOutboxRepo, sourceRepo, summaryRepo, postRepo, txManager, confSummary, logger)
-	stuckEventReaper := task.NewStuckEventReaper(summaryOutboxRepo, confSummary, logger)
+	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, postRepo, openRouterProvider, txManager, confSummary)
+	summaryService := summary.NewService(summaryUsecase)
+	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, summaryService, logger)
+	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, summaryService, logger)
+	eventWorkerPool := task.NewEventWorkerPool(summaryOutboxRepo, summaryUsecase, confSummary, logger)
+	sourceDueScheduler := task.NewSourceDueScheduler(summaryUsecase, confSummary, logger)
+	stuckEventReaper := task.NewStuckEventReaper(summaryUsecase, confSummary, logger)
 	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper)
 	return app, func() {
 		cleanup()

@@ -1,6 +1,10 @@
 // Package task implements background workers for FT-007 scalable event processing.
 // See memory-bank/features/FT-007-scalable-event-processing/feature.md for the canonical
 // requirements (REQ-01..09) and architectural invariants.
+//
+// This layer is intentionally thin: per architecture.md, task/ owns lifecycle
+// (claim, heartbeat, lease-guarded finalize, retry decision, graceful shutdown)
+// and delegates all business logic to biz usecases.
 package task
 
 import (
@@ -8,9 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -26,27 +28,26 @@ const (
 	defaultLeaseTTL          = 5 * time.Minute
 	defaultHeartbeatInterval = 1 * time.Minute
 	defaultGracefulTimeout   = 10 * time.Second
-	defaultMaxAttempts       = 5
-	defaultBackoffBase       = 10 * time.Second
-	defaultBackoffMax        = 10 * time.Minute
-	defaultEventTTL          = 24 * time.Hour
-	defaultMaxWindow         = 72 * time.Hour
-	listPageSize             = 500
-	llmRetryBackoffBase      = 2
 	finalizeTimeout          = 10 * time.Second
 )
 
-// EventWorkerPool implements REQ-01..04 and REQ-08: N goroutines that each pull one
-// event at a time via ClaimOne (FOR UPDATE SKIP LOCKED), run the FT-005 domain
-// handlers, and finalize under a guarded lease. A per-event heartbeat goroutine
-// extends the lease while the handler runs.
+// EventProcessor is the task-level view of biz.SummaryUsecase: pure domain
+// execution with no lease / retry awareness.
+type EventProcessor interface {
+	ProcessPostEvent(ctx context.Context, event biz.SummaryEvent) (string, error)
+	ProcessSourceEvent(ctx context.Context, event biz.SummaryEvent) (string, error)
+	RetryPolicy() biz.RetryPolicy
+}
+
+// EventWorkerPool implements REQ-01..04 and REQ-08: N goroutines that each pull
+// one event at a time via ClaimOne (FOR UPDATE SKIP LOCKED), delegate execution
+// to the usecase, and finalize under a guarded lease. A per-event heartbeat
+// goroutine extends the lease while the handler runs.
 type EventWorkerPool struct {
-	outboxRepo  biz.SummaryOutboxRepo
-	postRepo    biz.PostRepo
-	summaryRepo biz.SummaryRepo
-	llmProvider biz.LLMProvider
-	cfg         *conf.Summary
-	log         *slog.Logger
+	outboxRepo biz.SummaryOutboxRepo
+	processor  EventProcessor
+	cfg        *conf.Summary
+	log        *slog.Logger
 
 	processID string
 	policy    biz.RetryPolicy
@@ -59,47 +60,27 @@ type EventWorkerPool struct {
 
 func NewEventWorkerPool(
 	outboxRepo biz.SummaryOutboxRepo,
-	postRepo biz.PostRepo,
-	summaryRepo biz.SummaryRepo,
-	llmProvider biz.LLMProvider,
+	processor EventProcessor,
 	cfg *conf.Summary,
 	logger *slog.Logger,
 ) *EventWorkerPool {
 	host, _ := os.Hostname()
 	processID := fmt.Sprintf("%s-%d-%s", host, os.Getpid(), uuid.NewString()[:8])
 
-	policy := biz.RetryPolicy{
-		MaxAttempts: int(cfg.GetWorker().GetMaxAttempts()),
-		BackoffBase: cfg.GetWorker().GetBackoffBase().AsDuration(),
-		BackoffMax:  cfg.GetWorker().GetBackoffMax().AsDuration(),
-	}
-	if policy.MaxAttempts <= 0 {
-		policy.MaxAttempts = defaultMaxAttempts
-	}
-	if policy.BackoffBase <= 0 {
-		policy.BackoffBase = defaultBackoffBase
-	}
-	if policy.BackoffMax <= 0 {
-		policy.BackoffMax = defaultBackoffMax
-	}
-
 	return &EventWorkerPool{
-		outboxRepo:  outboxRepo,
-		postRepo:    postRepo,
-		summaryRepo: summaryRepo,
-		llmProvider: llmProvider,
-		cfg:         cfg,
-		log:         logger,
-		processID:   processID,
-		policy:      policy,
-		stopCh:      make(chan struct{}),
+		outboxRepo: outboxRepo,
+		processor:  processor,
+		cfg:        cfg,
+		log:        logger,
+		processID:  processID,
+		policy:     processor.RetryPolicy(),
+		stopCh:     make(chan struct{}),
 	}
 }
 
 func (p *EventWorkerPool) Start(ctx context.Context) error {
-	// cancel is invoked from Stop() either on graceful-timeout expiry or when the
-	// caller's context is already done; see Stop() below. The pool owns its
-	// lifetime through stopCh + cancel, so this is not a leak.
+	// cancel is invoked from Stop() on graceful-timeout expiry or when the caller's
+	// context is done; see Stop() below. Lifetime is owned by stopCh + cancel.
 	runCtx, cancel := context.WithCancel(ctx) //nolint:gosec // cancel is stored on the pool and invoked by Stop
 	p.cancel = cancel
 
@@ -153,7 +134,6 @@ func (p *EventWorkerPool) runWorker(ctx context.Context, workerID string) {
 	if pollInterval <= 0 {
 		pollInterval = defaultPollInterval
 	}
-
 	leaseTTL := p.cfg.GetWorker().GetLeaseTtl().AsDuration()
 	if leaseTTL <= 0 {
 		leaseTTL = defaultLeaseTTL
@@ -163,7 +143,6 @@ func (p *EventWorkerPool) runWorker(ctx context.Context, workerID string) {
 		if !p.isRunning(ctx) {
 			return
 		}
-
 		event, claimErr := p.outboxRepo.ClaimOne(ctx, workerID, leaseTTL)
 		if claimErr != nil {
 			if errors.Is(claimErr, biz.ErrNoEventAvailable) {
@@ -178,7 +157,6 @@ func (p *EventWorkerPool) runWorker(ctx context.Context, workerID string) {
 			}
 			continue
 		}
-
 		p.processEvent(ctx, workerID, event)
 	}
 }
@@ -216,49 +194,28 @@ func (p *EventWorkerPool) processEvent(parent context.Context, workerID string, 
 	)
 	start := time.Now()
 
-	eventTTL := p.cfg.GetOutbox().GetEventTtl().AsDuration()
-	if eventTTL <= 0 {
-		eventTTL = defaultEventTTL
-	}
-	if time.Since(event.CreatedAt) > eventTTL {
-		logger.InfoContext(parent, "event expired", "age", time.Since(event.CreatedAt))
-		finCtx, finCancel := context.WithTimeout(context.Background(), finalizeTimeout)
-		defer finCancel()
-		if err := p.outboxRepo.FinalizeWithLease(
-			finCtx, event.ID, workerID, biz.SummaryEventStatusExpired, nil, nil,
-		); err != nil && !errors.Is(err, biz.ErrLeaseLost) {
-			logger.ErrorContext(parent, "finalize expired failed", "err", err)
-		}
-		return
-	}
-
 	// Per-event context, cancellable by heartbeat when lease is lost.
 	processCtx, processCancel := context.WithCancel(parent)
 	defer processCancel()
 
 	heartbeatDone := p.startHeartbeat(processCtx, processCancel, workerID, event.ID)
 
-	handlerErr := p.dispatch(processCtx, logger, workerID, event)
+	summaryID, handlerErr := p.dispatch(processCtx, event)
 
 	processCancel()
 	<-heartbeatDone
 
-	p.finalize(parent, logger, workerID, event, handlerErr, start)
+	p.finalize(parent, logger, workerID, event, summaryID, handlerErr, start)
 }
 
-func (p *EventWorkerPool) dispatch(
-	ctx context.Context,
-	logger *slog.Logger,
-	workerID string,
-	event biz.SummaryEvent,
-) error {
+func (p *EventWorkerPool) dispatch(ctx context.Context, event biz.SummaryEvent) (string, error) {
 	switch event.EventType {
 	case biz.SummaryEventTypeSummarizePost:
-		return p.processSummarizePost(ctx, logger, workerID, event)
+		return p.processor.ProcessPostEvent(ctx, event)
 	case biz.SummaryEventTypeSummarizeSource:
-		return p.processSummarizeSource(ctx, logger, workerID, event)
+		return p.processor.ProcessSourceEvent(ctx, event)
 	default:
-		return fmt.Errorf("unknown event type %q", event.EventType)
+		return "", fmt.Errorf("unknown event type %q", event.EventType)
 	}
 }
 
@@ -267,11 +224,17 @@ func (p *EventWorkerPool) finalize(
 	logger *slog.Logger,
 	workerID string,
 	event biz.SummaryEvent,
+	summaryID string,
 	handlerErr error,
 	start time.Time,
 ) {
 	if handlerErr == nil {
 		logger.InfoContext(ctx, "event processed", "duration", time.Since(start), "status", "completed")
+		var summaryIDPtr *string
+		if summaryID != "" {
+			summaryIDPtr = &summaryID
+		}
+		p.writeTerminal(ctx, logger, workerID, event.ID, biz.SummaryEventStatusCompleted, summaryIDPtr, nil)
 		return
 	}
 
@@ -282,20 +245,27 @@ func (p *EventWorkerPool) finalize(
 	}
 
 	// Handler interrupted by context cancellation (graceful-timeout expiry, parent
-	// shutdown, or heartbeat lease-loss that cancelled processCtx). Abandoning
-	// the row without writing aligns with FM-01: lease will expire, another worker
-	// re-claims via the expired-lease path. Marking it as permanent Failed here
-	// would swallow the event despite FT-005 idempotency invariant (CON-02).
+	// shutdown, or heartbeat lease-loss). Abandoning aligns with FM-01: lease will
+	// expire, another worker re-claims via the expired-lease path.
 	if errors.Is(handlerErr, context.Canceled) || errors.Is(handlerErr, context.DeadlineExceeded) {
 		logger.WarnContext(ctx, "handler cancelled; abandoning for lease expiry",
 			"duration", time.Since(start), "err", handlerErr)
 		return
 	}
 
-	// Use a fresh background-derived context so we can finalize even if the parent
-	// context was cancelled (e.g. graceful shutdown).
-	finCtx, cancel := context.WithTimeout(context.Background(), finalizeTimeout)
-	defer cancel()
+	if errors.Is(handlerErr, biz.ErrSummaryEventExpired) {
+		logger.InfoContext(ctx, "event expired; finalizing",
+			"duration", time.Since(start), "err", handlerErr)
+		p.writeTerminal(ctx, logger, workerID, event.ID, biz.SummaryEventStatusExpired, nil, nil)
+		return
+	}
+
+	if errors.Is(handlerErr, biz.ErrSummarySourceNoPosts) {
+		logger.InfoContext(ctx, "source has no new posts; finalizing",
+			"duration", time.Since(start))
+		p.writeTerminal(ctx, logger, workerID, event.ID, biz.SummaryEventStatusCompleted, nil, nil)
+		return
+	}
 
 	// event.AttemptCount was incremented by ClaimOne, so it reflects the current
 	// (this) attempt. Both backoff growth and the transient-vs-permanent check use
@@ -306,6 +276,8 @@ func (p *EventWorkerPool) finalize(
 		logger.WarnContext(ctx, "transient failure; scheduling retry",
 			"attempt", event.AttemptCount, "retry_in", backoff,
 			"duration", time.Since(start), "err", handlerErr)
+		finCtx, cancel := context.WithTimeout(context.Background(), finalizeTimeout)
+		defer cancel()
 		if err := p.outboxRepo.MarkForRetry(
 			finCtx, event.ID, workerID, time.Now().Add(backoff), handlerErr.Error(),
 		); err != nil && !errors.Is(err, biz.ErrLeaseLost) {
@@ -316,10 +288,24 @@ func (p *EventWorkerPool) finalize(
 
 	errText := handlerErr.Error()
 	logger.WarnContext(ctx, "permanent failure", "duration", time.Since(start), "err", handlerErr)
-	if err := p.outboxRepo.FinalizeWithLease(
-		finCtx, event.ID, workerID, biz.SummaryEventStatusFailed, nil, &errText,
-	); err != nil && !errors.Is(err, biz.ErrLeaseLost) {
-		logger.ErrorContext(ctx, "finalize failed", "err", err)
+	p.writeTerminal(ctx, logger, workerID, event.ID, biz.SummaryEventStatusFailed, nil, &errText)
+}
+
+func (p *EventWorkerPool) writeTerminal(
+	ctx context.Context,
+	logger *slog.Logger,
+	workerID, eventID string,
+	status biz.SummaryEventStatus,
+	summaryID *string,
+	errText *string,
+) {
+	// Fresh background-derived context so finalization survives parent cancellation
+	// on normal completion (the caller already ruled out context-cancelled errors).
+	finCtx, cancel := context.WithTimeout(context.Background(), finalizeTimeout)
+	defer cancel()
+	if err := p.outboxRepo.FinalizeWithLease(finCtx, eventID, workerID, status, summaryID, errText); err != nil &&
+		!errors.Is(err, biz.ErrLeaseLost) {
+		logger.ErrorContext(ctx, "finalize failed", "err", err, "status", status)
 	}
 }
 
@@ -359,190 +345,4 @@ func (p *EventWorkerPool) startHeartbeat(
 		}
 	})
 	return done
-}
-
-func (p *EventWorkerPool) processSummarizePost(
-	ctx context.Context,
-	logger *slog.Logger,
-	workerID string,
-	event biz.SummaryEvent,
-) error {
-	if event.PostID == nil {
-		return fmt.Errorf("%w: post id is nil for summarize_post event", biz.ErrSummaryValidation)
-	}
-
-	// Idempotency (FM-05): if a summary for this post already exists, finalize as completed
-	// without invoking the LLM. This prevents duplicates on recovery after lease expiry.
-	existing, err := p.summaryRepo.ListByPost(ctx, *event.PostID)
-	if err != nil {
-		return fmt.Errorf("check existing summary: %w", err)
-	}
-	if len(existing) > 0 {
-		summaryID := existing[0].ID
-		return p.outboxRepo.FinalizeWithLease(
-			ctx, event.ID, workerID, biz.SummaryEventStatusCompleted, &summaryID, nil,
-		)
-	}
-
-	post, err := p.postRepo.Get(ctx, *event.PostID)
-	if err != nil {
-		return fmt.Errorf("get post: %w", err)
-	}
-
-	summaryText, err := p.summarizeWithRetry(ctx, logger, post.Text)
-	if err != nil {
-		return fmt.Errorf("summarize: %w", err)
-	}
-
-	wordCount := len(strings.Fields(summaryText))
-	sm := biz.Summary{
-		ID:        uuid.Must(uuid.NewV7()).String(),
-		PostID:    event.PostID,
-		SourceID:  event.SourceID,
-		Text:      summaryText,
-		WordCount: wordCount,
-		CreatedAt: time.Now(),
-	}
-
-	saved, saveErr := p.summaryRepo.Save(ctx, sm)
-	if saveErr != nil {
-		return fmt.Errorf("save summary: %w", saveErr)
-	}
-
-	summaryID := saved.ID
-	return p.outboxRepo.FinalizeWithLease(
-		ctx, event.ID, workerID, biz.SummaryEventStatusCompleted, &summaryID, nil,
-	)
-}
-
-func (p *EventWorkerPool) processSummarizeSource(
-	ctx context.Context,
-	logger *slog.Logger,
-	workerID string,
-	event biz.SummaryEvent,
-) error {
-	maxWindow := p.cfg.GetCumulative().GetMaxWindow().AsDuration()
-	if maxWindow <= 0 {
-		maxWindow = defaultMaxWindow
-	}
-	maxInputChars := int(p.cfg.GetCumulative().GetMaxInputChars())
-	if maxInputChars <= 0 {
-		maxInputChars = 50000
-	}
-
-	lastSummary, err := p.summaryRepo.GetLastBySource(ctx, event.SourceID)
-	if err != nil {
-		return fmt.Errorf("get last summary: %w", err)
-	}
-
-	now := time.Now()
-	windowStart := now.Add(-maxWindow)
-	if lastSummary != nil && lastSummary.CreatedAt.After(windowStart) {
-		windowStart = lastSummary.CreatedAt
-	}
-
-	var sb strings.Builder
-	foundPosts := false
-	pageToken := ""
-	exceeded := false
-
-	for {
-		postsResult, listErr := p.postRepo.List(ctx, biz.ListPostsFilter{
-			SourceID:      event.SourceID,
-			PageSize:      listPageSize,
-			PageToken:     pageToken,
-			OrderBy:       biz.SortByCreatedAt,
-			OrderDir:      biz.SortAsc,
-			CreatedAfter:  &windowStart,
-			CreatedBefore: &now,
-		})
-		if listErr != nil {
-			return fmt.Errorf("list posts: %w", listErr)
-		}
-		for _, post := range postsResult.Items {
-			foundPosts = true
-			sb.WriteString(post.Text)
-			sb.WriteString("\n\n")
-			if sb.Len() > maxInputChars {
-				exceeded = true
-				break
-			}
-		}
-		if postsResult.NextPageToken == "" || exceeded {
-			break
-		}
-		pageToken = postsResult.NextPageToken
-	}
-
-	if !foundPosts {
-		return p.outboxRepo.FinalizeWithLease(
-			ctx, event.ID, workerID, biz.SummaryEventStatusCompleted, nil, nil,
-		)
-	}
-
-	concat := sb.String()
-	if len(concat) > maxInputChars {
-		return fmt.Errorf("%w: input text exceeds max_input_chars limit", biz.ErrSummaryValidation)
-	}
-
-	summaryText, err := p.summarizeWithRetry(ctx, logger, concat)
-	if err != nil {
-		return fmt.Errorf("summarize: %w", err)
-	}
-
-	wordCount := len(strings.Fields(summaryText))
-	sm := biz.Summary{
-		ID:        uuid.Must(uuid.NewV7()).String(),
-		PostID:    nil,
-		SourceID:  event.SourceID,
-		Text:      summaryText,
-		WordCount: wordCount,
-		CreatedAt: time.Now(),
-	}
-
-	saved, saveErr := p.summaryRepo.Save(ctx, sm)
-	if saveErr != nil {
-		return fmt.Errorf("save summary: %w", saveErr)
-	}
-
-	summaryID := saved.ID
-	return p.outboxRepo.FinalizeWithLease(
-		ctx, event.ID, workerID, biz.SummaryEventStatusCompleted, &summaryID, nil,
-	)
-}
-
-// summarizeWithRetry preserves the FT-005 LLM retry contract (NS-04): up to
-// cfg.llm.max_retries in-call attempts with exponential backoff between them.
-// The outer FT-007 retry loop kicks in only if all LLM attempts fail.
-func (p *EventWorkerPool) summarizeWithRetry(
-	ctx context.Context,
-	logger *slog.Logger,
-	text string,
-) (string, error) {
-	maxRetries := int(p.cfg.GetLlm().GetMaxRetries())
-	if maxRetries <= 0 {
-		maxRetries = 3
-	}
-
-	var lastErr error
-	for attempt := range maxRetries {
-		result, err := p.llmProvider.Summarize(ctx, text)
-		if err != nil {
-			lastErr = err
-			logger.WarnContext(ctx, "llm attempt failed", "attempt", attempt+1, "err", err)
-			backoff := time.Duration(math.Pow(llmRetryBackoffBase, float64(attempt))) * time.Second
-			select {
-			case <-time.After(backoff):
-			case <-ctx.Done():
-				return "", ctx.Err()
-			}
-			continue
-		}
-		if strings.TrimSpace(result) == "" {
-			lastErr = fmt.Errorf("llm returned empty summary on attempt %d", attempt+1)
-			continue
-		}
-		return result, nil
-	}
-	return "", fmt.Errorf("all %d attempts failed: %w", maxRetries, lastErr)
 }

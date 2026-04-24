@@ -28,7 +28,6 @@ func TestIntegration_EventWorkerPool_ProcessesPostEvent(t *testing.T) {
 	post := createTestPost(ctx, t, d, sourceID, "Some interesting content that should be summarized.")
 
 	outboxRepo := data.NewSummaryOutboxRepo(d)
-	postRepo := data.NewPostRepo(d)
 	summaryRepo := data.NewSummaryRepo(d)
 
 	postIDRef := post.ID
@@ -38,7 +37,7 @@ func TestIntegration_EventWorkerPool_ProcessesPostEvent(t *testing.T) {
 	llm := &fakeLLM{reply: "hello world summary"}
 	cfg := testSummaryCfg()
 
-	pool := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
+	pool := task.NewEventWorkerPool(outboxRepo, newTestUsecase(t, d, cfg, llm), cfg, testLogger())
 	require.NoError(t, pool.Start(ctx))
 
 	require.Eventually(t, func() bool {
@@ -64,7 +63,6 @@ func TestIntegration_EventWorkerPool_ParallelUniqueness(t *testing.T) {
 	defer cleanup()
 
 	outboxRepo := data.NewSummaryOutboxRepo(d)
-	postRepo := data.NewPostRepo(d)
 	summaryRepo := data.NewSummaryRepo(d)
 
 	// N distinct sources, each with one post and one summarize_post event.
@@ -84,8 +82,8 @@ func TestIntegration_EventWorkerPool_ParallelUniqueness(t *testing.T) {
 	cfg.Worker.Concurrency = 4
 
 	// Two independent pools simulating two processes racing.
-	pool1 := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
-	pool2 := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
+	pool1 := task.NewEventWorkerPool(outboxRepo, newTestUsecase(t, d, cfg, llm), cfg, testLogger())
+	pool2 := task.NewEventWorkerPool(outboxRepo, newTestUsecase(t, d, cfg, llm), cfg, testLogger())
 
 	require.NoError(t, pool1.Start(ctx))
 	require.NoError(t, pool2.Start(ctx))
@@ -124,7 +122,6 @@ func TestIntegration_EventWorkerPool_GracefulDrainOnStop(t *testing.T) {
 	post := createTestPost(ctx, t, d, sourceID, "slow content for drain test")
 
 	outboxRepo := data.NewSummaryOutboxRepo(d)
-	postRepo := data.NewPostRepo(d)
 	summaryRepo := data.NewSummaryRepo(d)
 
 	postIDRef := post.ID
@@ -134,7 +131,7 @@ func TestIntegration_EventWorkerPool_GracefulDrainOnStop(t *testing.T) {
 	llm := &fakeLLM{reply: "drained", delay: 300 * time.Millisecond}
 	cfg := testSummaryCfg()
 
-	pool := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
+	pool := task.NewEventWorkerPool(outboxRepo, newTestUsecase(t, d, cfg, llm), cfg, testLogger())
 	require.NoError(t, pool.Start(ctx))
 
 	// Give a claimer time to pick the event up.
@@ -161,8 +158,6 @@ func TestIntegration_EventWorkerPool_CrashRecoveryViaLeaseExpiry(t *testing.T) {
 	post := createTestPost(ctx, t, d, sourceID, "content")
 
 	outboxRepo := data.NewSummaryOutboxRepo(d)
-	postRepo := data.NewPostRepo(d)
-	summaryRepo := data.NewSummaryRepo(d)
 
 	postIDRef := post.ID
 	saved, err := outboxRepo.Save(ctx, biz.NewSummaryEvent(biz.SummaryEventTypeSummarizePost, sourceID, &postIDRef))
@@ -178,7 +173,7 @@ func TestIntegration_EventWorkerPool_CrashRecoveryViaLeaseExpiry(t *testing.T) {
 	cfg.Worker.Concurrency = 1
 	llm := &fakeLLM{reply: "recovered"}
 
-	pool := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
+	pool := task.NewEventWorkerPool(outboxRepo, newTestUsecase(t, d, cfg, llm), cfg, testLogger())
 	require.NoError(t, pool.Start(ctx))
 
 	require.Eventually(t, func() bool {
@@ -206,7 +201,6 @@ func TestIntegration_EventWorkerPool_IdempotentOnExistingSummary(t *testing.T) {
 	post := createTestPost(ctx, t, d, sourceID, "already-summarized post")
 
 	outboxRepo := data.NewSummaryOutboxRepo(d)
-	postRepo := data.NewPostRepo(d)
 	summaryRepo := data.NewSummaryRepo(d)
 
 	// Pre-seed a summary for the post.
@@ -227,7 +221,7 @@ func TestIntegration_EventWorkerPool_IdempotentOnExistingSummary(t *testing.T) {
 	llm := &fakeLLM{err: errors.New("LLM MUST NOT be called")}
 	cfg := testSummaryCfg()
 
-	pool := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
+	pool := task.NewEventWorkerPool(outboxRepo, newTestUsecase(t, d, cfg, llm), cfg, testLogger())
 	require.NoError(t, pool.Start(ctx))
 
 	require.Eventually(t, func() bool {
@@ -258,7 +252,6 @@ func TestIntegration_EventWorkerPool_GracefulTimeoutDoesNotFailEvent(t *testing.
 	post := createTestPost(ctx, t, d, sourceID, "content that takes long to summarize")
 
 	outboxRepo := data.NewSummaryOutboxRepo(d)
-	postRepo := data.NewPostRepo(d)
 	summaryRepo := data.NewSummaryRepo(d)
 
 	postIDRef := post.ID
@@ -271,7 +264,7 @@ func TestIntegration_EventWorkerPool_GracefulTimeoutDoesNotFailEvent(t *testing.
 	cfg.Worker.Concurrency = 1
 	cfg.Worker.GracefulTimeout = durationpb.New(150 * time.Millisecond)
 
-	pool := task.NewEventWorkerPool(outboxRepo, postRepo, summaryRepo, llm, cfg, testLogger())
+	pool := task.NewEventWorkerPool(outboxRepo, newTestUsecase(t, d, cfg, llm), cfg, testLogger())
 	require.NoError(t, pool.Start(ctx))
 
 	// Give the worker time to claim and enter LLM call.
