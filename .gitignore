@@ -10,6 +10,11 @@
 /bin/
 /feedium
 
+configs/local/
+
+# Локальные образцы тел запросов для smoke-тестов API (см. README шаг 6)
+post.txt
+
 coverage.out
 session-ses_2854.md
 health.test

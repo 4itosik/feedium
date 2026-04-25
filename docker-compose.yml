@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    container_name: feedium-pg
+    environment:
+      POSTGRES_USER: feedium
+      POSTGRES_PASSWORD: feedium
+      POSTGRES_DB: feedium
+    ports:
+      - "5432:5432"
+    volumes:
+      - feedium-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U feedium -d feedium"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  feedium-pg-data:
