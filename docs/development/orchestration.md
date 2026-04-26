@@ -25,9 +25,10 @@
 | `mise` | toolchain (уже используется проектом) | `brew install mise` |
 | `start-issue` | issue → branch → worktree → агент | https://github.com/dapi/start-issue |
 | `zellij-tab-status` | переименование таба под issue (опц.) | https://github.com/dapi/zellij-tab-status |
-| `task-router` (Claude plugin) | `/route-task <url>` — классификация и запуск feature-dev / subagent-driven-dev / brainstorming | `dapi/claude-code-marketplace/task-router` |
-| `feature-dev`, `superpowers` (Claude plugins) | workflow-зависимости `task-router` | соответствующие плагины |
-| `zellij-workflow` (Claude plugin, опц.) | команды `/run-in-new-tab`, `/start-issue-in-new-tab` для триггера из чата | `dapi/claude-code-marketplace/zellij-workflow` |
+| `task-router` (Claude plugin) | `/route-task <url>` — классификация и запуск feature-dev / subagent-driven-dev / brainstorming | marketplace `dapi` |
+| `feature-dev` (Claude plugin) | workflow «discovery → architecture → implementation → review»; зависимость `task-router` | marketplace `claude-code-plugins` (официальный Anthropic) |
+| `superpowers` (Claude plugin) | brainstorming, writing-plans, subagent-driven-development и др.; зависимость `task-router` | marketplace `superpowers-marketplace` (obra) |
+| `zellij-workflow` (Claude plugin, опц.) | команды `/run-in-new-tab`, `/start-issue-in-new-tab` для триггера из чата | marketplace `dapi` |
 
 ## Установка (macOS)
 
@@ -47,12 +48,17 @@ cd ~/src/zellij-tab-status && make install
 # 4) GitHub auth
 gh auth login
 
-# 5) Claude Code плагины
-#    в Claude Code:
-/plugin install task-router@dapi
-/plugin install feature-dev@dapi          # требуется task-router-ом
-/plugin install superpowers@dapi          # требуется task-router-ом
-/plugin install zellij-workflow@dapi      # опционально
+# 5) Claude Code плагины (внутри Claude Code)
+#    плагины живут в трёх разных маркетплейсах — добавляем те, что ещё не подключены:
+/plugin marketplace add anthropics/claude-code         # claude-code-plugins (официальный)
+/plugin marketplace add obra/superpowers-marketplace   # superpowers-marketplace
+/plugin marketplace add dapi/claude-code-marketplace   # dapi
+
+#    установка:
+/plugin install feature-dev@claude-code-plugins
+/plugin install superpowers@superpowers-marketplace
+/plugin install task-router@dapi                       # требует feature-dev и superpowers
+/plugin install zellij-workflow@dapi                   # опционально
 ```
 
 Проверка установки:
@@ -83,7 +89,7 @@ zellij --version
 start-issue 42
 
 # по URL
-start-issue https://github.com/aay/feedium/issues/42
+start-issue https://github.com/4itosik/feedium/issues/42
 
 # с другим агентом
 start-issue 42 --agent codex
@@ -96,12 +102,21 @@ start-issue 42 --dry-run
 
 # sibling-layout вместо ~/worktrees/
 start-issue 42 --worktree-dir .. --flat
+
+# другой репо (если запускаешь не из чекаута того проекта)
+start-issue 42 --repo 4itosik/feedium
 ```
+
+**Как `start-issue` определяет, из какого репо брать issue:**
+
+1. Если передан полный URL — берёт его как есть.
+2. Если передан только номер — читает `git remote get-url origin` из CWD и собирает URL автоматически. Поэтому запускай команду из чекаута нужного проекта.
+3. Если remote не `origin` или нужен кросс-репо запуск — `--repo OWNER/REPO`.
 
 ### Из Claude-чата (если стоит `zellij-workflow` плагин)
 
 ```
-/start-issue-in-new-tab https://github.com/aay/feedium/issues/42
+/start-issue-in-new-tab https://github.com/4itosik/feedium/issues/42
 /run-in-new-tab Execute plan from memory-bank/features/FT-008/implementation-plan.md
 ```
 
@@ -153,7 +168,7 @@ gh auth login
 #    /plugin install zellij-workflow@dapi
 
 # 5) clone репо
-git clone git@github.com:aay/feedium.git ~/work/feedium
+git clone git@github.com:4itosik/feedium.git ~/work/feedium
 cd ~/work/feedium
 
 # 6) запуск zellij и проверка
