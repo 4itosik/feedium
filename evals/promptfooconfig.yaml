@@ -1,7 +1,9 @@
-description: feedium agent eval — smoke test
+description: feedium agent eval
 providers:
-  - id: 'exec:claude -p'
+  - id: 'exec:claude -p --permission-mode bypassPermissions'
     label: claude-code-local
+    config:
+      basePath: ..
 prompts:
   - '{{prompt}}'
 tests:

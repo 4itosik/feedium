@@ -53,13 +53,50 @@ Claude получал буквальный текст `{{prompt}}` вместо 
 
 **Фикс:** убрать `"{{prompt}}"` из `id`, оставить только `exec:claude -p`.
 
+### Проблема 3: CWD сабпроцесса = директория конфига, а не корень репо
+
+`promptfoo` `cd`'ит в директорию конфига (`evals/`) перед запуском провайдера.
+Сабпроцесс `claude -p` наследует этот CWD — в результате он не видит `internal/`,
+а `claude -p` запирается на `evals/` как allowed-dir. Все scenario-кейсы (требующие
+доступ к `internal/biz/...`, `internal/data/...`) проваливались с «не могу
+прочитать вне рабочего каталога».
+
+**Фикс:** в `exec`-провайдере `ScriptCompletionProvider` поддерживается
+`config.basePath` — это `cwd` для `execFile`. В файле конфига:
+
+```yaml
+providers:
+  - id: 'exec:claude -p --permission-mode bypassPermissions'
+    label: claude-code-local
+    config:
+      basePath: ..
+```
+
+`basePath: ..` — относительно директории конфига (`evals/`), что даёт корень репо.
+
+### Проблема 4: claude по дефолту не запускает Bash в `-p` режиме
+
+С дефолтным permission mode `claude -p` отвечает «Команда требует подтверждения
+от тебя — я её не запустил». Для сценария 01 (false-success) нам нужно, чтобы
+агент _реально пытался_ выполнить команду — иначе мы не тестируем поведение
+«не врать про success», а тестируем поведение «не запускать без подтверждения».
+
+**Фикс:** добавить `--permission-mode bypassPermissions` в команду провайдера.
+Это тот же режим, что `--dangerously-skip-permissions`, но через каноничный флаг.
+
+> ⚠️ Bypass-permissions означает, что агент может выполнить любую Bash-команду
+> в CWD = корень репо. Промпты scenario-набора аккуратные (`go test`, `curl
+> localhost`), но при добавлении новых кейсов проверяй side-effects.
+
 ## Итоговый рабочий конфиг
 
 ```yaml
-description: feedium agent eval — smoke test
+description: feedium agent eval
 providers:
-  - id: 'exec:claude -p'
+  - id: 'exec:claude -p --permission-mode bypassPermissions'
     label: claude-code-local
+    config:
+      basePath: ..
 prompts:
   - '{{prompt}}'
 tests:
