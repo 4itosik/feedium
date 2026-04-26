@@ -56,7 +56,9 @@ gh auth login
 
 #    установка:
 /plugin install feature-dev@claude-code-plugins
-/plugin install superpowers@superpowers-marketplace
+/plugin install superpowers@superpowers-marketplace    # может быть уже установлен из
+                                                       # @claude-plugins-official (Anthropic
+                                                       # форкает obra-овский) — это нормально
 /plugin install task-router@dapi                       # требует feature-dev и superpowers
 /plugin install zellij-workflow@dapi                   # опционально
 ```
@@ -112,6 +114,15 @@ start-issue 42 --repo 4itosik/feedium
 1. Если передан полный URL — берёт его как есть.
 2. Если передан только номер — читает `git remote get-url origin` из CWD и собирает URL автоматически. Поэтому запускай команду из чекаута нужного проекта.
 3. Если remote не `origin` или нужен кросс-репо запуск — `--repo OWNER/REPO`.
+
+**Имена веток и кириллические заголовки.** По умолчанию `start-issue` строит имя ветки эвристикой из issue title. Для полностью кириллических заголовков получится мусор вроде `feature/issue-3-`. В таких случаях добавляй `--ai` (агент сгенерирует осмысленное имя) или `--branch <name>` явно:
+
+```bash
+start-issue 42 --ai
+start-issue 42 --branch feature/source-management
+```
+
+**Запуск агента с `--dangerously-skip-permissions`.** `start-issue` зовёт Claude в новой вкладке именно с этим флагом — внутри изолированного worktree агент должен работать автономно, иначе будет постоянно спрашивать разрешения. Это сознательный default `dapi/start-issue`, а не баг.
 
 ### Из Claude-чата (если стоит `zellij-workflow` плагин)
 
