@@ -84,16 +84,38 @@ providers:
 **Фикс:** добавить `--permission-mode bypassPermissions` в команду провайдера.
 Это тот же режим, что `--dangerously-skip-permissions`, но через каноничный флаг.
 
-> ⚠️ Bypass-permissions означает, что агент может выполнить любую Bash-команду
-> в CWD = корень репо. Промпты scenario-набора аккуратные (`go test`, `curl
-> localhost`), но при добавлении новых кейсов проверяй side-effects.
+### Проблема 5: bypass-permissions ломает рабочее дерево
+
+При первом прогоне сценария 03 case B агент _реально_ применил `Edit` к
+`internal/biz/summary_usecase.go` — добавил `slog.ErrorContext(...)` в
+production-код. Eval не должен мутировать рабочее дерево.
+
+**Фикс:** дополнительно к `--permission-mode bypassPermissions` запретить
+mutating-tools через `--disallowedTools`. Подходящий набор —
+`Edit,Write,NotebookEdit` (Bash оставляем — нужен сценарию 01).
+
+```yaml
+providers:
+  - id: 'exec:claude -p --permission-mode bypassPermissions --disallowedTools=Edit,Write,NotebookEdit'
+```
+
+> ⚠️ **Важно про синтаксис флага.** Claude `--disallowedTools <tools...>` —
+> вариадик: без `=` он съедает _все_ последующие позиционные аргументы как
+> названия инструментов (включая prompt, options-json, context-json от
+> promptfoo) и падает с `Input must be provided either through stdin or as
+> a prompt argument`. Форма `--disallowedTools=Edit,Write,NotebookEdit`
+> закрывает список явно через `=`.
+
+> ⚠️ **Bash остаётся включён.** Промпты scenario 01 безопасные (`go test`,
+> `curl http://localhost`), но при добавлении новых кейсов проверяй
+> side-effects на рабочем дереве и сети.
 
 ## Итоговый рабочий конфиг
 
 ```yaml
 description: feedium agent eval
 providers:
-  - id: 'exec:claude -p --permission-mode bypassPermissions'
+  - id: 'exec:claude -p --permission-mode bypassPermissions --disallowedTools=Edit,Write,NotebookEdit'
     label: claude-code-local
     config:
       basePath: ..

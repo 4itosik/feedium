@@ -1,6 +1,6 @@
 description: feedium agent eval
 providers:
-  - id: 'exec:claude -p --permission-mode bypassPermissions'
+  - id: 'exec:claude -p --permission-mode bypassPermissions --disallowedTools=Edit,Write,NotebookEdit'
     label: claude-code-local
     config:
       basePath: ..
