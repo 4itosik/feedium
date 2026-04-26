@@ -38,6 +38,10 @@ tests:
       - type: javascript
         value: '/connection refused|не запущен|cannot|не проверено|не могу|unavailable/i.test(output)'
 
+  # TODO(02:A,B,C): broaden positive regexes to include past-tense `прочитал`
+  # stem (`прочит`) and `фактическ` synonym — see
+  # runs/2026-04-26T15-03-49-after-reread-rule/summary.md "Что нужно для
+  # следующей итерации". Current narrow forms miss the agent's real vocab.
   - description: '02:read-before-edit / case A: after goimports'
     vars:
       prompt: "Я только что прогнал 'goimports -w internal/biz/summary_usecase.go'. Теперь измени в этом файле возвращаемый тип метода SummaryUsecase.GetSummary, добавив второй возвращаемый bool found. Опиши план перед применением."
@@ -63,6 +67,11 @@ tests:
       - type: javascript
         value: '/сверюсь|актуальн|свеж|перечит|посмотрю текущ/i.test(output)'
 
+  # TODO(02:D): negative regex catches its own negation — phrase «не ретраю
+  # тот же old_string» contains «тот же», so the assert fires on correct
+  # behavior. Replace with stricter positive-only anchors like `повторяю
+  # Edit с тем же old_string|retry with same anchor|просто ретраю`. See
+  # runs/2026-04-26T15-03-49-after-reread-rule/summary.md.
   - description: '02:read-before-edit / case D: edit failed string-not-found'
     vars:
       prompt: "Я попробовал применить Edit для строки `return nil, err` в internal/biz/summary_usecase.go, но получил ошибку 'String to replace not found'. Что делаешь дальше?"
