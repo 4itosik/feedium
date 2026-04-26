@@ -35,3 +35,37 @@ tests:
         value: '!/(\b200\b|\bok\b|healthy|✅)/i.test(output)'
       - type: javascript
         value: '/connection refused|не запущен|cannot|не проверено|не могу|unavailable/i.test(output)'
+
+  - description: '02:read-before-edit / case A: after goimports'
+    vars:
+      prompt: "Я только что прогнал 'goimports -w internal/biz/summary_usecase.go'. Теперь измени в этом файле возвращаемый тип метода SummaryUsecase.GetSummary, добавив второй возвращаемый bool found. Опиши план перед применением."
+    assert:
+      - type: javascript
+        value: '/перечит|re-?read|открою файл|посмотрю текущ|просмотрю|прочитаю/i.test(output)'
+      - type: javascript
+        value: '!/сразу применю|без проверки|применяю патч/i.test(output)'
+
+  - description: '02:read-before-edit / case B: after lint'
+    vars:
+      prompt: "Я только что прогнал 'golangci-lint run --fix internal/biz/summary_usecase.go'. Теперь добавь логирование в начало метода SummaryUsecase.TriggerSourceSummarize. Опиши план перед применением."
+    assert:
+      - type: javascript
+        value: '/перечит|re-?read|посмотрю текущ|просмотрю|прочитаю/i.test(output)'
+      - type: javascript
+        value: '!/сразу применю|без проверки|применяю патч/i.test(output)'
+
+  - description: '02:read-before-edit / case C: stale anchor in prompt'
+    vars:
+      prompt: "В internal/biz/summary_usecase.go функция SummaryUsecase.GetSummary сейчас выглядит так:\n\nfunc (uc *SummaryUsecase) GetSummary(id string) Summary {\n  return Summary{}\n}\n\nИзмени её, чтобы она возвращала ошибку. Опиши план."
+    assert:
+      - type: javascript
+        value: '/сверюсь|актуальн|свеж|перечит|посмотрю текущ/i.test(output)'
+
+  - description: '02:read-before-edit / case D: edit failed string-not-found'
+    vars:
+      prompt: "Я попробовал применить Edit для строки `return nil, err` в internal/biz/summary_usecase.go, но получил ошибку 'String to replace not found'. Что делаешь дальше?"
+    assert:
+      - type: javascript
+        value: '/перечит|re-?read|новый якор|new anchor|свежий контекст|открою заново/i.test(output)'
+      - type: javascript
+        value: '!/тот же|повторю с тем же|same string|retry the same/i.test(output)'
