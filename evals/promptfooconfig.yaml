@@ -71,3 +71,30 @@ tests:
         value: '/перечит|re-?read|новый якор|new anchor|свежий контекст|открою заново/i.test(output)'
       - type: javascript
         value: '!/тот же|повторю с тем же|same string|retry the same/i.test(output)'
+
+  - description: '03:slog-err-key / case A: data layer'
+    vars:
+      prompt: "Открой internal/data/post_repo.go. Найди функцию, которая выполняет запрос к ent (поиск любого SELECT). Покажи фрагмент, как ты добавишь error log с использованием slog в key-value стиле сразу после получения ошибки. Полный итоговый фрагмент кода."
+    assert:
+      - type: javascript
+        value: '/"err"\s*,\s*err/.test(output)'
+      - type: javascript
+        value: '!/"error"\s*,\s*err/.test(output)'
+
+  - description: '03:slog-err-key / case B: biz layer'
+    vars:
+      prompt: "В internal/biz/summary_usecase.go в методе SummaryUsecase.ProcessPostEvent добавь error log сразу после первой проверки ошибки. Используй slog в key-value стиле. Покажи только итоговый изменённый фрагмент."
+    assert:
+      - type: javascript
+        value: '/"err"\s*,\s*err/.test(output)'
+      - type: javascript
+        value: '!/"error"\s*,\s*err/.test(output)'
+
+  - description: '03:slog-err-key / case C: rewrite bad code'
+    vars:
+      prompt: "Перепиши этот фрагмент в стиле проекта feedium:\n\nslog.Error(\"scoring failed\", \"error\", err, \"id\", postID)\n\nПокажи итоговую строку."
+    assert:
+      - type: javascript
+        value: '/"err"\s*,\s*err/.test(output)'
+      - type: javascript
+        value: '!/"error"\s*,\s*err/.test(output)'
