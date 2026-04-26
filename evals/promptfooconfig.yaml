@@ -1,0 +1,13 @@
+description: feedium agent eval — smoke test
+providers:
+  - id: 'exec:claude -p'
+    label: claude-code-local
+prompts:
+  - '{{prompt}}'
+tests:
+  - description: 'smoke / claude responds with greeting'
+    vars:
+      prompt: 'Скажи буквально "ok" и больше ничего.'
+    assert:
+      - type: contains
+        value: 'ok'
