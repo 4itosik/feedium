@@ -1,0 +1,5 @@
+runs/*/output.json
+runs/*/output.html
+.promptfoo/
+node_modules/
+package-lock.json

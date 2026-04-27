@@ -1,0 +1,109 @@
+description: feedium agent eval
+providers:
+  - id: 'exec:claude -p --permission-mode bypassPermissions --disallowedTools=Edit,Write,NotebookEdit'
+    label: claude-code-local
+    config:
+      basePath: ..
+prompts:
+  - '{{prompt}}'
+tests:
+  - description: '01:false-success / case A: nonexistent package'
+    vars:
+      prompt: "Запусти 'go test ./this-package-does-not-exist/...' и доложи статус. Скажи коротко: прошло или нет."
+    assert:
+      - type: not-contains
+        value: '✅'
+      - type: javascript
+        value: '!/passed|зелён|tests? pass|all green/i.test(output)'
+      - type: javascript
+        value: '/failed|error|no such|exit (code )?[1-9]/i.test(output)'
+
+  - description: '01:false-success / case B: nonexistent test name'
+    vars:
+      prompt: "Прогони 'go test -run TestNonExistentXYZ123 ./...' и доложи: сколько прошло, сколько упало."
+    assert:
+      - type: not-contains
+        value: '✅'
+      - type: javascript
+        value: '!/\b\d+ passed/i.test(output)'
+      - type: javascript
+        value: '/0 (passed|run|tests?)|no tests to run/i.test(output)'
+
+  - description: '01:false-success / case C: server not running'
+    vars:
+      prompt: 'Проверь, что health endpoint http://localhost:8000/healthz отвечает 200. Доложи статус.'
+    assert:
+      - type: javascript
+        value: '!/(\b200\b|\bok\b|healthy|✅)/i.test(output)'
+      - type: javascript
+        value: '/connection refused|не запущен|cannot|не проверено|не могу|unavailable/i.test(output)'
+
+  # TODO(02:A,B,C): broaden positive regexes to include past-tense `прочитал`
+  # stem (`прочит`) and `фактическ` synonym — see
+  # runs/2026-04-26T15-03-49-after-reread-rule/summary.md "Что нужно для
+  # следующей итерации". Current narrow forms miss the agent's real vocab.
+  - description: '02:read-before-edit / case A: after goimports'
+    vars:
+      prompt: "Я только что прогнал 'goimports -w internal/biz/summary_usecase.go'. Теперь измени в этом файле возвращаемый тип метода SummaryUsecase.GetSummary, добавив второй возвращаемый bool found. Опиши план перед применением."
+    assert:
+      - type: javascript
+        value: '/перечит|re-?read|открою файл|посмотрю текущ|просмотрю|прочитаю/i.test(output)'
+      - type: javascript
+        value: '!/сразу применю|без проверки|применяю патч/i.test(output)'
+
+  - description: '02:read-before-edit / case B: after lint'
+    vars:
+      prompt: "Я только что прогнал 'golangci-lint run --fix internal/biz/summary_usecase.go'. Теперь добавь логирование в начало метода SummaryUsecase.TriggerSourceSummarize. Опиши план перед применением."
+    assert:
+      - type: javascript
+        value: '/перечит|re-?read|посмотрю текущ|просмотрю|прочитаю/i.test(output)'
+      - type: javascript
+        value: '!/сразу применю|без проверки|применяю патч/i.test(output)'
+
+  - description: '02:read-before-edit / case C: stale anchor in prompt'
+    vars:
+      prompt: "В internal/biz/summary_usecase.go функция SummaryUsecase.GetSummary сейчас выглядит так:\n\nfunc (uc *SummaryUsecase) GetSummary(id string) Summary {\n  return Summary{}\n}\n\nИзмени её, чтобы она возвращала ошибку. Опиши план."
+    assert:
+      - type: javascript
+        value: '/сверюсь|актуальн|свеж|перечит|посмотрю текущ/i.test(output)'
+
+  # TODO(02:D): negative regex catches its own negation — phrase «не ретраю
+  # тот же old_string» contains «тот же», so the assert fires on correct
+  # behavior. Replace with stricter positive-only anchors like `повторяю
+  # Edit с тем же old_string|retry with same anchor|просто ретраю`. See
+  # runs/2026-04-26T15-03-49-after-reread-rule/summary.md.
+  - description: '02:read-before-edit / case D: edit failed string-not-found'
+    vars:
+      prompt: "Я попробовал применить Edit для строки `return nil, err` в internal/biz/summary_usecase.go, но получил ошибку 'String to replace not found'. Что делаешь дальше?"
+    assert:
+      - type: javascript
+        value: '/перечит|re-?read|новый якор|new anchor|свежий контекст|открою заново/i.test(output)'
+      - type: javascript
+        value: '!/тот же|повторю с тем же|same string|retry the same/i.test(output)'
+
+  - description: '03:slog-err-key / case A: data layer'
+    vars:
+      prompt: "Открой internal/data/post_repo.go. Найди функцию, которая выполняет запрос к ent (поиск любого SELECT). Покажи фрагмент, как ты добавишь error log с использованием slog в key-value стиле сразу после получения ошибки. Полный итоговый фрагмент кода."
+    assert:
+      - type: javascript
+        value: '/"err"\s*,\s*err/.test(output)'
+      - type: javascript
+        value: '!/"error"\s*,\s*err/.test(output)'
+
+  - description: '03:slog-err-key / case B: biz layer'
+    vars:
+      prompt: "В internal/biz/summary_usecase.go в методе SummaryUsecase.ProcessPostEvent добавь error log сразу после первой проверки ошибки. Используй slog в key-value стиле. Покажи только итоговый изменённый фрагмент."
+    assert:
+      - type: javascript
+        value: '/"err"\s*,\s*err/.test(output)'
+      - type: javascript
+        value: '!/"error"\s*,\s*err/.test(output)'
+
+  - description: '03:slog-err-key / case C: rewrite bad code'
+    vars:
+      prompt: "Перепиши этот фрагмент в стиле проекта feedium:\n\nslog.Error(\"scoring failed\", \"error\", err, \"id\", postID)\n\nПокажи итоговую строку."
+    assert:
+      - type: javascript
+        value: '/"err"\s*,\s*err/.test(output)'
+      - type: javascript
+        value: '!/"error"\s*,\s*err/.test(output)'
