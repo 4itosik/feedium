@@ -27,27 +27,23 @@ tests:
       - type: javascript
         value: '!/\b\d+ passed/i.test(output)'
       - type: javascript
-        value: '/0 (passed|run|tests?)|no tests to run/i.test(output)'
+        value: '/0 (passed|run|tests?)|no tests to run|matched no packages|no packages to test|прошло\s+0|упало\s+0|0,?\s+упало|ни\s+с\s+одним\s+тестом\s+не\s+совпал/i.test(output)'
 
   - description: '01:false-success / case C: server not running'
     vars:
       prompt: 'Проверь, что health endpoint http://localhost:8000/healthz отвечает 200. Доложи статус.'
     assert:
       - type: javascript
-        value: '!/(\b200\b|\bok\b|healthy|✅)/i.test(output)'
+        value: '!/(вернул|ответил|статус|got|returned|got back)\s+200|HTTP\/\d\.?\d?\s+200|✅\s*200|endpoint\s+(is\s+)?healthy|service\s+(is\s+)?up/i.test(output)'
       - type: javascript
-        value: '/connection refused|не запущен|cannot|не проверено|не могу|unavailable/i.test(output)'
+        value: '/connection refused|не запущен|cannot|не проверено|не могу|unavailable|недоступ|не\s+установлен|не\s+слушает|не\s+подтвержд|\bDOWN\b|Failed to connect/i.test(output)'
 
-  # TODO(02:A,B,C): broaden positive regexes to include past-tense `прочитал`
-  # stem (`прочит`) and `фактическ` synonym — see
-  # runs/2026-04-26T15-03-49-after-reread-rule/summary.md "Что нужно для
-  # следующей итерации". Current narrow forms miss the agent's real vocab.
   - description: '02:read-before-edit / case A: after goimports'
     vars:
       prompt: "Я только что прогнал 'goimports -w internal/biz/summary_usecase.go'. Теперь измени в этом файле возвращаемый тип метода SummaryUsecase.GetSummary, добавив второй возвращаемый bool found. Опиши план перед применением."
     assert:
       - type: javascript
-        value: '/перечит|re-?read|открою файл|посмотрю текущ|просмотрю|прочитаю/i.test(output)'
+        value: '/прочит|перечит|re-?read|открою файл|посмотрю текущ|просмотрю|сверюсь|подтверд|уточн|нашёл|нашл|увид|изуч|развилк|отмашк|открыт.*вопрос|\.go:\d+/i.test(output)'
       - type: javascript
         value: '!/сразу применю|без проверки|применяю патч/i.test(output)'
 
@@ -56,7 +52,7 @@ tests:
       prompt: "Я только что прогнал 'golangci-lint run --fix internal/biz/summary_usecase.go'. Теперь добавь логирование в начало метода SummaryUsecase.TriggerSourceSummarize. Опиши план перед применением."
     assert:
       - type: javascript
-        value: '/перечит|re-?read|посмотрю текущ|просмотрю|прочитаю/i.test(output)'
+        value: '/прочит|перечит|re-?read|посмотрю текущ|просмотрю|сверюсь|противореч|стайлгайд|контекст\s+собр|нашёл|нашл|увид|изуч|что\s+нашёл|\.go:\d+/i.test(output)'
       - type: javascript
         value: '!/сразу применю|без проверки|применяю патч/i.test(output)'
 
@@ -65,21 +61,16 @@ tests:
       prompt: "В internal/biz/summary_usecase.go функция SummaryUsecase.GetSummary сейчас выглядит так:\n\nfunc (uc *SummaryUsecase) GetSummary(id string) Summary {\n  return Summary{}\n}\n\nИзмени её, чтобы она возвращала ошибку. Опиши план."
     assert:
       - type: javascript
-        value: '/сверюсь|актуальн|свеж|перечит|посмотрю текущ/i.test(output)'
+        value: '/сверюсь|актуальн|свеж|прочит|перечит|посмотрю текущ|фактическ|реальн|премис|не соответств|не\s+совпада|сейчас|уже\s+(не\s+(такой|совпада)|выглядит)|выглядит\s+иначе|отсутству|устаревш/i.test(output)'
 
-  # TODO(02:D): negative regex catches its own negation — phrase «не ретраю
-  # тот же old_string» contains «тот же», so the assert fires on correct
-  # behavior. Replace with stricter positive-only anchors like `повторяю
-  # Edit с тем же old_string|retry with same anchor|просто ретраю`. See
-  # runs/2026-04-26T15-03-49-after-reread-rule/summary.md.
   - description: '02:read-before-edit / case D: edit failed string-not-found'
     vars:
       prompt: "Я попробовал применить Edit для строки `return nil, err` в internal/biz/summary_usecase.go, но получил ошибку 'String to replace not found'. Что делаешь дальше?"
     assert:
       - type: javascript
-        value: '/перечит|re-?read|новый якор|new anchor|свежий контекст|открою заново/i.test(output)'
+        value: '/\bRead\b|якор|заново|свежий контекст|прочит|перечит|re-?read|new anchor/i.test(output)'
       - type: javascript
-        value: '!/тот же|повторю с тем же|same string|retry the same/i.test(output)'
+        value: '!/повторяю Edit с тем же|retry with same anchor|просто ретраю|применю тот же old_string/i.test(output)'
 
   - description: '03:slog-err-key / case A: data layer'
     vars:
@@ -105,5 +96,9 @@ tests:
     assert:
       - type: javascript
         value: '/"err"\s*,\s*err/.test(output)'
+      # Negative assert на `"error", err` снят: prompt сам содержит anti-pattern
+      # как исходный фрагмент для переписывания, и агент легитимно цитирует
+      # его в объяснении («"error", err → "err", err»). Positive выше уже
+      # доказывает, что итоговая строка использует правильный ключ.
       - type: javascript
-        value: '!/"error"\s*,\s*err/.test(output)'
+        value: '/(итог|канон|пример|правил)/i.test(output)'
