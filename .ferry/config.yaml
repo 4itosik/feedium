@@ -1,0 +1,6 @@
+# Ferry per-project configuration. See memory-bank/features/FT-009/feature.md (REQ-01).
+memory_bank:
+  path: memory-bank          # path to project memory-bank (relative to project_dir)
+default_pipeline_path: ""    # optional pipeline.yaml override (empty => builtin default)
+graceful_shutdown_timeout: 30s
+project_dir: ""              # absolute project root; empty => os.Getwd()

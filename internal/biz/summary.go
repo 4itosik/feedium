@@ -70,6 +70,10 @@ var (
 	// ErrSummarySourceNoPosts indicates a cumulative source has no new posts in the
 	// current window; the event should be finalized as Completed without a Summary.
 	ErrSummarySourceNoPosts = errors.New("summary source has no new posts")
+	// ErrUnknownSummaryPromptMode is returned by SummaryPromptResolver.For when
+	// called with a ProcessingMode that has no registered prompt artifact.
+	// SummaryUsecase treats this as a permanent error (no retry).
+	ErrUnknownSummaryPromptMode = errors.New("biz: unknown summary prompt mode")
 )
 
 func NewSummaryEvent(eventType SummaryEventType, sourceID string, postID *string) SummaryEvent {
@@ -151,6 +155,17 @@ type SummaryOutboxRepo interface {
 	) (bool, error)
 }
 
+// LLMProvider abstracts the chat completion call used by SummaryUsecase.
+// The system prompt is an input to the call, chosen upstream in biz/ by
+// ProcessingMode (see SummaryPromptResolver). The provider must not branch
+// on any notion of mode or prompt identity.
 type LLMProvider interface {
-	Summarize(ctx context.Context, text string) (string, error)
+	Summarize(ctx context.Context, systemPrompt, text string) (string, error)
+}
+
+// SummaryPromptResolver returns the system prompt body for a ProcessingMode.
+// The mapping is total over AllProcessingModes(); calls with an unknown mode
+// return ErrUnknownSummaryPromptMode and an empty body.
+type SummaryPromptResolver interface {
+	For(mode ProcessingMode) (string, error)
 }

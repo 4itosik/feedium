@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/4itosik/feedium/internal/biz"
+	"github.com/4itosik/feedium/internal/biz/prompt"
 	"github.com/4itosik/feedium/internal/conf"
 	"github.com/4itosik/feedium/internal/data"
 	"github.com/4itosik/feedium/internal/server"
@@ -64,6 +65,7 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		data.ProviderSet,
 		healthservice.ProviderSet,
 		biz.ProviderSet,
+		prompt.ProviderSet,
 		sourceservice.ProviderSet,
 		postservice.ProviderSet,
 		summaryservice.ProviderSet,

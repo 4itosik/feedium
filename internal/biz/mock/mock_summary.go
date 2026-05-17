@@ -351,16 +351,55 @@ func (m *MockLLMProvider) EXPECT() *MockLLMProviderMockRecorder {
 }
 
 // Summarize mocks base method.
-func (m *MockLLMProvider) Summarize(ctx context.Context, text string) (string, error) {
+func (m *MockLLMProvider) Summarize(ctx context.Context, systemPrompt, text string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Summarize", ctx, text)
+	ret := m.ctrl.Call(m, "Summarize", ctx, systemPrompt, text)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Summarize indicates an expected call of Summarize.
-func (mr *MockLLMProviderMockRecorder) Summarize(ctx, text any) *gomock.Call {
+func (mr *MockLLMProviderMockRecorder) Summarize(ctx, systemPrompt, text any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockLLMProvider)(nil).Summarize), ctx, text)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockLLMProvider)(nil).Summarize), ctx, systemPrompt, text)
+}
+
+// MockSummaryPromptResolver is a mock of SummaryPromptResolver interface.
+type MockSummaryPromptResolver struct {
+	ctrl     *gomock.Controller
+	recorder *MockSummaryPromptResolverMockRecorder
+	isgomock struct{}
+}
+
+// MockSummaryPromptResolverMockRecorder is the mock recorder for MockSummaryPromptResolver.
+type MockSummaryPromptResolverMockRecorder struct {
+	mock *MockSummaryPromptResolver
+}
+
+// NewMockSummaryPromptResolver creates a new mock instance.
+func NewMockSummaryPromptResolver(ctrl *gomock.Controller) *MockSummaryPromptResolver {
+	mock := &MockSummaryPromptResolver{ctrl: ctrl}
+	mock.recorder = &MockSummaryPromptResolverMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSummaryPromptResolver) EXPECT() *MockSummaryPromptResolverMockRecorder {
+	return m.recorder
+}
+
+// For mocks base method.
+func (m *MockSummaryPromptResolver) For(mode biz.ProcessingMode) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "For", mode)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// For indicates an expected call of For.
+func (mr *MockSummaryPromptResolverMockRecorder) For(mode any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "For", reflect.TypeOf((*MockSummaryPromptResolver)(nil).For), mode)
 }

@@ -35,6 +35,7 @@ type SummaryUsecase struct {
 	sourceRepo  SourceRepo
 	postRepo    PostRepo
 	llmProvider LLMProvider
+	prompts     SummaryPromptResolver
 	txManager   TxManager
 	cfg         *conf.Summary
 }
@@ -45,6 +46,7 @@ func NewSummaryUsecase(
 	sourceRepo SourceRepo,
 	postRepo PostRepo,
 	llmProvider LLMProvider,
+	prompts SummaryPromptResolver,
 	txManager TxManager,
 	cfg *conf.Summary,
 ) *SummaryUsecase {
@@ -54,6 +56,7 @@ func NewSummaryUsecase(
 		sourceRepo:  sourceRepo,
 		postRepo:    postRepo,
 		llmProvider: llmProvider,
+		prompts:     prompts,
 		txManager:   txManager,
 		cfg:         cfg,
 	}
@@ -154,7 +157,7 @@ func (uc *SummaryUsecase) ProcessPostEvent(ctx context.Context, event SummaryEve
 		return "", fmt.Errorf("get post: %w", err)
 	}
 
-	text, err := uc.summarizeWithLLMRetry(ctx, post.Text)
+	text, err := uc.summarizeWithLLMRetry(ctx, ProcessingModeSelfContained, post.Text)
 	if err != nil {
 		return "", fmt.Errorf("summarize: %w", err)
 	}
@@ -212,7 +215,7 @@ func (uc *SummaryUsecase) ProcessSourceEvent(ctx context.Context, event SummaryE
 		return "", ErrSummarySourceNoPosts
 	}
 
-	text, err := uc.summarizeWithLLMRetry(ctx, concat)
+	text, err := uc.summarizeWithLLMRetry(ctx, ProcessingModeCumulative, concat)
 	if err != nil {
 		return "", fmt.Errorf("summarize: %w", err)
 	}
@@ -425,7 +428,18 @@ func (uc *SummaryUsecase) maybeEnqueueSourceEvent(ctx context.Context, sourceID 
 // summarizeWithLLMRetry keeps the FT-005 inner retry contract (NS-04): up to
 // llm.max_retries in-call attempts with exponential backoff. The outer FT-007
 // event-level retry only engages if all LLM attempts fail.
-func (uc *SummaryUsecase) summarizeWithLLMRetry(ctx context.Context, text string) (string, error) {
+//
+// The system prompt is resolved exactly once per event (outside the retry
+// loop): the body is constant for a given mode, and a resolver error must be
+// permanent — wrapping it in retry-with-backoff would mask FM-02.
+func (uc *SummaryUsecase) summarizeWithLLMRetry(
+	ctx context.Context, mode ProcessingMode, text string,
+) (string, error) {
+	systemPrompt, err := uc.prompts.For(mode)
+	if err != nil {
+		return "", fmt.Errorf("resolve prompt for mode %q: %w", mode, err)
+	}
+
 	maxRetries := int(uc.cfg.GetLlm().GetMaxRetries())
 	if maxRetries <= 0 {
 		maxRetries = defaultLLMMaxRetries
@@ -433,9 +447,9 @@ func (uc *SummaryUsecase) summarizeWithLLMRetry(ctx context.Context, text string
 
 	var lastErr error
 	for attempt := range maxRetries {
-		result, err := uc.llmProvider.Summarize(ctx, text)
-		if err != nil {
-			lastErr = err
+		result, llmErr := uc.llmProvider.Summarize(ctx, systemPrompt, text)
+		if llmErr != nil {
+			lastErr = llmErr
 			backoff := time.Duration(math.Pow(llmRetryBackoffBase, float64(attempt))) * time.Second
 			select {
 			case <-time.After(backoff):

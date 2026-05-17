@@ -29,6 +29,21 @@ const (
 	minPageSize = 1
 )
 
+// AllProcessingModes returns every defined ProcessingMode in declaration
+// order. It is the registry consulted by SummaryPromptResolver
+// implementations at construction time to enforce totality (FM-02).
+//
+// When a new ProcessingMode constant is introduced, this slice MUST be
+// updated in the same change; the boot-time check in
+// prompt.NewResolver panics otherwise, surfacing the gap before any
+// summarization event is handled.
+func AllProcessingModes() []ProcessingMode {
+	return []ProcessingMode{
+		ProcessingModeSelfContained,
+		ProcessingModeCumulative,
+	}
+}
+
 // SourceConfig is a marker interface for type-specific configs.
 type SourceConfig interface {
 	sourceConfigMarker()

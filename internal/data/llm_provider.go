@@ -18,8 +18,6 @@ import (
 
 const defaultLLMTimeout = 30 * time.Second
 
-const defaultSystemPrompt = `You are a concise summarizer. Summarize the provided text in the same language as the original. Preserve key facts, names, numbers, and conclusions. Produce a concise summary.`
-
 type openRouterProvider struct {
 	apiKey     string
 	baseURL    string
@@ -77,11 +75,14 @@ func NewOpenRouterProvider(cfg *conf.SummaryLLM, logger *slog.Logger) (*openRout
 	}, nil
 }
 
-func (p *openRouterProvider) Summarize(ctx context.Context, text string) (string, error) {
+func (p *openRouterProvider) Summarize(ctx context.Context, systemPrompt, text string) (string, error) {
+	if systemPrompt == "" {
+		return "", errors.New("empty system prompt")
+	}
 	reqBody := chatRequest{
 		Model: p.model,
 		Messages: []chatMessage{
-			{Role: "system", Content: defaultSystemPrompt},
+			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: text},
 		},
 	}

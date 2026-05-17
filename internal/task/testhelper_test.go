@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/4itosik/feedium/internal/biz"
+	"github.com/4itosik/feedium/internal/biz/prompt"
 	"github.com/4itosik/feedium/internal/conf"
 	"github.com/4itosik/feedium/internal/data"
 	entgo "github.com/4itosik/feedium/internal/ent"
@@ -142,7 +143,7 @@ type fakeLLM struct {
 	delay time.Duration
 }
 
-func (f *fakeLLM) Summarize(ctx context.Context, text string) (string, error) {
+func (f *fakeLLM) Summarize(ctx context.Context, _, text string) (string, error) {
 	f.mu.Lock()
 	f.calls++
 	d := f.delay
@@ -181,6 +182,7 @@ func newTestUsecase(t *testing.T, d *data.Data, cfg *conf.Summary, llm biz.LLMPr
 		data.NewSourceRepo(d),
 		data.NewPostRepo(d),
 		llm,
+		prompt.NewResolver(),
 		data.NewTxManager(d),
 		cfg,
 	)

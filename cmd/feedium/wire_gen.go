@@ -8,6 +8,7 @@ package main
 
 import (
 	"github.com/4itosik/feedium/internal/biz"
+	"github.com/4itosik/feedium/internal/biz/prompt"
 	"github.com/4itosik/feedium/internal/conf"
 	"github.com/4itosik/feedium/internal/data"
 	"github.com/4itosik/feedium/internal/server"
@@ -49,7 +50,8 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		cleanup()
 		return nil, nil, err
 	}
-	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, postRepo, openRouterProvider, txManager, confSummary)
+	embeddedResolver := prompt.NewResolver()
+	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, postRepo, openRouterProvider, embeddedResolver, txManager, confSummary)
 	summaryService := summary.NewService(summaryUsecase)
 	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, summaryService, logger)
 	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, summaryService, logger)
