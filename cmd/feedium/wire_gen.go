@@ -58,7 +58,13 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	eventWorkerPool := task.NewEventWorkerPool(summaryOutboxRepo, summaryUsecase, confSummary, logger)
 	sourceDueScheduler := task.NewSourceDueScheduler(summaryUsecase, confSummary, logger)
 	stuckEventReaper := task.NewStuckEventReaper(summaryUsecase, confSummary, logger)
-	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper)
+	collectUsecase := biz.NewCollectUsecase(postUsecase)
+	rssFetcher := data.NewRSSFetcher()
+	confCollectors := newCollectorsConfigFromBootstrap(bc)
+	rssCollector := task.NewRSSCollector(collectUsecase, rssFetcher, sourceUsecase, confCollectors, logger)
+	webFetcher := data.NewWebFetcher()
+	webCollector := task.NewWebCollector(collectUsecase, webFetcher, sourceUsecase, confCollectors, logger)
+	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper, rssCollector, webCollector)
 	return app, func() {
 		cleanup()
 	}, nil
@@ -73,8 +79,13 @@ func newApp(
 	pool *task.EventWorkerPool,
 	scheduler *task.SourceDueScheduler,
 	reaper *task.StuckEventReaper,
+	rssCollector *task.RSSCollector,
+	webCollector *task.WebCollector,
 ) *kratos.App {
-	return kratos.New(kratos.Name("feedium"), kratos.Server(hs, gs, pool, scheduler, reaper))
+	return kratos.New(
+		kratos.Name("feedium"),
+		kratos.Server(hs, gs, pool, scheduler, reaper, rssCollector, webCollector),
+	)
 }
 
 func newDataFromBootstrap(bc *conf.Bootstrap) *conf.Data {
@@ -87,6 +98,10 @@ func newServerFromBootstrap(bc *conf.Bootstrap) *conf.Server {
 
 func newSummaryConfigFromBootstrap(bc *conf.Bootstrap) *conf.Summary {
 	return bc.GetSummary()
+}
+
+func newCollectorsConfigFromBootstrap(bc *conf.Bootstrap) *conf.Collectors {
+	return bc.GetCollectors()
 }
 
 func newSummaryLLMFromBootstrap(bc *conf.Bootstrap) *conf.SummaryLLM {

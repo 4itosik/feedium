@@ -10,6 +10,7 @@ message Bootstrap {
   Server server = 1;
   Data data = 2;
   Summary summary = 3;
+  Collectors collectors = 4;
 }
 
 message Server {
@@ -94,4 +95,17 @@ message SummaryCumulative {
 
 message SummaryOutbox {
   google.protobuf.Duration event_ttl = 1;
+}
+
+// Collectors holds the polling configuration for the FT-009 content
+// collectors. Each source type has its own interval so Telegram (rate-limit
+// sensitive) can poll on a different cadence than RSS or web (REQ-08, OQ-02).
+message Collectors {
+  CollectorPoll rss = 1;
+  CollectorPoll web = 2;
+  CollectorPoll telegram = 3;
+}
+
+message CollectorPoll {
+  google.protobuf.Duration poll_interval = 1;
 }

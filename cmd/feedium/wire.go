@@ -28,10 +28,12 @@ func newApp(
 	pool *task.EventWorkerPool,
 	scheduler *task.SourceDueScheduler,
 	reaper *task.StuckEventReaper,
+	rssCollector *task.RSSCollector,
+	webCollector *task.WebCollector,
 ) *kratos.App {
 	return kratos.New(
 		kratos.Name("feedium"),
-		kratos.Server(hs, gs, pool, scheduler, reaper),
+		kratos.Server(hs, gs, pool, scheduler, reaper, rssCollector, webCollector),
 	)
 }
 
@@ -45,6 +47,10 @@ func newServerFromBootstrap(bc *conf.Bootstrap) *conf.Server {
 
 func newSummaryConfigFromBootstrap(bc *conf.Bootstrap) *conf.Summary {
 	return bc.GetSummary()
+}
+
+func newCollectorsConfigFromBootstrap(bc *conf.Bootstrap) *conf.Collectors {
+	return bc.GetCollectors()
 }
 
 func newSummaryLLMFromBootstrap(bc *conf.Bootstrap) *conf.SummaryLLM {
@@ -61,6 +67,7 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		newDataFromBootstrap,
 		newSummaryConfigFromBootstrap,
 		newSummaryLLMFromBootstrap,
+		newCollectorsConfigFromBootstrap,
 		server.ProviderSet,
 		data.ProviderSet,
 		healthservice.ProviderSet,
@@ -73,6 +80,8 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		wire.Bind(new(sourceservice.Usecase), new(*biz.SourceUsecase)),
 		wire.Bind(new(postservice.Usecase), new(*biz.PostUsecase)),
 		wire.Bind(new(summaryservice.Usecase), new(*biz.SummaryUsecase)),
+		wire.Bind(new(task.Collector), new(*biz.CollectUsecase)),
+		wire.Bind(new(task.SourceLister), new(*biz.SourceUsecase)),
 		newApp,
 	)
 	return &kratos.App{}, nil, nil

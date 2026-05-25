@@ -27,6 +27,7 @@ type Bootstrap struct {
 	Server        *Server                `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 	Summary       *Summary               `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
+	Collectors    *Collectors            `protobuf:"bytes,4,opt,name=collectors,proto3" json:"collectors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -78,6 +79,13 @@ func (x *Bootstrap) GetData() *Data {
 func (x *Bootstrap) GetSummary() *Summary {
 	if x != nil {
 		return x.Summary
+	}
+	return nil
+}
+
+func (x *Bootstrap) GetCollectors() *Collectors {
+	if x != nil {
+		return x.Collectors
 	}
 	return nil
 }
@@ -922,16 +930,121 @@ func (x *SummaryOutbox) GetEventTtl() *durationpb.Duration {
 	return nil
 }
 
+type Collectors struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rss           *CollectorPoll         `protobuf:"bytes,1,opt,name=rss,proto3" json:"rss,omitempty"`
+	Web           *CollectorPoll         `protobuf:"bytes,2,opt,name=web,proto3" json:"web,omitempty"`
+	Telegram      *CollectorPoll         `protobuf:"bytes,3,opt,name=telegram,proto3" json:"telegram,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Collectors) Reset() {
+	*x = Collectors{}
+	mi := &file_internal_conf_conf_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Collectors) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Collectors) ProtoMessage() {}
+
+func (x *Collectors) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Collectors.ProtoReflect.Descriptor instead.
+func (*Collectors) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *Collectors) GetRss() *CollectorPoll {
+	if x != nil {
+		return x.Rss
+	}
+	return nil
+}
+
+func (x *Collectors) GetWeb() *CollectorPoll {
+	if x != nil {
+		return x.Web
+	}
+	return nil
+}
+
+func (x *Collectors) GetTelegram() *CollectorPoll {
+	if x != nil {
+		return x.Telegram
+	}
+	return nil
+}
+
+type CollectorPoll struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PollInterval  *durationpb.Duration   `protobuf:"bytes,1,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CollectorPoll) Reset() {
+	*x = CollectorPoll{}
+	mi := &file_internal_conf_conf_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CollectorPoll) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollectorPoll) ProtoMessage() {}
+
+func (x *CollectorPoll) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollectorPoll.ProtoReflect.Descriptor instead.
+func (*CollectorPoll) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CollectorPoll) GetPollInterval() *durationpb.Duration {
+	if x != nil {
+		return x.PollInterval
+	}
+	return nil
+}
+
 var File_internal_conf_conf_proto protoreflect.FileDescriptor
 
 const file_internal_conf_conf_proto_rawDesc = "" +
 	"\n" +
-	"\x18internal/conf/conf.proto\x12\x04conf\x1a\x1egoogle/protobuf/duration.proto\"z\n" +
+	"\x18internal/conf/conf.proto\x12\x04conf\x1a\x1egoogle/protobuf/duration.proto\"\xac\x01\n" +
 	"\tBootstrap\x12$\n" +
 	"\x06server\x18\x01 \x01(\v2\f.conf.ServerR\x06server\x12\x1e\n" +
 	"\x04data\x18\x02 \x01(\v2\n" +
 	".conf.DataR\x04data\x12'\n" +
-	"\asummary\x18\x03 \x01(\v2\r.conf.SummaryR\asummary\"H\n" +
+	"\asummary\x18\x03 \x01(\v2\r.conf.SummaryR\asummary\x120\n" +
+	"\ncollectors\x18\x04 \x01(\v2\x10.conf.CollectorsR\ncollectors\"H\n" +
 	"\x06Server\x12\x1e\n" +
 	"\x04http\x18\x01 \x01(\v2\n" +
 	".conf.HTTPR\x04http\x12\x1e\n" +
@@ -998,7 +1111,13 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"max_window\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\tmaxWindow\x12&\n" +
 	"\x0fmax_input_chars\x18\x02 \x01(\x05R\rmaxInputChars\"G\n" +
 	"\rSummaryOutbox\x126\n" +
-	"\tevent_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\beventTtlB/Z-github.com/4itosik/feedium/internal/conf;confb\x06proto3"
+	"\tevent_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\beventTtl\"\x8b\x01\n" +
+	"\nCollectors\x12%\n" +
+	"\x03rss\x18\x01 \x01(\v2\x13.conf.CollectorPollR\x03rss\x12%\n" +
+	"\x03web\x18\x02 \x01(\v2\x13.conf.CollectorPollR\x03web\x12/\n" +
+	"\btelegram\x18\x03 \x01(\v2\x13.conf.CollectorPollR\btelegram\"O\n" +
+	"\rCollectorPoll\x12>\n" +
+	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollIntervalB/Z-github.com/4itosik/feedium/internal/conf;confb\x06proto3"
 
 var (
 	file_internal_conf_conf_proto_rawDescOnce sync.Once
@@ -1012,7 +1131,7 @@ func file_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_internal_conf_conf_proto_rawDescData
 }
 
-var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),              // 0: conf.Bootstrap
 	(*Server)(nil),                 // 1: conf.Server
@@ -1029,45 +1148,52 @@ var file_internal_conf_conf_proto_goTypes = []any{
 	(*SummaryLLMProvider)(nil),     // 12: conf.SummaryLLMProvider
 	(*SummaryCumulative)(nil),      // 13: conf.SummaryCumulative
 	(*SummaryOutbox)(nil),          // 14: conf.SummaryOutbox
-	nil,                            // 15: conf.SummaryLLM.ProvidersEntry
-	(*durationpb.Duration)(nil),    // 16: google.protobuf.Duration
+	(*Collectors)(nil),             // 15: conf.Collectors
+	(*CollectorPoll)(nil),          // 16: conf.CollectorPoll
+	nil,                            // 17: conf.SummaryLLM.ProvidersEntry
+	(*durationpb.Duration)(nil),    // 18: google.protobuf.Duration
 }
 var file_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: conf.Bootstrap.server:type_name -> conf.Server
 	4,  // 1: conf.Bootstrap.data:type_name -> conf.Data
 	6,  // 2: conf.Bootstrap.summary:type_name -> conf.Summary
-	2,  // 3: conf.Server.http:type_name -> conf.HTTP
-	3,  // 4: conf.Server.grpc:type_name -> conf.GRPC
-	16, // 5: conf.HTTP.timeout:type_name -> google.protobuf.Duration
-	16, // 6: conf.GRPC.timeout:type_name -> google.protobuf.Duration
-	5,  // 7: conf.Data.database:type_name -> conf.Database
-	7,  // 8: conf.Summary.worker:type_name -> conf.SummaryWorker
-	8,  // 9: conf.Summary.cron:type_name -> conf.SummaryCron
-	11, // 10: conf.Summary.llm:type_name -> conf.SummaryLLM
-	13, // 11: conf.Summary.cumulative:type_name -> conf.SummaryCumulative
-	14, // 12: conf.Summary.outbox:type_name -> conf.SummaryOutbox
-	9,  // 13: conf.Summary.source_scheduler:type_name -> conf.SummarySourceScheduler
-	10, // 14: conf.Summary.reaper:type_name -> conf.SummaryReaper
-	16, // 15: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
-	16, // 16: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
-	16, // 17: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
-	16, // 18: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
-	16, // 19: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
-	16, // 20: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
-	16, // 21: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
-	16, // 22: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
-	16, // 23: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
-	16, // 24: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
-	16, // 25: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
-	15, // 26: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
-	16, // 27: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
-	16, // 28: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
-	12, // 29: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	15, // 3: conf.Bootstrap.collectors:type_name -> conf.Collectors
+	2,  // 4: conf.Server.http:type_name -> conf.HTTP
+	3,  // 5: conf.Server.grpc:type_name -> conf.GRPC
+	18, // 6: conf.HTTP.timeout:type_name -> google.protobuf.Duration
+	18, // 7: conf.GRPC.timeout:type_name -> google.protobuf.Duration
+	5,  // 8: conf.Data.database:type_name -> conf.Database
+	7,  // 9: conf.Summary.worker:type_name -> conf.SummaryWorker
+	8,  // 10: conf.Summary.cron:type_name -> conf.SummaryCron
+	11, // 11: conf.Summary.llm:type_name -> conf.SummaryLLM
+	13, // 12: conf.Summary.cumulative:type_name -> conf.SummaryCumulative
+	14, // 13: conf.Summary.outbox:type_name -> conf.SummaryOutbox
+	9,  // 14: conf.Summary.source_scheduler:type_name -> conf.SummarySourceScheduler
+	10, // 15: conf.Summary.reaper:type_name -> conf.SummaryReaper
+	18, // 16: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
+	18, // 17: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
+	18, // 18: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
+	18, // 19: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
+	18, // 20: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
+	18, // 21: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
+	18, // 22: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
+	18, // 23: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
+	18, // 24: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
+	18, // 25: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
+	18, // 26: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
+	17, // 27: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
+	18, // 28: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
+	18, // 29: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
+	16, // 30: conf.Collectors.rss:type_name -> conf.CollectorPoll
+	16, // 31: conf.Collectors.web:type_name -> conf.CollectorPoll
+	16, // 32: conf.Collectors.telegram:type_name -> conf.CollectorPoll
+	18, // 33: conf.CollectorPoll.poll_interval:type_name -> google.protobuf.Duration
+	12, // 34: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
+	35, // [35:35] is the sub-list for method output_type
+	35, // [35:35] is the sub-list for method input_type
+	35, // [35:35] is the sub-list for extension type_name
+	35, // [35:35] is the sub-list for extension extendee
+	0,  // [0:35] is the sub-list for field type_name
 }
 
 func init() { file_internal_conf_conf_proto_init() }
@@ -1081,7 +1207,7 @@ func file_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_conf_conf_proto_rawDesc), len(file_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -44,3 +44,12 @@ summary:
     max_input_chars: 50000
   outbox:
     event_ttl: 24h
+collectors:
+  rss:
+    poll_interval: 5m
+  web:
+    poll_interval: 15m
+  # telegram polling is configured but its collector is not yet wired
+  # (DEC-03 awaiting approval — see FT-009 implement.md).
+  telegram:
+    poll_interval: 2m

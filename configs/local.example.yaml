@@ -44,3 +44,13 @@ summary:
     max_input_chars: 50000
   outbox:
     event_ttl: 86400s
+collectors:
+  rss:
+    poll_interval: 300s
+  web:
+    poll_interval: 900s
+  # Telegram userbot session/credentials and its collector are deferred:
+  # DEC-03 (Telegram client library) requires human approval. Session storage
+  # location (OQ-03) will be added here once the library is approved.
+  telegram:
+    poll_interval: 120s
