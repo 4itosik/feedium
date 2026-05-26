@@ -18,6 +18,7 @@ var ProviderSet = wire.NewSet( //nolint:gochecknoglobals // wire dependency inje
 	NewOpenRouterProvider,
 	NewRSSFetcher,
 	NewWebFetcher,
+	NewTelegramSession,
 	wire.Bind(new(healthservice.Pinger), new(*HealthRepo)),
 	wire.Bind(new(biz.SourceRepo), new(*sourceRepo)),
 	wire.Bind(new(biz.PostRepo), new(*postRepo)),
@@ -30,4 +31,5 @@ var ProviderSet = wire.NewSet( //nolint:gochecknoglobals // wire dependency inje
 	// resolve which concrete implements which port.
 	wire.Bind(new(biz.RSSFetcher), new(*rssFetcher)),
 	wire.Bind(new(biz.WebFetcher), new(*webFetcher)),
+	wire.Bind(new(biz.TelegramSession), new(*telegramSession)),
 )
