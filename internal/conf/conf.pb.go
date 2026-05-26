@@ -930,9 +930,10 @@ func (x *SummaryOutbox) GetEventTtl() *durationpb.Duration {
 	return nil
 }
 
-// Collectors holds the polling configuration for the FT-009 content
-// collectors. Each source type has its own interval so Telegram (rate-limit
-// sensitive) can poll on a different cadence than RSS or web (REQ-08, OQ-02).
+// Collectors holds the collection configuration for the FT-009 content
+// collectors. RSS and web use a poll interval (REQ-08, OQ-02); the Telegram
+// collector uses a push model (gotd updates.Manager, DEC-08) and carries only
+// connection credentials — no poll interval.
 type Collectors struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Rss           *CollectorPoll         `protobuf:"bytes,1,opt,name=rss,proto3" json:"rss,omitempty"`
@@ -1043,11 +1044,13 @@ func (x *CollectorPoll) GetPollInterval() *durationpb.Duration {
 // (gotd updates.Manager), not polling. Secrets (api_hash, phone) live only in
 // the uncommitted config.yaml / env — never in committed examples.
 type TelegramCollector struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ApiId         int32                  `protobuf:"varint,2,opt,name=api_id,json=apiId,proto3" json:"api_id,omitempty"`
-	ApiHash       string                 `protobuf:"bytes,3,opt,name=api_hash,json=apiHash,proto3" json:"api_hash,omitempty"`
-	Phone         string                 `protobuf:"bytes,4,opt,name=phone,proto3" json:"phone,omitempty"`
-	SessionPath   string                 `protobuf:"bytes,5,opt,name=session_path,json=sessionPath,proto3" json:"session_path,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	ApiId   int32                  `protobuf:"varint,2,opt,name=api_id,json=apiId,proto3" json:"api_id,omitempty"`
+	ApiHash string                 `protobuf:"bytes,3,opt,name=api_hash,json=apiHash,proto3" json:"api_hash,omitempty"`
+	// phone is used only for the manual first-time userbot login (AG-02); the
+	// service does not read it at runtime — it reuses the stored session_path.
+	Phone         string `protobuf:"bytes,4,opt,name=phone,proto3" json:"phone,omitempty"`
+	SessionPath   string `protobuf:"bytes,5,opt,name=session_path,json=sessionPath,proto3" json:"session_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

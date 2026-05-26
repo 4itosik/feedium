@@ -97,9 +97,10 @@ message SummaryOutbox {
   google.protobuf.Duration event_ttl = 1;
 }
 
-// Collectors holds the polling configuration for the FT-009 content
-// collectors. Each source type has its own interval so Telegram (rate-limit
-// sensitive) can poll on a different cadence than RSS or web (REQ-08, OQ-02).
+// Collectors holds the collection configuration for the FT-009 content
+// collectors. RSS and web use a poll interval (REQ-08, OQ-02); the Telegram
+// collector uses a push model (gotd updates.Manager, DEC-08) and carries only
+// connection credentials — no poll interval.
 message Collectors {
   CollectorPoll rss = 1;
   CollectorPoll web = 2;
@@ -118,6 +119,8 @@ message CollectorPoll {
 message TelegramCollector {
   int32 api_id = 2;
   string api_hash = 3;
+  // phone is used only for the manual first-time userbot login (AG-02); the
+  // service does not read it at runtime — it reuses the stored session_path.
   string phone = 4;
   string session_path = 5;
 }
