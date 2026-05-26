@@ -103,9 +103,21 @@ message SummaryOutbox {
 message Collectors {
   CollectorPoll rss = 1;
   CollectorPoll web = 2;
-  CollectorPoll telegram = 3;
+  TelegramCollector telegram = 3;
 }
 
 message CollectorPoll {
   google.protobuf.Duration poll_interval = 1;
+}
+
+// TelegramCollector configures the userbot push collector (FT-009 REQ-02/REQ-03,
+// DEC-08). It carries userbot credentials and the server-side session file
+// location (OQ-03, CON-04). No poll interval: messages arrive via push
+// (gotd updates.Manager), not polling. Secrets (api_hash, phone) live only in
+// the uncommitted config.yaml / env — never in committed examples.
+message TelegramCollector {
+  int32 api_id = 2;
+  string api_hash = 3;
+  string phone = 4;
+  string session_path = 5;
 }

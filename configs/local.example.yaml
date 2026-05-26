@@ -49,8 +49,11 @@ collectors:
     poll_interval: 300s
   web:
     poll_interval: 900s
-  # Telegram userbot session/credentials and its collector are deferred:
-  # DEC-03 (Telegram client library) requires human approval. Session storage
-  # location (OQ-03) will be added here once the library is approved.
+  # Telegram userbot collector (FT-009 REQ-02/REQ-03). Credentials come from
+  # my.telegram.org; secrets (api_hash, phone) belong only in the uncommitted
+  # config.yaml or env — the values below are placeholders (OQ-03, CON-04).
   telegram:
-    poll_interval: 120s
+    api_id: 0                              # int32 app id from my.telegram.org
+    api_hash: ""                           # secret — do NOT commit
+    phone: ""                              # userbot phone, e.g. +10000000000
+    session_path: "/var/lib/feedium/tg.session"

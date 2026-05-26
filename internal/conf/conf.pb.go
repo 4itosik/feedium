@@ -930,11 +930,14 @@ func (x *SummaryOutbox) GetEventTtl() *durationpb.Duration {
 	return nil
 }
 
+// Collectors holds the polling configuration for the FT-009 content
+// collectors. Each source type has its own interval so Telegram (rate-limit
+// sensitive) can poll on a different cadence than RSS or web (REQ-08, OQ-02).
 type Collectors struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Rss           *CollectorPoll         `protobuf:"bytes,1,opt,name=rss,proto3" json:"rss,omitempty"`
 	Web           *CollectorPoll         `protobuf:"bytes,2,opt,name=web,proto3" json:"web,omitempty"`
-	Telegram      *CollectorPoll         `protobuf:"bytes,3,opt,name=telegram,proto3" json:"telegram,omitempty"`
+	Telegram      *TelegramCollector     `protobuf:"bytes,3,opt,name=telegram,proto3" json:"telegram,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -983,7 +986,7 @@ func (x *Collectors) GetWeb() *CollectorPoll {
 	return nil
 }
 
-func (x *Collectors) GetTelegram() *CollectorPoll {
+func (x *Collectors) GetTelegram() *TelegramCollector {
 	if x != nil {
 		return x.Telegram
 	}
@@ -1034,6 +1037,79 @@ func (x *CollectorPoll) GetPollInterval() *durationpb.Duration {
 	return nil
 }
 
+// TelegramCollector configures the userbot push collector (FT-009 REQ-02/REQ-03,
+// DEC-08). It carries userbot credentials and the server-side session file
+// location (OQ-03, CON-04). No poll interval: messages arrive via push
+// (gotd updates.Manager), not polling. Secrets (api_hash, phone) live only in
+// the uncommitted config.yaml / env — never in committed examples.
+type TelegramCollector struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApiId         int32                  `protobuf:"varint,2,opt,name=api_id,json=apiId,proto3" json:"api_id,omitempty"`
+	ApiHash       string                 `protobuf:"bytes,3,opt,name=api_hash,json=apiHash,proto3" json:"api_hash,omitempty"`
+	Phone         string                 `protobuf:"bytes,4,opt,name=phone,proto3" json:"phone,omitempty"`
+	SessionPath   string                 `protobuf:"bytes,5,opt,name=session_path,json=sessionPath,proto3" json:"session_path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TelegramCollector) Reset() {
+	*x = TelegramCollector{}
+	mi := &file_internal_conf_conf_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TelegramCollector) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TelegramCollector) ProtoMessage() {}
+
+func (x *TelegramCollector) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TelegramCollector.ProtoReflect.Descriptor instead.
+func (*TelegramCollector) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *TelegramCollector) GetApiId() int32 {
+	if x != nil {
+		return x.ApiId
+	}
+	return 0
+}
+
+func (x *TelegramCollector) GetApiHash() string {
+	if x != nil {
+		return x.ApiHash
+	}
+	return ""
+}
+
+func (x *TelegramCollector) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+func (x *TelegramCollector) GetSessionPath() string {
+	if x != nil {
+		return x.SessionPath
+	}
+	return ""
+}
+
 var File_internal_conf_conf_proto protoreflect.FileDescriptor
 
 const file_internal_conf_conf_proto_rawDesc = "" +
@@ -1044,7 +1120,9 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\x04data\x18\x02 \x01(\v2\n" +
 	".conf.DataR\x04data\x12'\n" +
 	"\asummary\x18\x03 \x01(\v2\r.conf.SummaryR\asummary\x120\n" +
-	"\ncollectors\x18\x04 \x01(\v2\x10.conf.CollectorsR\ncollectors\"H\n" +
+	"\n" +
+	"collectors\x18\x04 \x01(\v2\x10.conf.CollectorsR\n" +
+	"collectors\"H\n" +
 	"\x06Server\x12\x1e\n" +
 	"\x04http\x18\x01 \x01(\v2\n" +
 	".conf.HTTPR\x04http\x12\x1e\n" +
@@ -1111,13 +1189,19 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"max_window\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\tmaxWindow\x12&\n" +
 	"\x0fmax_input_chars\x18\x02 \x01(\x05R\rmaxInputChars\"G\n" +
 	"\rSummaryOutbox\x126\n" +
-	"\tevent_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\beventTtl\"\x8b\x01\n" +
-	"\nCollectors\x12%\n" +
+	"\tevent_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\beventTtl\"\x8f\x01\n" +
+	"\n" +
+	"Collectors\x12%\n" +
 	"\x03rss\x18\x01 \x01(\v2\x13.conf.CollectorPollR\x03rss\x12%\n" +
-	"\x03web\x18\x02 \x01(\v2\x13.conf.CollectorPollR\x03web\x12/\n" +
-	"\btelegram\x18\x03 \x01(\v2\x13.conf.CollectorPollR\btelegram\"O\n" +
+	"\x03web\x18\x02 \x01(\v2\x13.conf.CollectorPollR\x03web\x123\n" +
+	"\btelegram\x18\x03 \x01(\v2\x17.conf.TelegramCollectorR\btelegram\"O\n" +
 	"\rCollectorPoll\x12>\n" +
-	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollIntervalB/Z-github.com/4itosik/feedium/internal/conf;confb\x06proto3"
+	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\"~\n" +
+	"\x11TelegramCollector\x12\x15\n" +
+	"\x06api_id\x18\x02 \x01(\x05R\x05apiId\x12\x19\n" +
+	"\bapi_hash\x18\x03 \x01(\tR\aapiHash\x12\x14\n" +
+	"\x05phone\x18\x04 \x01(\tR\x05phone\x12!\n" +
+	"\fsession_path\x18\x05 \x01(\tR\vsessionPathB/Z-github.com/4itosik/feedium/internal/conf;confb\x06proto3"
 
 var (
 	file_internal_conf_conf_proto_rawDescOnce sync.Once
@@ -1131,7 +1215,7 @@ func file_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_internal_conf_conf_proto_rawDescData
 }
 
-var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),              // 0: conf.Bootstrap
 	(*Server)(nil),                 // 1: conf.Server
@@ -1150,8 +1234,9 @@ var file_internal_conf_conf_proto_goTypes = []any{
 	(*SummaryOutbox)(nil),          // 14: conf.SummaryOutbox
 	(*Collectors)(nil),             // 15: conf.Collectors
 	(*CollectorPoll)(nil),          // 16: conf.CollectorPoll
-	nil,                            // 17: conf.SummaryLLM.ProvidersEntry
-	(*durationpb.Duration)(nil),    // 18: google.protobuf.Duration
+	(*TelegramCollector)(nil),      // 17: conf.TelegramCollector
+	nil,                            // 18: conf.SummaryLLM.ProvidersEntry
+	(*durationpb.Duration)(nil),    // 19: google.protobuf.Duration
 }
 var file_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: conf.Bootstrap.server:type_name -> conf.Server
@@ -1160,8 +1245,8 @@ var file_internal_conf_conf_proto_depIdxs = []int32{
 	15, // 3: conf.Bootstrap.collectors:type_name -> conf.Collectors
 	2,  // 4: conf.Server.http:type_name -> conf.HTTP
 	3,  // 5: conf.Server.grpc:type_name -> conf.GRPC
-	18, // 6: conf.HTTP.timeout:type_name -> google.protobuf.Duration
-	18, // 7: conf.GRPC.timeout:type_name -> google.protobuf.Duration
+	19, // 6: conf.HTTP.timeout:type_name -> google.protobuf.Duration
+	19, // 7: conf.GRPC.timeout:type_name -> google.protobuf.Duration
 	5,  // 8: conf.Data.database:type_name -> conf.Database
 	7,  // 9: conf.Summary.worker:type_name -> conf.SummaryWorker
 	8,  // 10: conf.Summary.cron:type_name -> conf.SummaryCron
@@ -1170,24 +1255,24 @@ var file_internal_conf_conf_proto_depIdxs = []int32{
 	14, // 13: conf.Summary.outbox:type_name -> conf.SummaryOutbox
 	9,  // 14: conf.Summary.source_scheduler:type_name -> conf.SummarySourceScheduler
 	10, // 15: conf.Summary.reaper:type_name -> conf.SummaryReaper
-	18, // 16: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
-	18, // 17: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
-	18, // 18: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
-	18, // 19: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
-	18, // 20: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
-	18, // 21: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
-	18, // 22: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
-	18, // 23: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
-	18, // 24: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
-	18, // 25: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
-	18, // 26: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
-	17, // 27: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
-	18, // 28: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
-	18, // 29: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
+	19, // 16: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
+	19, // 17: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
+	19, // 18: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
+	19, // 19: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
+	19, // 20: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
+	19, // 21: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
+	19, // 22: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
+	19, // 23: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
+	19, // 24: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
+	19, // 25: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
+	19, // 26: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
+	18, // 27: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
+	19, // 28: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
+	19, // 29: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
 	16, // 30: conf.Collectors.rss:type_name -> conf.CollectorPoll
 	16, // 31: conf.Collectors.web:type_name -> conf.CollectorPoll
-	16, // 32: conf.Collectors.telegram:type_name -> conf.CollectorPoll
-	18, // 33: conf.CollectorPoll.poll_interval:type_name -> google.protobuf.Duration
+	17, // 32: conf.Collectors.telegram:type_name -> conf.TelegramCollector
+	19, // 33: conf.CollectorPoll.poll_interval:type_name -> google.protobuf.Duration
 	12, // 34: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
 	35, // [35:35] is the sub-list for method output_type
 	35, // [35:35] is the sub-list for method input_type
@@ -1207,7 +1292,7 @@ func file_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_conf_conf_proto_rawDesc), len(file_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

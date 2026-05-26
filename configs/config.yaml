@@ -49,7 +49,10 @@ collectors:
     poll_interval: 5m
   web:
     poll_interval: 15m
-  # telegram polling is configured but its collector is not yet wired
-  # (DEC-03 awaiting approval — see FT-009 implement.md).
+  # Telegram userbot collector (FT-009 REQ-02/REQ-03). Real api_hash/phone are
+  # injected via env or a local override — keep secrets out of this file.
   telegram:
-    poll_interval: 2m
+    api_id: 0
+    api_hash: ""
+    phone: ""
+    session_path: "/var/lib/feedium/tg.session"
