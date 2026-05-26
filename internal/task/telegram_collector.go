@@ -22,6 +22,10 @@ type ItemCollector interface {
 // by TgID and persisted via ItemCollector.CollectItems. An unknown peer (the
 // userbot is in other dialogs) is ignored; a persist error is logged and never
 // stops the stream (REQ-07, FM-T01). Stop cancels the session and waits.
+//
+// Push model (vs RSS/web polling) and its rationale: see
+// memory-bank/features/FT-009-collectors/feature.md (DEC-08) and
+// 2026-05-26-telegram-push-design.md.
 type TelegramCollector struct {
 	collector ItemCollector
 	session   biz.TelegramSession

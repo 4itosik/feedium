@@ -12,8 +12,8 @@ derived_from:
   - ../FT-004-posts-management/spec.md
   - ../FT-005-ai-summarization/spec.md
   - ../FT-007-scalable-event-processing/feature.md
-status: draft
-delivery_status: planned
+status: active
+delivery_status: done
 ---
 
 # FT-009-collectors: Content Collectors
@@ -90,6 +90,8 @@ delivery_status: planned
 Для каждого типа источника ввести коллектор в `task/`, реализующий kratos `transport.Server` и работающий в polling-цикле с интервалом из конфига: коллектор забирает с внешней системы материал, поступивший с момента предыдущего цикла, отфильтровывает нетекстовый (`REQ-10`), нормализует его в модель Post и передаёт через `biz/` usecase сбора, который сохраняет пост существующим путём FT-004 (дедупликация по внешнему идентификатору материала) и тем самым атомарно инициирует обработку через outbox FT-005 / per-source расписание FT-007. Главный trade-off: 4 типа источников обслуживаются отдельными коллекторами с общим biz-контрактом сохранения, а не единым «универсальным» сборщиком — это даёт изоляцию отказов по источнику (`REQ-07`) и независимую rate-limit/retry-политику на тип (`CON-02`) ценой повторяющегося lifecycle-каркаса в `task/`.
 
 Конкретные библиотеки и клиенты (Telegram userbot: gotd/td vs go-tdlib; RSS-парсер; HTTP/HTML-извлечение), механизм планирования опроса, способ хранения учётных данных и сессии Telegram, стратегия извлечения контента из HTML и дефолтная частота опроса — решения Design-фазы, фиксируются в sibling [`implementation-plan.md`](implementation-plan.md). Бизнес-контракт FT-009 не зависит от выбора этих механизмов.
+
+> **Design-delta (DEC-08, реализовано 2026-05-26):** Telegram (`REQ-02`/`REQ-03`) собирается **push-моделью** на `gotd/td` (`updates.Manager`), а не polling — сообщения приходят в реальном времени и прогоняются через тот же biz-путь сбора. Поэтому для Telegram `REQ-08` (частота опроса) **не применяется**, а порт `biz.Fetcher` не используется (вместо него — порт `biz.TelegramSession` + `CollectUsecase.CollectItems`). RSS (`REQ-01`) и web (`REQ-04`) остаются на polling без изменений. Долговечность: in-memory updates-state, без backfill (схема БД не меняется). Полное обоснование и архитектура — [`2026-05-26-telegram-push-design.md`](2026-05-26-telegram-push-design.md).
 
 ### Change Surface
 
