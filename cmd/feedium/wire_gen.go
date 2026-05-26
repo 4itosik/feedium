@@ -64,7 +64,9 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	rssCollector := task.NewRSSCollector(collectUsecase, rssFetcher, sourceUsecase, confCollectors, logger)
 	webFetcher := data.NewWebFetcher()
 	webCollector := task.NewWebCollector(collectUsecase, webFetcher, sourceUsecase, confCollectors, logger)
-	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper, rssCollector, webCollector)
+	telegramSession := data.NewTelegramSession(confCollectors)
+	telegramCollector := task.NewTelegramCollector(collectUsecase, telegramSession, sourceUsecase, logger)
+	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper, rssCollector, webCollector, telegramCollector)
 	return app, func() {
 		cleanup()
 	}, nil
@@ -81,10 +83,11 @@ func newApp(
 	reaper *task.StuckEventReaper,
 	rssCollector *task.RSSCollector,
 	webCollector *task.WebCollector,
+	telegramCollector *task.TelegramCollector,
 ) *kratos.App {
 	return kratos.New(
 		kratos.Name("feedium"),
-		kratos.Server(hs, gs, pool, scheduler, reaper, rssCollector, webCollector),
+		kratos.Server(hs, gs, pool, scheduler, reaper, rssCollector, webCollector, telegramCollector),
 	)
 }
 

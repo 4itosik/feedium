@@ -30,10 +30,11 @@ func newApp(
 	reaper *task.StuckEventReaper,
 	rssCollector *task.RSSCollector,
 	webCollector *task.WebCollector,
+	telegramCollector *task.TelegramCollector,
 ) *kratos.App {
 	return kratos.New(
 		kratos.Name("feedium"),
-		kratos.Server(hs, gs, pool, scheduler, reaper, rssCollector, webCollector),
+		kratos.Server(hs, gs, pool, scheduler, reaper, rssCollector, webCollector, telegramCollector),
 	)
 }
 
@@ -81,6 +82,7 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		wire.Bind(new(postservice.Usecase), new(*biz.PostUsecase)),
 		wire.Bind(new(summaryservice.Usecase), new(*biz.SummaryUsecase)),
 		wire.Bind(new(task.Collector), new(*biz.CollectUsecase)),
+		wire.Bind(new(task.ItemCollector), new(*biz.CollectUsecase)),
 		wire.Bind(new(task.SourceLister), new(*biz.SourceUsecase)),
 		newApp,
 	)
