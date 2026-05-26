@@ -52,7 +52,11 @@ func (r *recordingCollector) CollectItems(_ context.Context, s biz.Source, items
 func TestTelegramCollector_RoutesMessageToMatchingSource(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
-	chSrc := biz.Source{ID: "s-chan", Type: biz.SourceTypeTelegramChannel, Config: &biz.TelegramChannelConfig{TgID: 111}}
+	chSrc := biz.Source{
+		ID:     "s-chan",
+		Type:   biz.SourceTypeTelegramChannel,
+		Config: &biz.TelegramChannelConfig{TgID: 111},
+	}
 	rec := &recordingCollector{}
 	session := &fakeSession{msgs: []biz.TelegramMessage{
 		{TgID: 111, Item: biz.CollectedItem{ExternalID: "1", Text: "hi"}}, // matches chSrc
@@ -61,7 +65,12 @@ func TestTelegramCollector_RoutesMessageToMatchingSource(t *testing.T) {
 	c := task.NewTelegramCollector(rec, session, &fakeSourceLister{items: []biz.Source{chSrc}}, testLogger())
 
 	require.NoError(t, c.Start(context.Background()))
-	require.Eventually(t, func() bool { rec.mu.Lock(); defer rec.mu.Unlock(); return len(rec.calls) == 1 }, time.Second, 5*time.Millisecond)
+	gotOneCall := func() bool {
+		rec.mu.Lock()
+		defer rec.mu.Unlock()
+		return len(rec.calls) == 1
+	}
+	require.Eventually(t, gotOneCall, time.Second, 5*time.Millisecond)
 	require.NoError(t, c.Stop(context.Background()))
 
 	require.Equal(t, "s-chan", rec.calls[0].source.ID)
