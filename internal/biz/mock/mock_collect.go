@@ -135,6 +135,44 @@ func (mr *MockWebFetcherMockRecorder) Fetch(ctx, source any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockWebFetcher)(nil).Fetch), ctx, source)
 }
 
+// MockTelegramSession is a mock of TelegramSession interface.
+type MockTelegramSession struct {
+	ctrl     *gomock.Controller
+	recorder *MockTelegramSessionMockRecorder
+	isgomock struct{}
+}
+
+// MockTelegramSessionMockRecorder is the mock recorder for MockTelegramSession.
+type MockTelegramSessionMockRecorder struct {
+	mock *MockTelegramSession
+}
+
+// NewMockTelegramSession creates a new mock instance.
+func NewMockTelegramSession(ctrl *gomock.Controller) *MockTelegramSession {
+	mock := &MockTelegramSession{ctrl: ctrl}
+	mock.recorder = &MockTelegramSessionMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTelegramSession) EXPECT() *MockTelegramSessionMockRecorder {
+	return m.recorder
+}
+
+// Run mocks base method.
+func (m *MockTelegramSession) Run(ctx context.Context, handle func(context.Context, biz.TelegramMessage) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Run", ctx, handle)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Run indicates an expected call of Run.
+func (mr *MockTelegramSessionMockRecorder) Run(ctx, handle any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockTelegramSession)(nil).Run), ctx, handle)
+}
+
 // MockPostCreator is a mock of PostCreator interface.
 type MockPostCreator struct {
 	ctrl     *gomock.Controller

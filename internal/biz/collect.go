@@ -41,6 +41,29 @@ type (
 	WebFetcher interface{ Fetcher }
 )
 
+// TelegramMessage is one new Telegram message yielded by the userbot session
+// (FT-009 DEC-08). It is transport-agnostic — no gotd types leak past data/.
+// TgID is the channel/chat identifier used to resolve the configured Source
+// (matches biz.TelegramChannelConfig/TelegramGroupConfig.TgID).
+type TelegramMessage struct {
+	TgID int64
+	Item CollectedItem
+}
+
+// TelegramSession is the live userbot connection port (DEC-08, AG-02). The
+// data/ implementation is gotd-backed; it blocks in Run delivering each new
+// channel/group message to handle until ctx is cancelled. A handle error is
+// logged by the collector and never stops the stream (FM-T01). data/ owns
+// connection, auth and FLOOD_WAIT handling; biz/ and task/ stay gotd-free.
+type TelegramSession interface {
+	Run(ctx context.Context, handle func(context.Context, TelegramMessage) error) error
+}
+
+// ErrTelegramNotAuthorized is returned by the Telegram session when the stored
+// session is missing or unauthorized. First-time login (phone code) is a manual
+// operation (AG-02) and is never automated.
+var ErrTelegramNotAuthorized = errors.New("telegram session not authorized")
+
 // PostCreator is the persistence port CollectUsecase delegates to. It is
 // satisfied by *PostUsecase, so collection reuses the single Create path that
 // already provides idempotency by (source_id, external_id) (REQ-06) and the
@@ -68,27 +91,29 @@ func NewCollectUsecase(creator PostCreator) *CollectUsecase {
 	return &CollectUsecase{creator: creator}
 }
 
-// CollectSource fetches material for one source, drops non-text items (REQ-10)
-// and persists each text item through PostCreator.Create. A Fetch failure is
-// wrapped and returned so the calling collector can log it and move on to the
-// next source (REQ-07, FM-T01). A per-item ErrPostSourceNotFound — the source
-// was removed between listing and saving — is skipped, not fatal (FM-T04); any
-// other Create error aborts this source's cycle and is returned.
+// CollectSource fetches material for one source and persists it via
+// CollectItems (REQ-05..10). A Fetch failure is wrapped and returned so the
+// calling collector can log it and move on to the next source (REQ-07, FM-T01).
 func (uc *CollectUsecase) CollectSource(ctx context.Context, source Source, fetcher Fetcher) error {
 	items, err := fetcher.Fetch(ctx, source)
 	if err != nil {
 		return fmt.Errorf("fetch source %s: %w", source.ID, err)
 	}
+	return uc.CollectItems(ctx, source, items)
+}
 
+// CollectItems persists already-fetched material for a source: it drops
+// non-text items (REQ-10) and saves each text item through PostCreator.Create,
+// reusing the single Create path that provides idempotency by
+// (source_id, external_id) (REQ-06) and the self-contained-outbox /
+// cumulative-no-event behaviour (REQ-09). A per-item ErrPostSourceNotFound is
+// skipped (FM-T04); any other Create error aborts the batch and is returned.
+// The push Telegram collector calls this directly with one item per message
+// (DEC-08); pull collectors reach it via CollectSource.
+func (uc *CollectUsecase) CollectItems(ctx context.Context, source Source, items []CollectedItem) error {
 	for _, item := range FilterTextItems(items) {
 		_, createErr := uc.creator.Create(
-			ctx,
-			source.ID,
-			item.ExternalID,
-			item.Text,
-			item.PublishedAt,
-			item.Author,
-			item.Metadata,
+			ctx, source.ID, item.ExternalID, item.Text, item.PublishedAt, item.Author, item.Metadata,
 		)
 		if createErr != nil {
 			if errors.Is(createErr, ErrPostSourceNotFound) {
@@ -97,7 +122,6 @@ func (uc *CollectUsecase) CollectSource(ctx context.Context, source Source, fetc
 			return fmt.Errorf("create post for source %s item %s: %w", source.ID, item.ExternalID, createErr)
 		}
 	}
-
 	return nil
 }
 

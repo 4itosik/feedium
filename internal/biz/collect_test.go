@@ -291,3 +291,91 @@ func TestCollectUsecase_CollectSource(t *testing.T) {
 		assert.ErrorIs(t, err, createErr)
 	})
 }
+
+func TestCollectUsecase_CollectItems(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	src := collectTestSource()
+	publishedAt := time.Date(2026, 4, 14, 12, 0, 0, 0, time.UTC)
+
+	t.Run("non-text item filtered, text item persisted (push path)", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		creator := mock.NewMockPostCreator(ctrl)
+
+		items := []biz.CollectedItem{
+			{ExternalID: "img-1", Text: "   \n\t"},
+			{
+				ExternalID:  "ext-1",
+				Text:        "message body",
+				Author:      ptr("Bob"),
+				PublishedAt: publishedAt,
+				Metadata:    map[string]string{"title": "Msg"},
+			},
+		}
+
+		creator.EXPECT().
+			Create(gomock.Any(), src.ID, "ext-1", "message body", publishedAt, ptr("Bob"), map[string]string{"title": "Msg"}).
+			Return(biz.Post{ID: "p1"}, nil)
+
+		uc := biz.NewCollectUsecase(creator)
+
+		// Act
+		err := uc.CollectItems(context.Background(), src, items)
+
+		// Assert
+		require.NoError(t, err)
+	})
+
+	t.Run("ErrPostSourceNotFound on an item is skipped, no error returned", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		creator := mock.NewMockPostCreator(ctrl)
+
+		items := []biz.CollectedItem{
+			{ExternalID: "gone", Text: "source removed", PublishedAt: publishedAt},
+		}
+
+		creator.EXPECT().
+			Create(gomock.Any(), src.ID, "gone", "source removed", publishedAt, gomock.Nil(), gomock.Nil()).
+			Return(biz.Post{}, biz.ErrPostSourceNotFound)
+
+		uc := biz.NewCollectUsecase(creator)
+
+		// Act
+		err := uc.CollectItems(context.Background(), src, items)
+
+		// Assert
+		require.NoError(t, err)
+	})
+
+	t.Run("unexpected Create error aborts the batch and is returned", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		creator := mock.NewMockPostCreator(ctrl)
+
+		createErr := errors.New("db down")
+		items := []biz.CollectedItem{
+			{ExternalID: "ext-1", Text: "first", PublishedAt: publishedAt},
+		}
+
+		creator.EXPECT().
+			Create(gomock.Any(), src.ID, "ext-1", "first", publishedAt, gomock.Nil(), gomock.Nil()).
+			Return(biz.Post{}, createErr)
+
+		uc := biz.NewCollectUsecase(creator)
+
+		// Act
+		err := uc.CollectItems(context.Background(), src, items)
+
+		// Assert
+		require.Error(t, err)
+		assert.ErrorIs(t, err, createErr)
+	})
+}
