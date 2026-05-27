@@ -15,8 +15,6 @@ import (
 	"github.com/4itosik/feedium/internal/biz/mock"
 )
 
-func ptr(s string) *string { return &s }
-
 func TestFilterTextItems(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
@@ -119,7 +117,7 @@ func TestCollectUsecase_CollectSource(t *testing.T) {
 			{
 				ExternalID:  "ext-1",
 				Text:        "first body",
-				Author:      ptr("Alice"),
+				Author:      new("Alice"),
 				PublishedAt: publishedAt,
 				Metadata:    map[string]string{"title": "First"},
 			},
@@ -127,7 +125,7 @@ func TestCollectUsecase_CollectSource(t *testing.T) {
 		}, nil)
 
 		creator.EXPECT().
-			Create(gomock.Any(), src.ID, "ext-1", "first body", publishedAt, ptr("Alice"), map[string]string{"title": "First"}).
+			Create(gomock.Any(), src.ID, "ext-1", "first body", publishedAt, new("Alice"), map[string]string{"title": "First"}).
 			Return(biz.Post{ID: "p1"}, nil)
 		creator.EXPECT().
 			Create(gomock.Any(), src.ID, "ext-2", "second body", publishedAt, gomock.Nil(), gomock.Nil()).
@@ -310,14 +308,14 @@ func TestCollectUsecase_CollectItems(t *testing.T) {
 			{
 				ExternalID:  "ext-1",
 				Text:        "message body",
-				Author:      ptr("Bob"),
+				Author:      new("Bob"),
 				PublishedAt: publishedAt,
 				Metadata:    map[string]string{"title": "Msg"},
 			},
 		}
 
 		creator.EXPECT().
-			Create(gomock.Any(), src.ID, "ext-1", "message body", publishedAt, ptr("Bob"), map[string]string{"title": "Msg"}).
+			Create(gomock.Any(), src.ID, "ext-1", "message body", publishedAt, new("Bob"), map[string]string{"title": "Msg"}).
 			Return(biz.Post{ID: "p1"}, nil)
 
 		uc := biz.NewCollectUsecase(creator)

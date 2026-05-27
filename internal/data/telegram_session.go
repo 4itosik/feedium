@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -87,7 +88,7 @@ func (s *telegramSession) Run(ctx context.Context, handle func(context.Context, 
 	return client.Run(ctx, func(ctx context.Context) error {
 		status, err := client.Auth().Status(ctx)
 		if err != nil {
-			return err
+			return fmt.Errorf("telegram auth status: %w", err)
 		}
 		if !status.Authorized {
 			// First-time login needs a phone code — manual, AG-02. Never auto-login.
@@ -95,7 +96,7 @@ func (s *telegramSession) Run(ctx context.Context, handle func(context.Context, 
 		}
 		self, err := client.Self(ctx)
 		if err != nil {
-			return err
+			return fmt.Errorf("telegram self: %w", err)
 		}
 		// mgr.Run blocks until ctx is cancelled (then returns ctx.Err) or a fatal
 		// error occurs; it owns the update loop for the connection's lifetime.

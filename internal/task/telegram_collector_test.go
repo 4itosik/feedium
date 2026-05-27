@@ -52,6 +52,7 @@ func (r *recordingCollector) CollectItems(_ context.Context, s biz.Source, items
 func TestTelegramCollector_RoutesMessageToMatchingSource(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
+	// Arrange
 	chSrc := biz.Source{
 		ID:     "s-chan",
 		Type:   biz.SourceTypeTelegramChannel,
@@ -64,6 +65,7 @@ func TestTelegramCollector_RoutesMessageToMatchingSource(t *testing.T) {
 	}}
 	c := task.NewTelegramCollector(rec, session, &fakeSourceLister{items: []biz.Source{chSrc}}, testLogger())
 
+	// Act
 	require.NoError(t, c.Start(context.Background()))
 	gotOneCall := func() bool {
 		rec.mu.Lock()
@@ -73,6 +75,8 @@ func TestTelegramCollector_RoutesMessageToMatchingSource(t *testing.T) {
 	require.Eventually(t, gotOneCall, time.Second, 5*time.Millisecond)
 	require.NoError(t, c.Stop(context.Background()))
 
+	// Assert — only the message whose TgID matched a configured source is
+	// persisted; the unknown peer (999) is silently ignored.
 	require.Equal(t, "s-chan", rec.calls[0].source.ID)
 	require.Equal(t, "1", rec.calls[0].items[0].ExternalID)
 }

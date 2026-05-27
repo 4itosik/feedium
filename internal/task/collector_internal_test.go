@@ -199,7 +199,7 @@ func TestWebCollector_collectWithRetry(t *testing.T) {
 
 		// Assert
 		require.Error(t, err)
-		assert.ErrorIs(t, err, persistent)
+		require.ErrorIs(t, err, persistent)
 		assert.Equal(t, 2, fc.callCount())
 	})
 
@@ -215,7 +215,7 @@ func TestWebCollector_collectWithRetry(t *testing.T) {
 
 		// Assert
 		require.Error(t, err)
-		assert.ErrorIs(t, err, transient)
+		require.ErrorIs(t, err, transient)
 		assert.Equal(t, 1, fc.callCount(), "no retry once the context is cancelled (graceful shutdown)")
 	})
 }
@@ -265,4 +265,73 @@ func TestCollectAllOfType_ListFailureIsObservable(t *testing.T) {
 	// Assert
 	assert.Equal(t, 0, collectCalls, "no source is collected when listing fails")
 	assert.Positive(t, rec.count(), "listing failure is logged")
+}
+
+// itemCollectorStub records CollectItems calls and can return a scripted error,
+// so the Telegram push resilience branches can be exercised deterministically.
+type itemCollectorStub struct {
+	mu    sync.Mutex
+	err   error
+	calls int
+}
+
+func (s *itemCollectorStub) CollectItems(_ context.Context, _ biz.Source, _ []biz.CollectedItem) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.calls++
+	return s.err
+}
+
+func (s *itemCollectorStub) callCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.calls
+}
+
+// TestTelegramCollector_handle_ResolveErrorIsLoggedAndStreamContinues proves a
+// source-listing failure during resolve is logged and swallowed (handle returns
+// nil) so the push stream survives, and no persistence is attempted (REQ-07,
+// FM-T01). Without this, a transient List error would silently drop the message
+// with no regression guard.
+func TestTelegramCollector_handle_ResolveErrorIsLoggedAndStreamContinues(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	// Arrange
+	lister := &fakeSourceLister{errs: []error{errors.New("list down")}}
+	rec := &errCountHandler{}
+	collector := &itemCollectorStub{}
+	c := NewTelegramCollector(collector, nil, lister, slog.New(rec))
+
+	// Act
+	err := c.handle(context.Background(), biz.TelegramMessage{TgID: 1, Item: biz.CollectedItem{Text: "x"}})
+
+	// Assert
+	require.NoError(t, err, "a resolve error never breaks the push stream")
+	assert.Positive(t, rec.count(), "resolve failure is logged")
+	assert.Zero(t, collector.callCount(), "no persistence when the source cannot be resolved")
+}
+
+// TestTelegramCollector_handle_PersistErrorIsLoggedAndStreamContinues proves a
+// CollectItems failure is logged and swallowed (handle returns nil) so a persist
+// error never stops the push stream (REQ-07, FM-T01).
+func TestTelegramCollector_handle_PersistErrorIsLoggedAndStreamContinues(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	// Arrange
+	src := biz.Source{ID: "s1", Type: biz.SourceTypeTelegramChannel, Config: &biz.TelegramChannelConfig{TgID: 7}}
+	lister := &fakeSourceLister{pages: []biz.ListSourcesResult{{Items: []biz.Source{src}}}}
+	rec := &errCountHandler{}
+	collector := &itemCollectorStub{err: errors.New("db down")}
+	c := NewTelegramCollector(collector, nil, lister, slog.New(rec))
+
+	// Act
+	err := c.handle(
+		context.Background(),
+		biz.TelegramMessage{TgID: 7, Item: biz.CollectedItem{ExternalID: "1", Text: "hi"}},
+	)
+
+	// Assert
+	require.NoError(t, err, "a persist error never breaks the push stream")
+	assert.Equal(t, 1, collector.callCount(), "persistence was attempted on the resolved source")
+	assert.Positive(t, rec.count(), "persist failure is logged")
 }

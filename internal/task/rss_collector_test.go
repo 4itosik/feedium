@@ -96,10 +96,14 @@ func newCollectUsecase(d *data.Data) *biz.CollectUsecase {
 	))
 }
 
-func collectorsCfg(interval time.Duration) *conf.Collectors {
+// testPollInterval is the fast cadence used by the integration collectors so a
+// few cycles elapse within the test deadline without real waiting.
+const testPollInterval = 30 * time.Millisecond
+
+func collectorsCfg() *conf.Collectors {
 	return &conf.Collectors{
-		Rss: &conf.CollectorPoll{PollInterval: durationpb.New(interval)},
-		Web: &conf.CollectorPoll{PollInterval: durationpb.New(interval)},
+		Rss: &conf.CollectorPoll{PollInterval: durationpb.New(testPollInterval)},
+		Web: &conf.CollectorPoll{PollInterval: durationpb.New(testPollInterval)},
 	}
 }
 
@@ -161,7 +165,7 @@ func TestIntegration_RSSCollector_CollectsAndIsIdempotent(t *testing.T) {
 		newCollectUsecase(d),
 		data.NewRSSFetcher(),
 		biz.NewSourceUsecase(data.NewSourceRepo(d)),
-		collectorsCfg(30*time.Millisecond),
+		collectorsCfg(),
 		testLogger(),
 	)
 
@@ -222,7 +226,7 @@ func TestIntegration_RSSCollector_PersistsFieldsAndEnqueuesSummary(t *testing.T)
 		newCollectUsecase(d),
 		data.NewRSSFetcher(),
 		biz.NewSourceUsecase(data.NewSourceRepo(d)),
-		collectorsCfg(30*time.Millisecond),
+		collectorsCfg(),
 		testLogger(),
 	)
 
@@ -282,7 +286,7 @@ func TestIntegration_RSSCollector_IsolatesSourceFailure(t *testing.T) {
 		newCollectUsecase(d),
 		data.NewRSSFetcher(),
 		biz.NewSourceUsecase(data.NewSourceRepo(d)),
-		collectorsCfg(30*time.Millisecond),
+		collectorsCfg(),
 		slog.New(rec),
 	)
 

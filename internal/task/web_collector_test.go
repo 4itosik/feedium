@@ -59,7 +59,7 @@ func TestIntegration_WebCollector_CollectsArticle(t *testing.T) {
 		newCollectUsecase(d),
 		data.NewWebFetcher(),
 		biz.NewSourceUsecase(data.NewSourceRepo(d)),
-		collectorsCfg(30*time.Millisecond),
+		collectorsCfg(),
 		testLogger(),
 	)
 
@@ -98,7 +98,7 @@ func TestIntegration_WebCollector_SkipsExtractionFailure(t *testing.T) {
 		newCollectUsecase(d),
 		data.NewWebFetcher(),
 		biz.NewSourceUsecase(data.NewSourceRepo(d)),
-		collectorsCfg(30*time.Millisecond),
+		collectorsCfg(),
 		slog.New(rec),
 	)
 

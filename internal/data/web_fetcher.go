@@ -101,6 +101,7 @@ func extractArticle(root *html.Node) extractedArticle {
 	var visit func(*html.Node)
 	visit = func(n *html.Node) {
 		if n.Type == html.ElementNode {
+			//nolint:exhaustive // only title/p/meta carry article content; every other HTML element is intentionally ignored
 			switch n.DataAtom {
 			case atom.Title:
 				if result.title == "" {

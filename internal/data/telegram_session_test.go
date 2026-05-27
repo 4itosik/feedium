@@ -1,3 +1,4 @@
+//nolint:testpackage // test needs access to unexported functions authorFrom/chatTitleFrom
 package data
 
 import (
@@ -21,19 +22,19 @@ func TestAuthorFrom(t *testing.T) {
 			name: "username preferred",
 			msg:  &tg.Message{FromID: &tg.PeerUser{UserID: 7}},
 			ents: tg.Entities{Users: map[int64]*tg.User{7: {Username: "alice", FirstName: "Alice", LastName: "Smith"}}},
-			want: ptrString("alice"),
+			want: new("alice"),
 		},
 		{
 			name: "falls back to first+last name",
 			msg:  &tg.Message{FromID: &tg.PeerUser{UserID: 7}},
 			ents: tg.Entities{Users: map[int64]*tg.User{7: {FirstName: "Alice", LastName: "Smith"}}},
-			want: ptrString("Alice Smith"),
+			want: new("Alice Smith"),
 		},
 		{
 			name: "first name only",
 			msg:  &tg.Message{FromID: &tg.PeerUser{UserID: 7}},
 			ents: tg.Entities{Users: map[int64]*tg.User{7: {FirstName: "Alice"}}},
-			want: ptrString("Alice"),
+			want: new("Alice"),
 		},
 		{
 			name: "user with no name resolves to nil",
@@ -120,5 +121,3 @@ func TestChatTitleFrom(t *testing.T) {
 		})
 	}
 }
-
-func ptrString(s string) *string { return &s }

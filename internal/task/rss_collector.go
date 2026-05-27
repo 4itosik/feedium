@@ -106,7 +106,7 @@ func (c *RSSCollector) tick(ctx context.Context) {
 // runCollectLoop runs tick immediately and then once per interval until the
 // context is cancelled or done is closed (graceful shutdown via kratos). The
 // wait between ticks is taken from after(interval); production passes
-// time.After, tests inject a controllable channel (SC-08).
+// [time.After], tests inject a controllable channel (SC-08).
 func runCollectLoop(
 	ctx context.Context,
 	done <-chan struct{},

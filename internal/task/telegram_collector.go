@@ -55,9 +55,11 @@ func NewTelegramCollector(
 // in the data/ session impl and is gated by AG-02; tests inject a fake session.
 // startOnce makes a second Start a no-op (kratos calls Start once), so the first
 // session's cancel is never orphaned. Stop drains the goroutine via wg.Wait.
-func (c *TelegramCollector) Start(_ context.Context) error {
+// The session derives from the Start context (consistent with EventWorkerPool) so
+// a base-context cancellation also tears the session down even outside Stop.
+func (c *TelegramCollector) Start(ctx context.Context) error {
 	c.startOnce.Do(func() {
-		runCtx, cancel := context.WithCancel(context.Background())
+		runCtx, cancel := context.WithCancel(ctx)
 		c.cancel = cancel
 		c.wg.Go(func() {
 			if err := c.session.Run(runCtx, c.handle); err != nil && runCtx.Err() == nil {

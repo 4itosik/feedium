@@ -28,18 +28,25 @@ type CollectedItem struct {
 // data/ (RSS, web, Telegram); they map external responses to CollectedItem and
 // return errors without logging — logging and retry belong to task/ (CON-02,
 // INV-T04).
+//
+//nolint:iface // RSSFetcher/WebFetcher intentionally share this method set; named ports disambiguate Wire (DEC-06)
 type Fetcher interface {
 	Fetch(ctx context.Context, source Source) ([]CollectedItem, error)
 }
 
-// RSSFetcher and WebFetcher are per-type names for Fetcher. Their only purpose
-// is to disambiguate Wire injection: every fetcher satisfies the bare Fetcher
-// method set, so each collector binds to a distinct named port instead of an
-// ambiguous *biz.Fetcher (DEC-06). Behaviour is identical to Fetcher.
-type (
-	RSSFetcher interface{ Fetcher }
-	WebFetcher interface{ Fetcher }
-)
+// RSSFetcher is the per-type name for the RSS Fetcher. Its only purpose is to
+// disambiguate Wire injection: every fetcher satisfies the bare Fetcher method
+// set, so each collector binds to a distinct named port instead of an ambiguous
+// *biz.Fetcher (DEC-06). Behaviour is identical to Fetcher.
+//
+//nolint:iface // intentionally identical to Fetcher; named port disambiguates Wire (DEC-06)
+type RSSFetcher interface{ Fetcher }
+
+// WebFetcher is the per-type name for the web Fetcher. See RSSFetcher: identical
+// method set, distinct named port for Wire (DEC-06).
+//
+//nolint:iface // intentionally identical to Fetcher; named port disambiguates Wire (DEC-06)
+type WebFetcher interface{ Fetcher }
 
 // TelegramMessage is one new Telegram message yielded by the userbot session
 // (FT-009 DEC-08). It is transport-agnostic — no gotd types leak past data/.
