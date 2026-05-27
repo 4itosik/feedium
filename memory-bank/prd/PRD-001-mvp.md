@@ -98,16 +98,19 @@ Canonical-определения метрик MET-01..MET-05 — в [`../domain/
 
 ## Downstream Features
 
+> Нумерация отражает фактический каталог `../features/`. Идентификаторы стабильны: новые downstream-фичи получают следующий свободный номер, существующие не переиспользуются.
+
 | Feature | Why it exists | Status |
 |---|---|---|
-| `FT-001` Структура проекта | Базовый layout, DI, lifecycle | done (connect-go), переписывается на kratos |
-| `FT-002` Health Check | Проверка доступности сервиса | done (connect-go), переписывается на kratos |
-| `FT-003` Source Management API | CRUD источников | done (connect-go), переписывается на kratos |
-| `FT-004` Migrations in Binary | Goose-миграции в одном бинарнике | done (connect-go), переписывается на kratos |
-| `FT-005` Post Management API | CRUD постов с фильтрацией | done (connect-go), переписывается на kratos |
-| `FT-006` Дифференцированный процессинг | Self-contained vs cumulative режимы, outbox | done (connect-go), переписывается на kratos |
-| `FT-007` AI-суммаризация | LLM-генерация саммари через OpenRouter | done (connect-go), переписывается на kratos |
-| `FT-008` Коллекторы | Telegram userbot, веб-скрапер, RSS-парсер | planned |
-| `FT-009` AI-скоринг и ранжирование | Embeddings + интересы, score для постов | planned (подход не определён, см. OQ-01) |
-| `FT-010` React UI | Лента с саммари, фильтрация по источнику/времени | planned |
-| `FT-011` OpenClaw бот | Telegram-бот: дайджест, управление источниками | planned |
+| `FT-001` Структура проекта | Базовый layout (kratos), DI (Wire), lifecycle | done |
+| `FT-002` Health Check | Проверка доступности сервиса и БД, goose-миграции в бинарнике | done |
+| `FT-003` Source Management | CRUD источников (Telegram, RSS, веб) | done |
+| `FT-004` Posts Management | CRUD постов с фильтрацией по дате | done |
+| `FT-005` AI Summarization | Дифференцированный процессинг (self-contained / cumulative), outbox, LLM-генерация саммари | done |
+| `FT-006` CLI Client (feediumctl) | CLI для управления источниками | planned |
+| `FT-007` Scalable Event Processing | Pull-модель обработки summary-событий, горизонтальное масштабирование, per-source планировщик | done |
+| `FT-008` Summarization Prompts Split | Раздельные системные промпты для self-contained и cumulative режимов | done |
+| `FT-009` Content Collectors | Telegram userbot, веб-скрапер, RSS-парсер | done |
+| `FT-010` AI-скоринг и ранжирование | Embeddings + интересы, score для постов | planned (подход не определён, см. OQ-01) |
+| `FT-011` React UI | Лента с саммари, фильтрация по источнику/времени | planned |
+| `FT-012` OpenClaw бот | Telegram-бот: дайджест, управление источниками | planned |

@@ -10,7 +10,7 @@ derived_from:
   - ../../domain/architecture.md
   - ../../domain/glossary.md
 status: active
-delivery_status: in_progress
+delivery_status: done
 ---
 
 # FT-008: Summarization Prompts Split

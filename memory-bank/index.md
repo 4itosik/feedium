@@ -63,7 +63,7 @@ status: active
 
 ### [PRD — продуктовые инициативы](prd/index.md)
 
-- [PRD-001: Feedium MVP](prd/PRD-001-mvp.md) — MVP initiative: проблема (10+ источников, 80%+ шум), goals (G-01..03), scope (источники, коллекторы, AI-суммаризация, скоринг, React UI, OpenClaw), business rules (BR-01..06), risks (RISK-01..05), downstream features (FT-001..011). Читать перед началом работы над любой фичей.
+- [PRD-001: Feedium MVP](prd/PRD-001-mvp.md) — MVP initiative: проблема (10+ источников, 80%+ шум), goals (G-01..03), scope (источники, коллекторы, AI-суммаризация, скоринг, React UI, OpenClaw), business rules (BR-01..06), risks (RISK-01..05), downstream features (FT-001..012). Читать перед началом работы над любой фичей.
 
 ### [Features — feature packages](features/index.md)
 
@@ -74,6 +74,8 @@ status: active
 - [FT-005: AI Summarization](features/FT-005-ai-summarization/brief.md) — AI-суммаризация постов и переписок: self-contained (сразу) и cumulative (по крону), outbox-паттерн, LLM-генерация саммари. Артефакты: [brief](features/FT-005-ai-summarization/brief.md), [spec](features/FT-005-ai-summarization/spec.md), [implement](features/FT-005-ai-summarization/implement.md). Upstream: PRD-001. Delivery: done.
 
 > С FT-006 новые фичи ведутся по [feature-flow](flows/feature-flow.md): package = `README.md` + `feature.md` (+ `implementation-plan.md` после Design Ready). Формат brief+spec замёрз для FT-001..005.
+>
+> ⚠️ Перекрёстные feature-ID внутри замороженных доков FT-001..005 (например «коллекторы (FT-008)», «AI-скоринг (FT-009)», «UI (FT-010)») используют **до-ренумерационную** нумерацию и намеренно не правятся. Актуальная нумерация — в [PRD-001 → Downstream Features](prd/PRD-001-mvp.md#downstream-features): коллекторы = FT-009, AI-скоринг = FT-010, React UI = FT-011, OpenClaw = FT-012.
 
 ### [ADR — архитектурные решения](adr/index.md)
 
