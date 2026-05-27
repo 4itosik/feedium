@@ -63,9 +63,18 @@ func Write(w io.Writer, format string, msg proto.Message) error {
 }
 
 func writeJSON(w io.Writer, msg proto.Message) error {
-	// source list outputs a JSON array of items, not the full response envelope.
+	// source/post/summary list outputs JSON array of items, not the full response envelope.
 	if resp, ok := msg.(*feediumapi.V1ListSourcesResponse); ok {
 		return writeSourceListJSON(w, resp)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListPostsResponse); ok {
+		return writePostListJSON(w, resp)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListPostSummariesResponse); ok {
+		return writeSummaryListJSON(w, resp)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListSourceSummariesResponse); ok {
+		return writeSummaryListSourceJSON(w, resp)
 	}
 	data, err := jsonMarshaler().Marshal(msg)
 	if err != nil {
@@ -75,9 +84,33 @@ func writeJSON(w io.Writer, msg proto.Message) error {
 }
 
 func writeYAML(w io.Writer, msg proto.Message) error {
-	// source list outputs a YAML sequence, not the full response envelope.
+	// source/post/summary list outputs YAML sequence, not the full response envelope.
 	if resp, ok := msg.(*feediumapi.V1ListSourcesResponse); ok {
 		return writeSourceListYAML(w, resp)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListPostsResponse); ok {
+		items := resp.GetItems()
+		itemsIface := make([]proto.Message, len(items))
+		for i, item := range items {
+			itemsIface[i] = item
+		}
+		return writeItemsAsYAML(w, itemsIface)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListPostSummariesResponse); ok {
+		items := resp.GetSummaries()
+		itemsIface := make([]proto.Message, len(items))
+		for i, item := range items {
+			itemsIface[i] = item
+		}
+		return writeItemsAsYAML(w, itemsIface)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListSourceSummariesResponse); ok {
+		items := resp.GetSummaries()
+		itemsIface := make([]proto.Message, len(items))
+		for i, item := range items {
+			itemsIface[i] = item
+		}
+		return writeItemsAsYAML(w, itemsIface)
 	}
 	// Use a deterministic, non-multiline JSON representation as the input to
 	// JSONToYAML. YAML key order is therefore driven by JSONToYAML itself,
@@ -109,6 +142,16 @@ func writeTable(w io.Writer, msg proto.Message) error {
 		return writeSourceSingleTable(w, m.GetSource())
 	case *feediumapi.V1UpdateSourceResponse:
 		return writeSourceSingleTable(w, m.GetSource())
+	case *feediumapi.V1ListPostsResponse:
+		return writePostListTable(w, m)
+	case *feediumapi.V1GetPostResponse:
+		return writePostSingleTable(w, m.GetPost())
+	case *feediumapi.V1ListPostSummariesResponse:
+		return writeSummaryListTable(w, m)
+	case *feediumapi.V1ListSourceSummariesResponse:
+		return writeSummaryListSourceTable(w, m)
+	case *feediumapi.V1GetSummaryResponse:
+		return writeSummarySingleTable(w, m.GetSummary())
 	default:
 		// Unreachable: every proto message rendered by CLI is listed
 		// above. Panicking preserves the NFR-03 prefix contract.
@@ -183,6 +226,29 @@ func WriteDelete(w io.Writer, format, id string) error {
 		// Unreachable: resolve.ValidateOutput guards this path.
 		panic(fmt.Sprintf("render: unreachable format %q", format))
 	}
+}
+
+// writeItemsAsYAML converts a slice of proto messages to YAML via JSON array format.
+// Handles empty list as "[]".
+func writeItemsAsYAML(w io.Writer, items []proto.Message) error {
+	if len(items) == 0 {
+		_, err := fmt.Fprintln(w, "[]")
+		return err
+	}
+	parts := make([]string, len(items))
+	for i, item := range items {
+		data, err := listItemMarshaler().Marshal(item)
+		if err != nil {
+			return err
+		}
+		parts[i] = string(data)
+	}
+	jsonArray := fmt.Sprintf("[%s]", strings.Join(parts, ","))
+	yamlOut, err := yaml.JSONToYAML([]byte(jsonArray))
+	if err != nil {
+		return err
+	}
+	return writeExactlyOneTrailingNewline(w, yamlOut)
 }
 
 // writeExactlyOneTrailingNewline writes data to w, ensuring the final byte

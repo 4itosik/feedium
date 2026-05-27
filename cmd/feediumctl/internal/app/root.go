@@ -31,6 +31,8 @@ func NewRootCommand() *cobra.Command {
 
 	cmd.AddCommand(newHealthCommand(cmd, &g))
 	cmd.AddCommand(newSourceCommand(cmd, &g, defaultSourceClientFactory))
+	cmd.AddCommand(newPostCommand(cmd, &g, defaultPostClientFactory))
+	cmd.AddCommand(newSummaryCommand(cmd, &g, defaultSummaryClientFactory))
 
 	return cmd
 }

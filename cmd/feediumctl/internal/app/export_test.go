@@ -79,3 +79,69 @@ func FactoryFromHealth(client feediumapi.HealthServiceClient) HealthClientFactor
 		return client, func() error { return nil }, nil
 	}
 }
+
+// ── Post client DI ─────────────────────────────────────────────────────────
+
+// PostClientFactory is the exported alias of the unexported postClientFactory
+// type, allowing tests to inject gomock clients.
+type PostClientFactory = postClientFactory
+
+// NewRootCommandWithPost creates a root command whose "post" subcommands
+// use the provided factory. Mirrors NewRootCommandWithHealth.
+func NewRootCommandWithPost(factory PostClientFactory) *cobra.Command {
+	var g globalFlags
+	cmd := &cobra.Command{
+		Use:           "feediumctl",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	cmd.PersistentFlags().StringVar(&g.endpoint, "endpoint", "", "")
+	cmd.PersistentFlags().StringVarP(&g.output, "output", "o", "", "")
+	cmd.PersistentFlags().StringVar(&g.timeout, "timeout", "", "")
+	cmd.PersistentFlags().StringVar(&g.pageSize, "page-size", "", "")
+	cmd.PersistentFlags().StringVar(&g.config, "config", "", "")
+
+	cmd.AddCommand(newPostCommand(cmd, &g, factory))
+	return cmd
+}
+
+// FactoryFromPost wraps any PostServiceClient as a factory that returns it
+// for every endpoint (no real connection opened).
+func FactoryFromPost(client feediumapi.PostServiceClient) PostClientFactory {
+	return func(string) (feediumapi.PostServiceClient, func() error, error) {
+		return client, func() error { return nil }, nil
+	}
+}
+
+// ── Summary client DI ──────────────────────────────────────────────────────
+
+// SummaryClientFactory is the exported alias of the unexported summaryClientFactory
+// type, allowing tests to inject gomock clients.
+type SummaryClientFactory = summaryClientFactory
+
+// NewRootCommandWithSummary creates a root command whose "summary" subcommands
+// use the provided factory. Mirrors NewRootCommandWithHealth.
+func NewRootCommandWithSummary(factory SummaryClientFactory) *cobra.Command {
+	var g globalFlags
+	cmd := &cobra.Command{
+		Use:           "feediumctl",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	cmd.PersistentFlags().StringVar(&g.endpoint, "endpoint", "", "")
+	cmd.PersistentFlags().StringVarP(&g.output, "output", "o", "", "")
+	cmd.PersistentFlags().StringVar(&g.timeout, "timeout", "", "")
+	cmd.PersistentFlags().StringVar(&g.pageSize, "page-size", "", "")
+	cmd.PersistentFlags().StringVar(&g.config, "config", "", "")
+
+	cmd.AddCommand(newSummaryCommand(cmd, &g, factory))
+	return cmd
+}
+
+// FactoryFromSummary wraps any SummaryServiceClient as a factory that returns it
+// for every endpoint (no real connection opened).
+func FactoryFromSummary(client feediumapi.SummaryServiceClient) SummaryClientFactory {
+	return func(string) (feediumapi.SummaryServiceClient, func() error, error) {
+		return client, func() error { return nil }, nil
+	}
+}
