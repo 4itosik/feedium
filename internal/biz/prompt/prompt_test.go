@@ -1,7 +1,7 @@
+//nolint:testpackage // test needs access to unexported embeddedResolver/validate and the embedded bodies
 package prompt
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
@@ -46,7 +46,7 @@ func TestResolver_For_UnknownMode(t *testing.T) {
 	body, err := r.For("bogus-mode")
 	assert.Empty(t, body)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, biz.ErrUnknownSummaryPromptMode),
+	assert.ErrorIs(t, err, biz.ErrUnknownSummaryPromptMode,
 		"unknown mode must surface biz.ErrUnknownSummaryPromptMode (errors.Is)")
 }
 
@@ -55,6 +55,7 @@ func TestResolver_Validate_MissingMode(t *testing.T) {
 
 	// Build a resolver missing one of the modes from AllProcessingModes().
 	r := &embeddedResolver{
+		//nolint:exhaustive // intentionally omits ProcessingModeCumulative to exercise the missing-mode path
 		bodies: map[biz.ProcessingMode]string{
 			biz.ProcessingModeSelfContained: "x",
 		},
@@ -97,6 +98,7 @@ func TestNewResolver_PanicsOnDriftingState(t *testing.T) {
 	}, "empty body must panic")
 
 	assert.Panics(t, func() {
+		//nolint:exhaustive // intentionally omits ProcessingModeCumulative to exercise the missing-mode panic
 		construct(map[biz.ProcessingMode]string{
 			biz.ProcessingModeSelfContained: "ok",
 		})

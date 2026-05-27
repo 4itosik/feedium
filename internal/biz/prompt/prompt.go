@@ -30,7 +30,7 @@ type embeddedResolver struct {
 }
 
 // NewResolver returns the production resolver. It panics if any prompt
-// body is empty after strings.TrimSpace, or if its internal map does not
+// body is empty after [strings.TrimSpace], or if its internal map does not
 // cover every biz.ProcessingMode in biz.AllProcessingModes(). Both
 // failures must be loud at process startup, never silent at event time.
 //

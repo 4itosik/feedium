@@ -164,7 +164,16 @@ func TestSummaryUsecase_PromptByMode_SelfContained(t *testing.T) {
 			return s, nil
 		})
 
-	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, postRepo, llm, prompts, txMgr, shortTimeoutSummaryCfg())
+	uc := biz.NewSummaryUsecase(
+		summaryRepo,
+		outboxRepo,
+		sourceRepo,
+		postRepo,
+		llm,
+		prompts,
+		txMgr,
+		shortTimeoutSummaryCfg(),
+	)
 
 	id, err := uc.ProcessPostEvent(context.Background(), event)
 	require.NoError(t, err)
@@ -221,7 +230,16 @@ func TestSummaryUsecase_PromptByMode_Cumulative(t *testing.T) {
 			return s, nil
 		})
 
-	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, postRepo, llm, prompts, txMgr, shortTimeoutSummaryCfg())
+	uc := biz.NewSummaryUsecase(
+		summaryRepo,
+		outboxRepo,
+		sourceRepo,
+		postRepo,
+		llm,
+		prompts,
+		txMgr,
+		shortTimeoutSummaryCfg(),
+	)
 
 	id, err := uc.ProcessSourceEvent(context.Background(), event)
 	require.NoError(t, err)
@@ -277,7 +295,16 @@ func TestSummaryUsecase_PromptByMode_Isolation(t *testing.T) {
 						return s, nil
 					})
 
-				uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, postRepo, llm, prompts, txMgr, shortTimeoutSummaryCfg())
+				uc := biz.NewSummaryUsecase(
+					summaryRepo,
+					outboxRepo,
+					sourceRepo,
+					postRepo,
+					llm,
+					prompts,
+					txMgr,
+					shortTimeoutSummaryCfg(),
+				)
 				_, err := uc.ProcessPostEvent(context.Background(), biz.SummaryEvent{
 					ID:        "e",
 					PostID:    &postID,
@@ -321,7 +348,16 @@ func TestSummaryUsecase_PromptByMode_Isolation(t *testing.T) {
 						return s, nil
 					})
 
-				uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, postRepo, llm, prompts, txMgr, shortTimeoutSummaryCfg())
+				uc := biz.NewSummaryUsecase(
+					summaryRepo,
+					outboxRepo,
+					sourceRepo,
+					postRepo,
+					llm,
+					prompts,
+					txMgr,
+					shortTimeoutSummaryCfg(),
+				)
 				_, err := uc.ProcessSourceEvent(context.Background(), biz.SummaryEvent{
 					ID:        "e",
 					SourceID:  "s",
@@ -359,7 +395,16 @@ func TestSummaryUsecase_PromptResolveError_IsTerminal_SelfContained(t *testing.T
 	prompts.EXPECT().For(biz.ProcessingModeSelfContained).
 		Return("", biz.ErrUnknownSummaryPromptMode)
 
-	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, postRepo, llm, prompts, txMgr, shortTimeoutSummaryCfg())
+	uc := biz.NewSummaryUsecase(
+		summaryRepo,
+		outboxRepo,
+		sourceRepo,
+		postRepo,
+		llm,
+		prompts,
+		txMgr,
+		shortTimeoutSummaryCfg(),
+	)
 
 	_, err := uc.ProcessPostEvent(context.Background(), biz.SummaryEvent{
 		ID:        "e",
@@ -369,7 +414,7 @@ func TestSummaryUsecase_PromptResolveError_IsTerminal_SelfContained(t *testing.T
 		CreatedAt: time.Now(),
 	})
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, biz.ErrUnknownSummaryPromptMode),
+	assert.ErrorIs(t, err, biz.ErrUnknownSummaryPromptMode,
 		"resolver failure must propagate as biz.ErrUnknownSummaryPromptMode (errors.Is)")
 }
 

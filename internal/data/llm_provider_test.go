@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -71,12 +70,14 @@ func TestOpenRouterProvider_Summarize_SendsSystemPrompt(t *testing.T) {
 				content0 string
 				role1    string
 				content1 string
-				calls    int32
+				calls    atomic.Int32
 			}
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				atomic.AddInt32(&captured.calls, 1)
+				captured.calls.Add(1)
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				if !assert.NoError(t, err) {
+					return
+				}
 				var req struct {
 					Model    string `json:"model"`
 					Messages []struct {
@@ -84,8 +85,12 @@ func TestOpenRouterProvider_Summarize_SendsSystemPrompt(t *testing.T) {
 						Content string `json:"content"`
 					} `json:"messages"`
 				}
-				require.NoError(t, json.Unmarshal(body, &req))
-				require.Len(t, req.Messages, 2)
+				if !assert.NoError(t, json.Unmarshal(body, &req)) {
+					return
+				}
+				if !assert.Len(t, req.Messages, 2) {
+					return
+				}
 				captured.role0 = req.Messages[0].Role
 				captured.content0 = req.Messages[0].Content
 				captured.role1 = req.Messages[1].Role
@@ -117,9 +122,9 @@ func TestOpenRouterProvider_Summarize_SendsSystemPrompt(t *testing.T) {
 func TestOpenRouterProvider_Summarize_EmptySystemPrompt_ReturnsError(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
-	var hits int32
+	var hits atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-		atomic.AddInt32(&hits, 1)
+		hits.Add(1)
 	}))
 	defer srv.Close()
 
@@ -127,8 +132,8 @@ func TestOpenRouterProvider_Summarize_EmptySystemPrompt_ReturnsError(t *testing.
 	out, err := p.Summarize(context.Background(), "", "anything")
 	require.Error(t, err)
 	assert.Empty(t, out)
-	assert.True(t, strings.Contains(err.Error(), "empty system prompt"),
+	assert.Contains(t, err.Error(), "empty system prompt",
 		"error must explicitly mention empty system prompt")
-	assert.Equal(t, int32(0), atomic.LoadInt32(&hits),
+	assert.Equal(t, int32(0), hits.Load(),
 		"no HTTP request must fire when systemPrompt is empty")
 }
