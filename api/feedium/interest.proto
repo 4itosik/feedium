@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package feedium;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "feedium/api/feedium;feedium";
+
+// Interest is an instance-global topic of interest (FT-010 CTR-01/CTR-12). The
+// embedding cached for scoring is internal and not exposed on the wire.
+message Interest {
+  string id = 1;
+  string topic = 2;
+  string model = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message V1CreateInterestRequest {
+  string topic = 1;
+}
+
+message V1CreateInterestResponse {
+  Interest interest = 1;
+}
+
+message V1UpdateInterestRequest {
+  string id = 1;
+  string topic = 2;
+}
+
+message V1UpdateInterestResponse {
+  Interest interest = 1;
+}
+
+message V1DeleteInterestRequest {
+  string id = 1;
+}
+
+message V1DeleteInterestResponse {
+}
+
+message V1ListInterestsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message V1ListInterestsResponse {
+  repeated Interest items = 1;
+  string next_page_token = 2;
+}
+
+message V1GetInterestRequest {
+  string id = 1;
+}
+
+message V1GetInterestResponse {
+  Interest interest = 1;
+}
+
+service InterestService {
+  rpc V1CreateInterest(V1CreateInterestRequest) returns (V1CreateInterestResponse) {
+    option (google.api.http) = {
+      post: "/v1/interests"
+      body: "*"
+    };
+  }
+
+  rpc V1UpdateInterest(V1UpdateInterestRequest) returns (V1UpdateInterestResponse) {
+    option (google.api.http) = {
+      put: "/v1/interests/{id}"
+      body: "*"
+    };
+  }
+
+  rpc V1DeleteInterest(V1DeleteInterestRequest) returns (V1DeleteInterestResponse) {
+    option (google.api.http) = {
+      delete: "/v1/interests/{id}"
+    };
+  }
+
+  rpc V1ListInterests(V1ListInterestsRequest) returns (V1ListInterestsResponse) {
+    option (google.api.http) = {
+      get: "/v1/interests"
+    };
+  }
+
+  rpc V1GetInterest(V1GetInterestRequest) returns (V1GetInterestResponse) {
+    option (google.api.http) = {
+      get: "/v1/interests/{id}"
+    };
+  }
+}

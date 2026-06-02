@@ -9,6 +9,18 @@ import (
 	"github.com/4itosik/feedium/internal/ent"
 )
 
+// The InterestFunc type is an adapter to allow the use of ordinary
+// function as Interest mutator.
+type InterestFunc func(context.Context, *ent.InterestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InterestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InterestMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InterestMutation", m)
+}
+
 // The PostFunc type is an adapter to allow the use of ordinary
 // function as Post mutator.
 type PostFunc func(context.Context, *ent.PostMutation) (ent.Value, error)
@@ -19,6 +31,30 @@ func (f PostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PostMutation", m)
+}
+
+// The ScoreFunc type is an adapter to allow the use of ordinary
+// function as Score mutator.
+type ScoreFunc func(context.Context, *ent.ScoreMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ScoreFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ScoreMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScoreMutation", m)
+}
+
+// The ScoreEventFunc type is an adapter to allow the use of ordinary
+// function as ScoreEvent mutator.
+type ScoreEventFunc func(context.Context, *ent.ScoreEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ScoreEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ScoreEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScoreEventMutation", m)
 }
 
 // The SourceFunc type is an adapter to allow the use of ordinary

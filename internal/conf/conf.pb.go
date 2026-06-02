@@ -28,6 +28,7 @@ type Bootstrap struct {
 	Data          *Data                  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 	Summary       *Summary               `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
 	Collectors    *Collectors            `protobuf:"bytes,4,opt,name=collectors,proto3" json:"collectors,omitempty"`
+	Scoring       *Scoring               `protobuf:"bytes,5,opt,name=scoring,proto3" json:"scoring,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -86,6 +87,13 @@ func (x *Bootstrap) GetSummary() *Summary {
 func (x *Bootstrap) GetCollectors() *Collectors {
 	if x != nil {
 		return x.Collectors
+	}
+	return nil
+}
+
+func (x *Bootstrap) GetScoring() *Scoring {
+	if x != nil {
+		return x.Scoring
 	}
 	return nil
 }
@@ -930,6 +938,418 @@ func (x *SummaryOutbox) GetEventTtl() *durationpb.Duration {
 	return nil
 }
 
+// Scoring holds the FT-010 AI scoring configuration: the score worker pool,
+// the due-post scheduler, the stuck-event reaper, the embedding provider and the
+// default ranked-feed threshold. Worker/scheduler/reaper mirror the Summary
+// conventions (DEC-07).
+type Scoring struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Worker           *ScoringWorker         `protobuf:"bytes,1,opt,name=worker,proto3" json:"worker,omitempty"`
+	Scheduler        *ScoringScheduler      `protobuf:"bytes,2,opt,name=scheduler,proto3" json:"scheduler,omitempty"`
+	Reaper           *ScoringReaper         `protobuf:"bytes,3,opt,name=reaper,proto3" json:"reaper,omitempty"`
+	Embedding        *ScoringEmbedding      `protobuf:"bytes,4,opt,name=embedding,proto3" json:"embedding,omitempty"`
+	DefaultThreshold float64                `protobuf:"fixed64,5,opt,name=default_threshold,json=defaultThreshold,proto3" json:"default_threshold,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *Scoring) Reset() {
+	*x = Scoring{}
+	mi := &file_internal_conf_conf_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Scoring) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Scoring) ProtoMessage() {}
+
+func (x *Scoring) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Scoring.ProtoReflect.Descriptor instead.
+func (*Scoring) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *Scoring) GetWorker() *ScoringWorker {
+	if x != nil {
+		return x.Worker
+	}
+	return nil
+}
+
+func (x *Scoring) GetScheduler() *ScoringScheduler {
+	if x != nil {
+		return x.Scheduler
+	}
+	return nil
+}
+
+func (x *Scoring) GetReaper() *ScoringReaper {
+	if x != nil {
+		return x.Reaper
+	}
+	return nil
+}
+
+func (x *Scoring) GetEmbedding() *ScoringEmbedding {
+	if x != nil {
+		return x.Embedding
+	}
+	return nil
+}
+
+func (x *Scoring) GetDefaultThreshold() float64 {
+	if x != nil {
+		return x.DefaultThreshold
+	}
+	return 0
+}
+
+type ScoringWorker struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	PollInterval      *durationpb.Duration   `protobuf:"bytes,1,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"`
+	Concurrency       int32                  `protobuf:"varint,2,opt,name=concurrency,proto3" json:"concurrency,omitempty"`
+	LeaseTtl          *durationpb.Duration   `protobuf:"bytes,3,opt,name=lease_ttl,json=leaseTtl,proto3" json:"lease_ttl,omitempty"`
+	HeartbeatInterval *durationpb.Duration   `protobuf:"bytes,4,opt,name=heartbeat_interval,json=heartbeatInterval,proto3" json:"heartbeat_interval,omitempty"`
+	GracefulTimeout   *durationpb.Duration   `protobuf:"bytes,5,opt,name=graceful_timeout,json=gracefulTimeout,proto3" json:"graceful_timeout,omitempty"`
+	MaxAttempts       int32                  `protobuf:"varint,6,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
+	BackoffBase       *durationpb.Duration   `protobuf:"bytes,7,opt,name=backoff_base,json=backoffBase,proto3" json:"backoff_base,omitempty"`
+	BackoffMax        *durationpb.Duration   `protobuf:"bytes,8,opt,name=backoff_max,json=backoffMax,proto3" json:"backoff_max,omitempty"`
+	EventTtl          *durationpb.Duration   `protobuf:"bytes,9,opt,name=event_ttl,json=eventTtl,proto3" json:"event_ttl,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ScoringWorker) Reset() {
+	*x = ScoringWorker{}
+	mi := &file_internal_conf_conf_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScoringWorker) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoringWorker) ProtoMessage() {}
+
+func (x *ScoringWorker) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScoringWorker.ProtoReflect.Descriptor instead.
+func (*ScoringWorker) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ScoringWorker) GetPollInterval() *durationpb.Duration {
+	if x != nil {
+		return x.PollInterval
+	}
+	return nil
+}
+
+func (x *ScoringWorker) GetConcurrency() int32 {
+	if x != nil {
+		return x.Concurrency
+	}
+	return 0
+}
+
+func (x *ScoringWorker) GetLeaseTtl() *durationpb.Duration {
+	if x != nil {
+		return x.LeaseTtl
+	}
+	return nil
+}
+
+func (x *ScoringWorker) GetHeartbeatInterval() *durationpb.Duration {
+	if x != nil {
+		return x.HeartbeatInterval
+	}
+	return nil
+}
+
+func (x *ScoringWorker) GetGracefulTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.GracefulTimeout
+	}
+	return nil
+}
+
+func (x *ScoringWorker) GetMaxAttempts() int32 {
+	if x != nil {
+		return x.MaxAttempts
+	}
+	return 0
+}
+
+func (x *ScoringWorker) GetBackoffBase() *durationpb.Duration {
+	if x != nil {
+		return x.BackoffBase
+	}
+	return nil
+}
+
+func (x *ScoringWorker) GetBackoffMax() *durationpb.Duration {
+	if x != nil {
+		return x.BackoffMax
+	}
+	return nil
+}
+
+func (x *ScoringWorker) GetEventTtl() *durationpb.Duration {
+	if x != nil {
+		return x.EventTtl
+	}
+	return nil
+}
+
+type ScoringScheduler struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PollInterval  *durationpb.Duration   `protobuf:"bytes,1,opt,name=poll_interval,json=pollInterval,proto3" json:"poll_interval,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScoringScheduler) Reset() {
+	*x = ScoringScheduler{}
+	mi := &file_internal_conf_conf_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScoringScheduler) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoringScheduler) ProtoMessage() {}
+
+func (x *ScoringScheduler) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScoringScheduler.ProtoReflect.Descriptor instead.
+func (*ScoringScheduler) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ScoringScheduler) GetPollInterval() *durationpb.Duration {
+	if x != nil {
+		return x.PollInterval
+	}
+	return nil
+}
+
+type ScoringReaper struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interval      *durationpb.Duration   `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	Grace         *durationpb.Duration   `protobuf:"bytes,2,opt,name=grace,proto3" json:"grace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScoringReaper) Reset() {
+	*x = ScoringReaper{}
+	mi := &file_internal_conf_conf_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScoringReaper) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoringReaper) ProtoMessage() {}
+
+func (x *ScoringReaper) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScoringReaper.ProtoReflect.Descriptor instead.
+func (*ScoringReaper) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ScoringReaper) GetInterval() *durationpb.Duration {
+	if x != nil {
+		return x.Interval
+	}
+	return nil
+}
+
+func (x *ScoringReaper) GetGrace() *durationpb.Duration {
+	if x != nil {
+		return x.Grace
+	}
+	return nil
+}
+
+type ScoringEmbedding struct {
+	state         protoimpl.MessageState               `protogen:"open.v1"`
+	Timeout       *durationpb.Duration                 `protobuf:"bytes,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	MaxRetries    int32                                `protobuf:"varint,2,opt,name=max_retries,json=maxRetries,proto3" json:"max_retries,omitempty"`
+	Provider      string                               `protobuf:"bytes,3,opt,name=provider,proto3" json:"provider,omitempty"`
+	Providers     map[string]*ScoringEmbeddingProvider `protobuf:"bytes,4,rep,name=providers,proto3" json:"providers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScoringEmbedding) Reset() {
+	*x = ScoringEmbedding{}
+	mi := &file_internal_conf_conf_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScoringEmbedding) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoringEmbedding) ProtoMessage() {}
+
+func (x *ScoringEmbedding) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScoringEmbedding.ProtoReflect.Descriptor instead.
+func (*ScoringEmbedding) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ScoringEmbedding) GetTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.Timeout
+	}
+	return nil
+}
+
+func (x *ScoringEmbedding) GetMaxRetries() int32 {
+	if x != nil {
+		return x.MaxRetries
+	}
+	return 0
+}
+
+func (x *ScoringEmbedding) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *ScoringEmbedding) GetProviders() map[string]*ScoringEmbeddingProvider {
+	if x != nil {
+		return x.Providers
+	}
+	return nil
+}
+
+type ScoringEmbeddingProvider struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApiKey        string                 `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	BaseUrl       string                 `protobuf:"bytes,2,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
+	Model         string                 `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScoringEmbeddingProvider) Reset() {
+	*x = ScoringEmbeddingProvider{}
+	mi := &file_internal_conf_conf_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScoringEmbeddingProvider) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScoringEmbeddingProvider) ProtoMessage() {}
+
+func (x *ScoringEmbeddingProvider) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_conf_conf_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScoringEmbeddingProvider.ProtoReflect.Descriptor instead.
+func (*ScoringEmbeddingProvider) Descriptor() ([]byte, []int) {
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ScoringEmbeddingProvider) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
+	}
+	return ""
+}
+
+func (x *ScoringEmbeddingProvider) GetBaseUrl() string {
+	if x != nil {
+		return x.BaseUrl
+	}
+	return ""
+}
+
+func (x *ScoringEmbeddingProvider) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
 // Collectors holds the collection configuration for the FT-009 content
 // collectors. RSS and web use a poll interval (REQ-08, OQ-02); the Telegram
 // collector uses a push model (gotd updates.Manager, DEC-08) and carries only
@@ -945,7 +1365,7 @@ type Collectors struct {
 
 func (x *Collectors) Reset() {
 	*x = Collectors{}
-	mi := &file_internal_conf_conf_proto_msgTypes[15]
+	mi := &file_internal_conf_conf_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -957,7 +1377,7 @@ func (x *Collectors) String() string {
 func (*Collectors) ProtoMessage() {}
 
 func (x *Collectors) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_conf_conf_proto_msgTypes[15]
+	mi := &file_internal_conf_conf_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -970,7 +1390,7 @@ func (x *Collectors) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Collectors.ProtoReflect.Descriptor instead.
 func (*Collectors) Descriptor() ([]byte, []int) {
-	return file_internal_conf_conf_proto_rawDescGZIP(), []int{15}
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Collectors) GetRss() *CollectorPoll {
@@ -1003,7 +1423,7 @@ type CollectorPoll struct {
 
 func (x *CollectorPoll) Reset() {
 	*x = CollectorPoll{}
-	mi := &file_internal_conf_conf_proto_msgTypes[16]
+	mi := &file_internal_conf_conf_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1015,7 +1435,7 @@ func (x *CollectorPoll) String() string {
 func (*CollectorPoll) ProtoMessage() {}
 
 func (x *CollectorPoll) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_conf_conf_proto_msgTypes[16]
+	mi := &file_internal_conf_conf_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1028,7 +1448,7 @@ func (x *CollectorPoll) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectorPoll.ProtoReflect.Descriptor instead.
 func (*CollectorPoll) Descriptor() ([]byte, []int) {
-	return file_internal_conf_conf_proto_rawDescGZIP(), []int{16}
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CollectorPoll) GetPollInterval() *durationpb.Duration {
@@ -1057,7 +1477,7 @@ type TelegramCollector struct {
 
 func (x *TelegramCollector) Reset() {
 	*x = TelegramCollector{}
-	mi := &file_internal_conf_conf_proto_msgTypes[17]
+	mi := &file_internal_conf_conf_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1069,7 +1489,7 @@ func (x *TelegramCollector) String() string {
 func (*TelegramCollector) ProtoMessage() {}
 
 func (x *TelegramCollector) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_conf_conf_proto_msgTypes[17]
+	mi := &file_internal_conf_conf_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1082,7 +1502,7 @@ func (x *TelegramCollector) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TelegramCollector.ProtoReflect.Descriptor instead.
 func (*TelegramCollector) Descriptor() ([]byte, []int) {
-	return file_internal_conf_conf_proto_rawDescGZIP(), []int{17}
+	return file_internal_conf_conf_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *TelegramCollector) GetApiId() int32 {
@@ -1117,7 +1537,7 @@ var File_internal_conf_conf_proto protoreflect.FileDescriptor
 
 const file_internal_conf_conf_proto_rawDesc = "" +
 	"\n" +
-	"\x18internal/conf/conf.proto\x12\x04conf\x1a\x1egoogle/protobuf/duration.proto\"\xac\x01\n" +
+	"\x18internal/conf/conf.proto\x12\x04conf\x1a\x1egoogle/protobuf/duration.proto\"\xd5\x01\n" +
 	"\tBootstrap\x12$\n" +
 	"\x06server\x18\x01 \x01(\v2\f.conf.ServerR\x06server\x12\x1e\n" +
 	"\x04data\x18\x02 \x01(\v2\n" +
@@ -1125,7 +1545,8 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\asummary\x18\x03 \x01(\v2\r.conf.SummaryR\asummary\x120\n" +
 	"\n" +
 	"collectors\x18\x04 \x01(\v2\x10.conf.CollectorsR\n" +
-	"collectors\"H\n" +
+	"collectors\x12'\n" +
+	"\ascoring\x18\x05 \x01(\v2\r.conf.ScoringR\ascoring\"H\n" +
 	"\x06Server\x12\x1e\n" +
 	"\x04http\x18\x01 \x01(\v2\n" +
 	".conf.HTTPR\x04http\x12\x1e\n" +
@@ -1192,7 +1613,42 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"max_window\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\tmaxWindow\x12&\n" +
 	"\x0fmax_input_chars\x18\x02 \x01(\x05R\rmaxInputChars\"G\n" +
 	"\rSummaryOutbox\x126\n" +
-	"\tevent_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\beventTtl\"\x8f\x01\n" +
+	"\tevent_ttl\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\beventTtl\"\xfc\x01\n" +
+	"\aScoring\x12+\n" +
+	"\x06worker\x18\x01 \x01(\v2\x13.conf.ScoringWorkerR\x06worker\x124\n" +
+	"\tscheduler\x18\x02 \x01(\v2\x16.conf.ScoringSchedulerR\tscheduler\x12+\n" +
+	"\x06reaper\x18\x03 \x01(\v2\x13.conf.ScoringReaperR\x06reaper\x124\n" +
+	"\tembedding\x18\x04 \x01(\v2\x16.conf.ScoringEmbeddingR\tembedding\x12+\n" +
+	"\x11default_threshold\x18\x05 \x01(\x01R\x10defaultThreshold\"\x8e\x04\n" +
+	"\rScoringWorker\x12>\n" +
+	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\x12 \n" +
+	"\vconcurrency\x18\x02 \x01(\x05R\vconcurrency\x126\n" +
+	"\tlease_ttl\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bleaseTtl\x12H\n" +
+	"\x12heartbeat_interval\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x11heartbeatInterval\x12D\n" +
+	"\x10graceful_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\x0fgracefulTimeout\x12!\n" +
+	"\fmax_attempts\x18\x06 \x01(\x05R\vmaxAttempts\x12<\n" +
+	"\fbackoff_base\x18\a \x01(\v2\x19.google.protobuf.DurationR\vbackoffBase\x12:\n" +
+	"\vbackoff_max\x18\b \x01(\v2\x19.google.protobuf.DurationR\n" +
+	"backoffMax\x126\n" +
+	"\tevent_ttl\x18\t \x01(\v2\x19.google.protobuf.DurationR\beventTtl\"R\n" +
+	"\x10ScoringScheduler\x12>\n" +
+	"\rpoll_interval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\"w\n" +
+	"\rScoringReaper\x125\n" +
+	"\binterval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\binterval\x12/\n" +
+	"\x05grace\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x05grace\"\xa7\x02\n" +
+	"\x10ScoringEmbedding\x123\n" +
+	"\atimeout\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12\x1f\n" +
+	"\vmax_retries\x18\x02 \x01(\x05R\n" +
+	"maxRetries\x12\x1a\n" +
+	"\bprovider\x18\x03 \x01(\tR\bprovider\x12C\n" +
+	"\tproviders\x18\x04 \x03(\v2%.conf.ScoringEmbedding.ProvidersEntryR\tproviders\x1a\\\n" +
+	"\x0eProvidersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x124\n" +
+	"\x05value\x18\x02 \x01(\v2\x1e.conf.ScoringEmbeddingProviderR\x05value:\x028\x01\"d\n" +
+	"\x18ScoringEmbeddingProvider\x12\x17\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
+	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12\x14\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\"\x8f\x01\n" +
 	"\n" +
 	"Collectors\x12%\n" +
 	"\x03rss\x18\x01 \x01(\v2\x13.conf.CollectorPollR\x03rss\x12%\n" +
@@ -1218,70 +1674,95 @@ func file_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_internal_conf_conf_proto_rawDescData
 }
 
-var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_internal_conf_conf_proto_goTypes = []any{
-	(*Bootstrap)(nil),              // 0: conf.Bootstrap
-	(*Server)(nil),                 // 1: conf.Server
-	(*HTTP)(nil),                   // 2: conf.HTTP
-	(*GRPC)(nil),                   // 3: conf.GRPC
-	(*Data)(nil),                   // 4: conf.Data
-	(*Database)(nil),               // 5: conf.Database
-	(*Summary)(nil),                // 6: conf.Summary
-	(*SummaryWorker)(nil),          // 7: conf.SummaryWorker
-	(*SummaryCron)(nil),            // 8: conf.SummaryCron
-	(*SummarySourceScheduler)(nil), // 9: conf.SummarySourceScheduler
-	(*SummaryReaper)(nil),          // 10: conf.SummaryReaper
-	(*SummaryLLM)(nil),             // 11: conf.SummaryLLM
-	(*SummaryLLMProvider)(nil),     // 12: conf.SummaryLLMProvider
-	(*SummaryCumulative)(nil),      // 13: conf.SummaryCumulative
-	(*SummaryOutbox)(nil),          // 14: conf.SummaryOutbox
-	(*Collectors)(nil),             // 15: conf.Collectors
-	(*CollectorPoll)(nil),          // 16: conf.CollectorPoll
-	(*TelegramCollector)(nil),      // 17: conf.TelegramCollector
-	nil,                            // 18: conf.SummaryLLM.ProvidersEntry
-	(*durationpb.Duration)(nil),    // 19: google.protobuf.Duration
+	(*Bootstrap)(nil),                // 0: conf.Bootstrap
+	(*Server)(nil),                   // 1: conf.Server
+	(*HTTP)(nil),                     // 2: conf.HTTP
+	(*GRPC)(nil),                     // 3: conf.GRPC
+	(*Data)(nil),                     // 4: conf.Data
+	(*Database)(nil),                 // 5: conf.Database
+	(*Summary)(nil),                  // 6: conf.Summary
+	(*SummaryWorker)(nil),            // 7: conf.SummaryWorker
+	(*SummaryCron)(nil),              // 8: conf.SummaryCron
+	(*SummarySourceScheduler)(nil),   // 9: conf.SummarySourceScheduler
+	(*SummaryReaper)(nil),            // 10: conf.SummaryReaper
+	(*SummaryLLM)(nil),               // 11: conf.SummaryLLM
+	(*SummaryLLMProvider)(nil),       // 12: conf.SummaryLLMProvider
+	(*SummaryCumulative)(nil),        // 13: conf.SummaryCumulative
+	(*SummaryOutbox)(nil),            // 14: conf.SummaryOutbox
+	(*Scoring)(nil),                  // 15: conf.Scoring
+	(*ScoringWorker)(nil),            // 16: conf.ScoringWorker
+	(*ScoringScheduler)(nil),         // 17: conf.ScoringScheduler
+	(*ScoringReaper)(nil),            // 18: conf.ScoringReaper
+	(*ScoringEmbedding)(nil),         // 19: conf.ScoringEmbedding
+	(*ScoringEmbeddingProvider)(nil), // 20: conf.ScoringEmbeddingProvider
+	(*Collectors)(nil),               // 21: conf.Collectors
+	(*CollectorPoll)(nil),            // 22: conf.CollectorPoll
+	(*TelegramCollector)(nil),        // 23: conf.TelegramCollector
+	nil,                              // 24: conf.SummaryLLM.ProvidersEntry
+	nil,                              // 25: conf.ScoringEmbedding.ProvidersEntry
+	(*durationpb.Duration)(nil),      // 26: google.protobuf.Duration
 }
 var file_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: conf.Bootstrap.server:type_name -> conf.Server
 	4,  // 1: conf.Bootstrap.data:type_name -> conf.Data
 	6,  // 2: conf.Bootstrap.summary:type_name -> conf.Summary
-	15, // 3: conf.Bootstrap.collectors:type_name -> conf.Collectors
-	2,  // 4: conf.Server.http:type_name -> conf.HTTP
-	3,  // 5: conf.Server.grpc:type_name -> conf.GRPC
-	19, // 6: conf.HTTP.timeout:type_name -> google.protobuf.Duration
-	19, // 7: conf.GRPC.timeout:type_name -> google.protobuf.Duration
-	5,  // 8: conf.Data.database:type_name -> conf.Database
-	7,  // 9: conf.Summary.worker:type_name -> conf.SummaryWorker
-	8,  // 10: conf.Summary.cron:type_name -> conf.SummaryCron
-	11, // 11: conf.Summary.llm:type_name -> conf.SummaryLLM
-	13, // 12: conf.Summary.cumulative:type_name -> conf.SummaryCumulative
-	14, // 13: conf.Summary.outbox:type_name -> conf.SummaryOutbox
-	9,  // 14: conf.Summary.source_scheduler:type_name -> conf.SummarySourceScheduler
-	10, // 15: conf.Summary.reaper:type_name -> conf.SummaryReaper
-	19, // 16: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
-	19, // 17: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
-	19, // 18: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
-	19, // 19: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
-	19, // 20: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
-	19, // 21: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
-	19, // 22: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
-	19, // 23: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
-	19, // 24: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
-	19, // 25: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
-	19, // 26: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
-	18, // 27: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
-	19, // 28: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
-	19, // 29: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
-	16, // 30: conf.Collectors.rss:type_name -> conf.CollectorPoll
-	16, // 31: conf.Collectors.web:type_name -> conf.CollectorPoll
-	17, // 32: conf.Collectors.telegram:type_name -> conf.TelegramCollector
-	19, // 33: conf.CollectorPoll.poll_interval:type_name -> google.protobuf.Duration
-	12, // 34: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
-	35, // [35:35] is the sub-list for method output_type
-	35, // [35:35] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	21, // 3: conf.Bootstrap.collectors:type_name -> conf.Collectors
+	15, // 4: conf.Bootstrap.scoring:type_name -> conf.Scoring
+	2,  // 5: conf.Server.http:type_name -> conf.HTTP
+	3,  // 6: conf.Server.grpc:type_name -> conf.GRPC
+	26, // 7: conf.HTTP.timeout:type_name -> google.protobuf.Duration
+	26, // 8: conf.GRPC.timeout:type_name -> google.protobuf.Duration
+	5,  // 9: conf.Data.database:type_name -> conf.Database
+	7,  // 10: conf.Summary.worker:type_name -> conf.SummaryWorker
+	8,  // 11: conf.Summary.cron:type_name -> conf.SummaryCron
+	11, // 12: conf.Summary.llm:type_name -> conf.SummaryLLM
+	13, // 13: conf.Summary.cumulative:type_name -> conf.SummaryCumulative
+	14, // 14: conf.Summary.outbox:type_name -> conf.SummaryOutbox
+	9,  // 15: conf.Summary.source_scheduler:type_name -> conf.SummarySourceScheduler
+	10, // 16: conf.Summary.reaper:type_name -> conf.SummaryReaper
+	26, // 17: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
+	26, // 18: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
+	26, // 19: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
+	26, // 20: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
+	26, // 21: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
+	26, // 22: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
+	26, // 23: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
+	26, // 24: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
+	26, // 25: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
+	26, // 26: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
+	26, // 27: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
+	24, // 28: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
+	26, // 29: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
+	26, // 30: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
+	16, // 31: conf.Scoring.worker:type_name -> conf.ScoringWorker
+	17, // 32: conf.Scoring.scheduler:type_name -> conf.ScoringScheduler
+	18, // 33: conf.Scoring.reaper:type_name -> conf.ScoringReaper
+	19, // 34: conf.Scoring.embedding:type_name -> conf.ScoringEmbedding
+	26, // 35: conf.ScoringWorker.poll_interval:type_name -> google.protobuf.Duration
+	26, // 36: conf.ScoringWorker.lease_ttl:type_name -> google.protobuf.Duration
+	26, // 37: conf.ScoringWorker.heartbeat_interval:type_name -> google.protobuf.Duration
+	26, // 38: conf.ScoringWorker.graceful_timeout:type_name -> google.protobuf.Duration
+	26, // 39: conf.ScoringWorker.backoff_base:type_name -> google.protobuf.Duration
+	26, // 40: conf.ScoringWorker.backoff_max:type_name -> google.protobuf.Duration
+	26, // 41: conf.ScoringWorker.event_ttl:type_name -> google.protobuf.Duration
+	26, // 42: conf.ScoringScheduler.poll_interval:type_name -> google.protobuf.Duration
+	26, // 43: conf.ScoringReaper.interval:type_name -> google.protobuf.Duration
+	26, // 44: conf.ScoringReaper.grace:type_name -> google.protobuf.Duration
+	26, // 45: conf.ScoringEmbedding.timeout:type_name -> google.protobuf.Duration
+	25, // 46: conf.ScoringEmbedding.providers:type_name -> conf.ScoringEmbedding.ProvidersEntry
+	22, // 47: conf.Collectors.rss:type_name -> conf.CollectorPoll
+	22, // 48: conf.Collectors.web:type_name -> conf.CollectorPoll
+	23, // 49: conf.Collectors.telegram:type_name -> conf.TelegramCollector
+	26, // 50: conf.CollectorPoll.poll_interval:type_name -> google.protobuf.Duration
+	12, // 51: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
+	20, // 52: conf.ScoringEmbedding.ProvidersEntry.value:type_name -> conf.ScoringEmbeddingProvider
+	53, // [53:53] is the sub-list for method output_type
+	53, // [53:53] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_internal_conf_conf_proto_init() }
@@ -1295,7 +1776,7 @@ func file_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_conf_conf_proto_rawDesc), len(file_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

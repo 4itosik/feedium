@@ -11,6 +11,7 @@ message Bootstrap {
   Data data = 2;
   Summary summary = 3;
   Collectors collectors = 4;
+  Scoring scoring = 5;
 }
 
 message Server {
@@ -95,6 +96,52 @@ message SummaryCumulative {
 
 message SummaryOutbox {
   google.protobuf.Duration event_ttl = 1;
+}
+
+// Scoring holds the FT-010 AI scoring configuration: the score worker pool,
+// the due-post scheduler, the stuck-event reaper, the embedding provider and the
+// default ranked-feed threshold. Worker/scheduler/reaper mirror the Summary
+// conventions (DEC-07).
+message Scoring {
+  ScoringWorker worker = 1;
+  ScoringScheduler scheduler = 2;
+  ScoringReaper reaper = 3;
+  ScoringEmbedding embedding = 4;
+  double default_threshold = 5;
+}
+
+message ScoringWorker {
+  google.protobuf.Duration poll_interval = 1;
+  int32 concurrency = 2;
+  google.protobuf.Duration lease_ttl = 3;
+  google.protobuf.Duration heartbeat_interval = 4;
+  google.protobuf.Duration graceful_timeout = 5;
+  int32 max_attempts = 6;
+  google.protobuf.Duration backoff_base = 7;
+  google.protobuf.Duration backoff_max = 8;
+  google.protobuf.Duration event_ttl = 9;
+}
+
+message ScoringScheduler {
+  google.protobuf.Duration poll_interval = 1;
+}
+
+message ScoringReaper {
+  google.protobuf.Duration interval = 1;
+  google.protobuf.Duration grace = 2;
+}
+
+message ScoringEmbedding {
+  google.protobuf.Duration timeout = 1;
+  int32 max_retries = 2;
+  string provider = 3;
+  map<string, ScoringEmbeddingProvider> providers = 4;
+}
+
+message ScoringEmbeddingProvider {
+  string api_key = 1;
+  string base_url = 2;
+  string model = 3;
 }
 
 // Collectors holds the collection configuration for the FT-009 content

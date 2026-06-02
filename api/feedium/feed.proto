@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package feedium;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "feedium/api/feedium;feedium";
+
+// FeedItem is a post paired with its current relevance score (FT-010 CTR-04).
+message FeedItem {
+  string post_id = 1;
+  string source_id = 2;
+  string author = 3;
+  string text = 4;
+  google.protobuf.Timestamp published_at = 5;
+  double score = 6;
+}
+
+message V1ListFeedRequest {
+  // Inclusive lower/upper bounds on published_at; empty means unbounded.
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  // Minimum score threshold in [0,1]; items below are excluded (REQ-04).
+  double min_score = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+message V1ListFeedResponse {
+  repeated FeedItem items = 1;
+  string next_page_token = 2;
+}
+
+service FeedService {
+  rpc V1ListFeed(V1ListFeedRequest) returns (V1ListFeedResponse) {
+    option (google.api.http) = {
+      get: "/v1/feed"
+    };
+  }
+}

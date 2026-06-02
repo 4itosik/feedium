@@ -8,6 +8,28 @@ import (
 )
 
 var (
+	// InterestsColumns holds the columns for the "interests" table.
+	InterestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "topic", Type: field.TypeString, Size: 2147483647},
+		{Name: "embedding", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "model", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// InterestsTable holds the schema information for the "interests" table.
+	InterestsTable = &schema.Table{
+		Name:       "interests",
+		Columns:    InterestsColumns,
+		PrimaryKey: []*schema.Column{InterestsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "interest_created_at_id",
+				Unique:  false,
+				Columns: []*schema.Column{InterestsColumns[4], InterestsColumns[0]},
+			},
+		},
+	}
 	// PostsColumns holds the columns for the "posts" table.
 	PostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -43,6 +65,59 @@ var (
 				Name:    "post_source_id_created_at_id",
 				Unique:  false,
 				Columns: []*schema.Column{PostsColumns[8], PostsColumns[6], PostsColumns[0]},
+			},
+		},
+	}
+	// ScoresColumns holds the columns for the "scores" table.
+	ScoresColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "post_id", Type: field.TypeUUID},
+		{Name: "value", Type: field.TypeFloat64},
+		{Name: "model", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ScoresTable holds the schema information for the "scores" table.
+	ScoresTable = &schema.Table{
+		Name:       "scores",
+		Columns:    ScoresColumns,
+		PrimaryKey: []*schema.Column{ScoresColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "score_post_id",
+				Unique:  true,
+				Columns: []*schema.Column{ScoresColumns[1]},
+			},
+			{
+				Name:    "score_value",
+				Unique:  false,
+				Columns: []*schema.Column{ScoresColumns[2]},
+			},
+		},
+	}
+	// ScoreEventsColumns holds the columns for the "score_events" table.
+	ScoreEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "post_id", Type: field.TypeUUID},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "attempt_count", Type: field.TypeInt, Default: 0},
+		{Name: "locked_by", Type: field.TypeString, Nullable: true},
+		{Name: "locked_until", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "next_attempt_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "processed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ScoreEventsTable holds the schema information for the "score_events" table.
+	ScoreEventsTable = &schema.Table{
+		Name:       "score_events",
+		Columns:    ScoreEventsColumns,
+		PrimaryKey: []*schema.Column{ScoreEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "scoreevent_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ScoreEventsColumns[2], ScoreEventsColumns[8]},
 			},
 		},
 	}
@@ -160,7 +235,10 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		InterestsTable,
 		PostsTable,
+		ScoresTable,
+		ScoreEventsTable,
 		SourcesTable,
 		SummariesTable,
 		SummaryEventsTable,

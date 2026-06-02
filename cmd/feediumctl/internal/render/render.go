@@ -76,6 +76,12 @@ func writeJSON(w io.Writer, msg proto.Message) error {
 	if resp, ok := msg.(*feediumapi.V1ListSourceSummariesResponse); ok {
 		return writeSummaryListSourceJSON(w, resp)
 	}
+	if resp, ok := msg.(*feediumapi.V1ListInterestsResponse); ok {
+		return writeInterestListJSON(w, resp)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListFeedResponse); ok {
+		return writeFeedListJSON(w, resp)
+	}
 	data, err := jsonMarshaler().Marshal(msg)
 	if err != nil {
 		return err
@@ -111,6 +117,12 @@ func writeYAML(w io.Writer, msg proto.Message) error {
 			itemsIface[i] = item
 		}
 		return writeItemsAsYAML(w, itemsIface)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListInterestsResponse); ok {
+		return writeInterestListYAML(w, resp)
+	}
+	if resp, ok := msg.(*feediumapi.V1ListFeedResponse); ok {
+		return writeFeedListYAML(w, resp)
 	}
 	// Use a deterministic, non-multiline JSON representation as the input to
 	// JSONToYAML. YAML key order is therefore driven by JSONToYAML itself,
@@ -152,6 +164,16 @@ func writeTable(w io.Writer, msg proto.Message) error {
 		return writeSummaryListSourceTable(w, m)
 	case *feediumapi.V1GetSummaryResponse:
 		return writeSummarySingleTable(w, m.GetSummary())
+	case *feediumapi.V1ListInterestsResponse:
+		return writeInterestListTable(w, m)
+	case *feediumapi.V1GetInterestResponse:
+		return writeInterestSingleTable(w, m.GetInterest())
+	case *feediumapi.V1CreateInterestResponse:
+		return writeInterestSingleTable(w, m.GetInterest())
+	case *feediumapi.V1UpdateInterestResponse:
+		return writeInterestSingleTable(w, m.GetInterest())
+	case *feediumapi.V1ListFeedResponse:
+		return writeFeedListTable(w, m)
 	default:
 		// Unreachable: every proto message rendered by CLI is listed
 		// above. Panicking preserves the NFR-03 prefix contract.

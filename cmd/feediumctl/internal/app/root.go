@@ -33,6 +33,8 @@ func NewRootCommand() *cobra.Command {
 	cmd.AddCommand(newSourceCommand(cmd, &g, defaultSourceClientFactory))
 	cmd.AddCommand(newPostCommand(cmd, &g, defaultPostClientFactory))
 	cmd.AddCommand(newSummaryCommand(cmd, &g, defaultSummaryClientFactory))
+	cmd.AddCommand(newInterestCommand(cmd, &g, defaultInterestClientFactory))
+	cmd.AddCommand(newFeedCommand(cmd, &g, defaultFeedClientFactory))
 
 	return cmd
 }

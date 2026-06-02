@@ -12,7 +12,9 @@ import (
 	"github.com/4itosik/feedium/internal/conf"
 	"github.com/4itosik/feedium/internal/data"
 	"github.com/4itosik/feedium/internal/server"
+	"github.com/4itosik/feedium/internal/service/feed"
 	"github.com/4itosik/feedium/internal/service/health"
+	"github.com/4itosik/feedium/internal/service/interest"
 	"github.com/4itosik/feedium/internal/service/post"
 	"github.com/4itosik/feedium/internal/service/source"
 	"github.com/4itosik/feedium/internal/service/summary"
@@ -25,6 +27,7 @@ import (
 
 // Injectors from wire.go:
 
+//nolint:revive,unused // wire injector shell used at generation time.
 func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), error) {
 	confServer := newServerFromBootstrap(bc)
 	confData := newDataFromBootstrap(bc)
@@ -43,7 +46,6 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	postUsecase := biz.NewPostUsecase(postRepo, txManager, summaryOutboxRepo, sourceRepo)
 	postService := post.NewPostService(postUsecase)
 	summaryRepo := data.NewSummaryRepo(dataData)
-	confSummary := newSummaryConfigFromBootstrap(bc)
 	summaryLLM := newSummaryLLMFromBootstrap(bc)
 	openRouterProvider, err := data.NewOpenRouterProvider(summaryLLM, logger)
 	if err != nil {
@@ -51,22 +53,41 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		return nil, nil, err
 	}
 	embeddedResolver := prompt.NewResolver()
+	confSummary := newSummaryConfigFromBootstrap(bc)
 	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, postRepo, openRouterProvider, embeddedResolver, txManager, confSummary)
-	summaryService := summary.NewService(summaryUsecase)
-	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, summaryService, logger)
-	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, summaryService, logger)
+	service := summary.NewService(summaryUsecase)
+	interestRepo := data.NewInterestRepo(dataData)
+	scoringEmbedding := newScoringEmbeddingFromBootstrap(bc)
+	embeddingProvider, err := data.NewEmbeddingProvider(scoringEmbedding, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	interestUsecase := biz.NewInterestUsecase(interestRepo, embeddingProvider)
+	interestService := interest.NewInterestService(interestUsecase)
+	scoreRepo := data.NewScoreRepo(dataData)
+	scoring := newScoringConfigFromBootstrap(bc)
+	feedUsecase := biz.NewFeedUsecase(scoreRepo, scoring)
+	feedService := feed.NewFeedService(feedUsecase)
+	httpServer := server.NewHTTPServer(confServer, healthService, sourceService, postService, service, interestService, feedService, logger)
+	grpcServer := server.NewGRPCServer(confServer, healthService, sourceService, postService, service, interestService, feedService, logger)
 	eventWorkerPool := task.NewEventWorkerPool(summaryOutboxRepo, summaryUsecase, confSummary, logger)
 	sourceDueScheduler := task.NewSourceDueScheduler(summaryUsecase, confSummary, logger)
 	stuckEventReaper := task.NewStuckEventReaper(summaryUsecase, confSummary, logger)
+	scoreOutboxRepo := data.NewScoreOutboxRepo(dataData)
+	scoreUsecase := biz.NewScoreUsecase(scoreRepo, interestRepo, summaryRepo, scoreOutboxRepo, embeddingProvider, scoring)
+	scoreEventWorkerPool := task.NewScoreEventWorkerPool(scoreOutboxRepo, scoreUsecase, scoring, logger)
+	scoreDueScheduler := task.NewScoreDueScheduler(scoreUsecase, scoring, logger)
+	stuckScoreEventReaper := task.NewStuckScoreEventReaper(scoreUsecase, scoring, logger)
 	collectUsecase := biz.NewCollectUsecase(postUsecase)
 	rssFetcher := data.NewRSSFetcher()
-	confCollectors := newCollectorsConfigFromBootstrap(bc)
-	rssCollector := task.NewRSSCollector(collectUsecase, rssFetcher, sourceUsecase, confCollectors, logger)
+	collectors := newCollectorsConfigFromBootstrap(bc)
+	rssCollector := task.NewRSSCollector(collectUsecase, rssFetcher, sourceUsecase, collectors, logger)
 	webFetcher := data.NewWebFetcher()
-	webCollector := task.NewWebCollector(collectUsecase, webFetcher, sourceUsecase, confCollectors, logger)
-	telegramSession := data.NewTelegramSession(confCollectors)
+	webCollector := task.NewWebCollector(collectUsecase, webFetcher, sourceUsecase, collectors, logger)
+	telegramSession := data.NewTelegramSession(collectors)
 	telegramCollector := task.NewTelegramCollector(collectUsecase, telegramSession, sourceUsecase, logger)
-	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper, rssCollector, webCollector, telegramCollector)
+	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper, scoreEventWorkerPool, scoreDueScheduler, stuckScoreEventReaper, rssCollector, webCollector, telegramCollector)
 	return app, func() {
 		cleanup()
 	}, nil
@@ -81,13 +102,18 @@ func newApp(
 	pool *task.EventWorkerPool,
 	scheduler *task.SourceDueScheduler,
 	reaper *task.StuckEventReaper,
+	scorePool *task.ScoreEventWorkerPool,
+	scoreScheduler *task.ScoreDueScheduler,
+	scoreReaper *task.StuckScoreEventReaper,
 	rssCollector *task.RSSCollector,
 	webCollector *task.WebCollector,
 	telegramCollector *task.TelegramCollector,
 ) *kratos.App {
-	return kratos.New(
-		kratos.Name("feedium"),
-		kratos.Server(hs, gs, pool, scheduler, reaper, rssCollector, webCollector, telegramCollector),
+	return kratos.New(kratos.Name("feedium"), kratos.Server(
+		hs, gs, pool, scheduler, reaper,
+		scorePool, scoreScheduler, scoreReaper,
+		rssCollector, webCollector, telegramCollector,
+	),
 	)
 }
 
@@ -112,4 +138,15 @@ func newSummaryLLMFromBootstrap(bc *conf.Bootstrap) *conf.SummaryLLM {
 		return nil
 	}
 	return bc.GetSummary().GetLlm()
+}
+
+func newScoringConfigFromBootstrap(bc *conf.Bootstrap) *conf.Scoring {
+	return bc.GetScoring()
+}
+
+func newScoringEmbeddingFromBootstrap(bc *conf.Bootstrap) *conf.ScoringEmbedding {
+	if bc.GetScoring() == nil {
+		return nil
+	}
+	return bc.GetScoring().GetEmbedding()
 }

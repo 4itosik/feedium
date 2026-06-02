@@ -5,8 +5,11 @@ package ent
 import (
 	"time"
 
+	"github.com/4itosik/feedium/internal/ent/interest"
 	"github.com/4itosik/feedium/internal/ent/post"
 	"github.com/4itosik/feedium/internal/ent/schema"
+	"github.com/4itosik/feedium/internal/ent/score"
+	"github.com/4itosik/feedium/internal/ent/scoreevent"
 	"github.com/4itosik/feedium/internal/ent/source"
 	"github.com/4itosik/feedium/internal/ent/summary"
 	"github.com/4itosik/feedium/internal/ent/summaryevent"
@@ -17,6 +20,30 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	interestFields := schema.Interest{}.Fields()
+	_ = interestFields
+	// interestDescTopic is the schema descriptor for topic field.
+	interestDescTopic := interestFields[1].Descriptor()
+	// interest.TopicValidator is a validator for the "topic" field. It is called by the builders before save.
+	interest.TopicValidator = interestDescTopic.Validators[0].(func(string) error)
+	// interestDescModel is the schema descriptor for model field.
+	interestDescModel := interestFields[3].Descriptor()
+	// interest.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	interest.ModelValidator = interestDescModel.Validators[0].(func(string) error)
+	// interestDescCreatedAt is the schema descriptor for created_at field.
+	interestDescCreatedAt := interestFields[4].Descriptor()
+	// interest.DefaultCreatedAt holds the default value on creation for the created_at field.
+	interest.DefaultCreatedAt = interestDescCreatedAt.Default.(func() time.Time)
+	// interestDescUpdatedAt is the schema descriptor for updated_at field.
+	interestDescUpdatedAt := interestFields[5].Descriptor()
+	// interest.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	interest.DefaultUpdatedAt = interestDescUpdatedAt.Default.(func() time.Time)
+	// interest.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	interest.UpdateDefaultUpdatedAt = interestDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// interestDescID is the schema descriptor for id field.
+	interestDescID := interestFields[0].Descriptor()
+	// interest.DefaultID holds the default value on creation for the id field.
+	interest.DefaultID = interestDescID.Default.(func() uuid.UUID)
 	postFields := schema.Post{}.Fields()
 	_ = postFields
 	// postDescExternalID is the schema descriptor for external_id field.
@@ -45,6 +72,46 @@ func init() {
 	postDescID := postFields[0].Descriptor()
 	// post.DefaultID holds the default value on creation for the id field.
 	post.DefaultID = postDescID.Default.(func() uuid.UUID)
+	scoreFields := schema.Score{}.Fields()
+	_ = scoreFields
+	// scoreDescModel is the schema descriptor for model field.
+	scoreDescModel := scoreFields[3].Descriptor()
+	// score.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	score.ModelValidator = scoreDescModel.Validators[0].(func(string) error)
+	// scoreDescCreatedAt is the schema descriptor for created_at field.
+	scoreDescCreatedAt := scoreFields[4].Descriptor()
+	// score.DefaultCreatedAt holds the default value on creation for the created_at field.
+	score.DefaultCreatedAt = scoreDescCreatedAt.Default.(func() time.Time)
+	// scoreDescUpdatedAt is the schema descriptor for updated_at field.
+	scoreDescUpdatedAt := scoreFields[5].Descriptor()
+	// score.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	score.DefaultUpdatedAt = scoreDescUpdatedAt.Default.(func() time.Time)
+	// score.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	score.UpdateDefaultUpdatedAt = scoreDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// scoreDescID is the schema descriptor for id field.
+	scoreDescID := scoreFields[0].Descriptor()
+	// score.DefaultID holds the default value on creation for the id field.
+	score.DefaultID = scoreDescID.Default.(func() uuid.UUID)
+	scoreeventFields := schema.ScoreEvent{}.Fields()
+	_ = scoreeventFields
+	// scoreeventDescStatus is the schema descriptor for status field.
+	scoreeventDescStatus := scoreeventFields[2].Descriptor()
+	// scoreevent.DefaultStatus holds the default value on creation for the status field.
+	scoreevent.DefaultStatus = scoreeventDescStatus.Default.(string)
+	// scoreevent.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	scoreevent.StatusValidator = scoreeventDescStatus.Validators[0].(func(string) error)
+	// scoreeventDescAttemptCount is the schema descriptor for attempt_count field.
+	scoreeventDescAttemptCount := scoreeventFields[4].Descriptor()
+	// scoreevent.DefaultAttemptCount holds the default value on creation for the attempt_count field.
+	scoreevent.DefaultAttemptCount = scoreeventDescAttemptCount.Default.(int)
+	// scoreeventDescCreatedAt is the schema descriptor for created_at field.
+	scoreeventDescCreatedAt := scoreeventFields[8].Descriptor()
+	// scoreevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	scoreevent.DefaultCreatedAt = scoreeventDescCreatedAt.Default.(func() time.Time)
+	// scoreeventDescID is the schema descriptor for id field.
+	scoreeventDescID := scoreeventFields[0].Descriptor()
+	// scoreevent.DefaultID holds the default value on creation for the id field.
+	scoreevent.DefaultID = scoreeventDescID.Default.(func() uuid.UUID)
 	sourceFields := schema.Source{}.Fields()
 	_ = sourceFields
 	// sourceDescType is the schema descriptor for type field.

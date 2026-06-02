@@ -9,6 +9,9 @@ var ProviderSet = wire.NewSet(
 	NewSourceUsecase,
 	NewPostUsecase,
 	NewSummaryUsecase,
+	NewInterestUsecase,
+	NewScoreUsecase,
+	NewFeedUsecase,
 	NewCollectUsecase,
 	// CollectUsecase persists collected posts through the existing Create path
 	// (CTR-T03): bind the PostCreator port to *PostUsecase.

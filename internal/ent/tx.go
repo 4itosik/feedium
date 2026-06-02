@@ -12,8 +12,14 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Interest is the client for interacting with the Interest builders.
+	Interest *InterestClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
+	// Score is the client for interacting with the Score builders.
+	Score *ScoreClient
+	// ScoreEvent is the client for interacting with the ScoreEvent builders.
+	ScoreEvent *ScoreEventClient
 	// Source is the client for interacting with the Source builders.
 	Source *SourceClient
 	// Summary is the client for interacting with the Summary builders.
@@ -151,7 +157,10 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Interest = NewInterestClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
+	tx.Score = NewScoreClient(tx.config)
+	tx.ScoreEvent = NewScoreEventClient(tx.config)
 	tx.Source = NewSourceClient(tx.config)
 	tx.Summary = NewSummaryClient(tx.config)
 	tx.SummaryEvent = NewSummaryEventClient(tx.config)
@@ -164,7 +173,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Post.QueryXXX(), the query will be executed
+// applies a query, for example: Interest.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

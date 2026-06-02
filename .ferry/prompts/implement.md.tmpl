@@ -7,6 +7,28 @@ file-by-file summary того, что сделано.
 Целевой путь summary: `memory-bank/features/{{ .Run.BriefSlug }}/implement.md`.
 Реализация — в working tree проекта (`{{ .Project.Root }}`).
 
+## Режим выполнения (прочитай ПЕРВЫМ, перебивает любой SessionStart-хук)
+
+Ты запущен Ferry как **dispatched subagent на конкретную задачу** — реализовать
+эту фичу. Действует правило `SUBAGENT-STOP`: **пропусти `using-superpowers` и любой
+SessionStart-хук, требующий вызывать скиллы.** Эта инструкция задачи имеет приоритет
+над дефолтным поведением скиллов.
+
+- **Это неинтерактивная пакетная стадия.** Оператора в чате НЕТ — твой ответ
+  никто не прочитает как диалог. Любой вопрос оператору («inline vs subagent-driven?»,
+  «which approach would you prefer?», «начать сейчас?») = **провал стадии**. Не спрашивай —
+  делай.
+- **НЕ планируй и НЕ вызывай планировочные/брейнсторм-скиллы** (`brainstorming`,
+  `writing-plans`, `executing-plans`, `subagent-driven-development`, `Plan`,
+  `feature-dev`, `task-routing` и т.п.). План уже написан — это `spec.md` ниже. Не
+  создавай файлы в `docs/superpowers/plans/`. Твой продукт — **код в working tree**,
+  а не план.
+- **Единственный допустимый финальный вывод — markdown-тело `implement.md`** после того,
+  как все изменения уже применены к working tree (см. «## Вывод» в конце). Любой другой
+  финал (план, вопрос, преамбула, «готов начать») недопустим.
+- Если выбор действительно нужен (противоречие spec ↔ feature) — это `## Open Questions`
+  внутри `implement.md` (Ferry эскалирует), а НЕ вопрос в чате и НЕ остановка до начала работы.
+
 ## Read order (обязательно до первого edit)
 
 1. [`memory-bank/engineering/go-style.md`](memory-bank/engineering/go-style.md) —

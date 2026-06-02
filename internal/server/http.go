@@ -7,7 +7,9 @@ import (
 
 	feediumv1 "github.com/4itosik/feedium/api/feedium"
 	"github.com/4itosik/feedium/internal/conf"
+	feedservice "github.com/4itosik/feedium/internal/service/feed"
 	healthservice "github.com/4itosik/feedium/internal/service/health"
+	interestservice "github.com/4itosik/feedium/internal/service/interest"
 	postservice "github.com/4itosik/feedium/internal/service/post"
 	sourceservice "github.com/4itosik/feedium/internal/service/source"
 	summaryservice "github.com/4itosik/feedium/internal/service/summary"
@@ -19,6 +21,8 @@ func NewHTTPServer(
 	ss *sourceservice.SourceService,
 	ps *postservice.PostService,
 	sms *summaryservice.Service,
+	is *interestservice.InterestService,
+	fs *feedservice.FeedService,
 	_ *slog.Logger,
 ) *kratoshttp.Server {
 	var opts []kratoshttp.ServerOption
@@ -33,5 +37,7 @@ func NewHTTPServer(
 	feediumv1.RegisterSourceServiceHTTPServer(srv, ss)
 	feediumv1.RegisterPostServiceHTTPServer(srv, ps)
 	feediumv1.RegisterSummaryServiceHTTPServer(srv, sms)
+	feediumv1.RegisterInterestServiceHTTPServer(srv, is)
+	feediumv1.RegisterFeedServiceHTTPServer(srv, fs)
 	return srv
 }

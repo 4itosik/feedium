@@ -16,7 +16,10 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/4itosik/feedium/internal/ent/interest"
 	"github.com/4itosik/feedium/internal/ent/post"
+	"github.com/4itosik/feedium/internal/ent/score"
+	"github.com/4itosik/feedium/internal/ent/scoreevent"
 	"github.com/4itosik/feedium/internal/ent/source"
 	"github.com/4itosik/feedium/internal/ent/summary"
 	"github.com/4itosik/feedium/internal/ent/summaryevent"
@@ -27,8 +30,14 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Interest is the client for interacting with the Interest builders.
+	Interest *InterestClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
+	// Score is the client for interacting with the Score builders.
+	Score *ScoreClient
+	// ScoreEvent is the client for interacting with the ScoreEvent builders.
+	ScoreEvent *ScoreEventClient
 	// Source is the client for interacting with the Source builders.
 	Source *SourceClient
 	// Summary is the client for interacting with the Summary builders.
@@ -46,7 +55,10 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Interest = NewInterestClient(c.config)
 	c.Post = NewPostClient(c.config)
+	c.Score = NewScoreClient(c.config)
+	c.ScoreEvent = NewScoreEventClient(c.config)
 	c.Source = NewSourceClient(c.config)
 	c.Summary = NewSummaryClient(c.config)
 	c.SummaryEvent = NewSummaryEventClient(c.config)
@@ -142,7 +154,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:          ctx,
 		config:       cfg,
+		Interest:     NewInterestClient(cfg),
 		Post:         NewPostClient(cfg),
+		Score:        NewScoreClient(cfg),
+		ScoreEvent:   NewScoreEventClient(cfg),
 		Source:       NewSourceClient(cfg),
 		Summary:      NewSummaryClient(cfg),
 		SummaryEvent: NewSummaryEventClient(cfg),
@@ -165,7 +180,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:          ctx,
 		config:       cfg,
+		Interest:     NewInterestClient(cfg),
 		Post:         NewPostClient(cfg),
+		Score:        NewScoreClient(cfg),
+		ScoreEvent:   NewScoreEventClient(cfg),
 		Source:       NewSourceClient(cfg),
 		Summary:      NewSummaryClient(cfg),
 		SummaryEvent: NewSummaryEventClient(cfg),
@@ -175,7 +193,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Post.
+//		Interest.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -197,26 +215,34 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Post.Use(hooks...)
-	c.Source.Use(hooks...)
-	c.Summary.Use(hooks...)
-	c.SummaryEvent.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.Interest, c.Post, c.Score, c.ScoreEvent, c.Source, c.Summary, c.SummaryEvent,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Post.Intercept(interceptors...)
-	c.Source.Intercept(interceptors...)
-	c.Summary.Intercept(interceptors...)
-	c.SummaryEvent.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.Interest, c.Post, c.Score, c.ScoreEvent, c.Source, c.Summary, c.SummaryEvent,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *InterestMutation:
+		return c.Interest.mutate(ctx, m)
 	case *PostMutation:
 		return c.Post.mutate(ctx, m)
+	case *ScoreMutation:
+		return c.Score.mutate(ctx, m)
+	case *ScoreEventMutation:
+		return c.ScoreEvent.mutate(ctx, m)
 	case *SourceMutation:
 		return c.Source.mutate(ctx, m)
 	case *SummaryMutation:
@@ -225,6 +251,139 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SummaryEvent.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// InterestClient is a client for the Interest schema.
+type InterestClient struct {
+	config
+}
+
+// NewInterestClient returns a client for the Interest from the given config.
+func NewInterestClient(c config) *InterestClient {
+	return &InterestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `interest.Hooks(f(g(h())))`.
+func (c *InterestClient) Use(hooks ...Hook) {
+	c.hooks.Interest = append(c.hooks.Interest, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `interest.Intercept(f(g(h())))`.
+func (c *InterestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Interest = append(c.inters.Interest, interceptors...)
+}
+
+// Create returns a builder for creating a Interest entity.
+func (c *InterestClient) Create() *InterestCreate {
+	mutation := newInterestMutation(c.config, OpCreate)
+	return &InterestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Interest entities.
+func (c *InterestClient) CreateBulk(builders ...*InterestCreate) *InterestCreateBulk {
+	return &InterestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InterestClient) MapCreateBulk(slice any, setFunc func(*InterestCreate, int)) *InterestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InterestCreateBulk{err: fmt.Errorf("calling to InterestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InterestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InterestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Interest.
+func (c *InterestClient) Update() *InterestUpdate {
+	mutation := newInterestMutation(c.config, OpUpdate)
+	return &InterestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InterestClient) UpdateOne(_m *Interest) *InterestUpdateOne {
+	mutation := newInterestMutation(c.config, OpUpdateOne, withInterest(_m))
+	return &InterestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InterestClient) UpdateOneID(id uuid.UUID) *InterestUpdateOne {
+	mutation := newInterestMutation(c.config, OpUpdateOne, withInterestID(id))
+	return &InterestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Interest.
+func (c *InterestClient) Delete() *InterestDelete {
+	mutation := newInterestMutation(c.config, OpDelete)
+	return &InterestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InterestClient) DeleteOne(_m *Interest) *InterestDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InterestClient) DeleteOneID(id uuid.UUID) *InterestDeleteOne {
+	builder := c.Delete().Where(interest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InterestDeleteOne{builder}
+}
+
+// Query returns a query builder for Interest.
+func (c *InterestClient) Query() *InterestQuery {
+	return &InterestQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInterest},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Interest entity by its id.
+func (c *InterestClient) Get(ctx context.Context, id uuid.UUID) (*Interest, error) {
+	return c.Query().Where(interest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InterestClient) GetX(ctx context.Context, id uuid.UUID) *Interest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *InterestClient) Hooks() []Hook {
+	return c.hooks.Interest
+}
+
+// Interceptors returns the client interceptors.
+func (c *InterestClient) Interceptors() []Interceptor {
+	return c.inters.Interest
+}
+
+func (c *InterestClient) mutate(ctx context.Context, m *InterestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InterestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InterestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InterestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InterestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Interest mutation op: %q", m.Op())
 	}
 }
 
@@ -390,6 +549,272 @@ func (c *PostClient) mutate(ctx context.Context, m *PostMutation) (Value, error)
 		return (&PostDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Post mutation op: %q", m.Op())
+	}
+}
+
+// ScoreClient is a client for the Score schema.
+type ScoreClient struct {
+	config
+}
+
+// NewScoreClient returns a client for the Score from the given config.
+func NewScoreClient(c config) *ScoreClient {
+	return &ScoreClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `score.Hooks(f(g(h())))`.
+func (c *ScoreClient) Use(hooks ...Hook) {
+	c.hooks.Score = append(c.hooks.Score, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `score.Intercept(f(g(h())))`.
+func (c *ScoreClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Score = append(c.inters.Score, interceptors...)
+}
+
+// Create returns a builder for creating a Score entity.
+func (c *ScoreClient) Create() *ScoreCreate {
+	mutation := newScoreMutation(c.config, OpCreate)
+	return &ScoreCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Score entities.
+func (c *ScoreClient) CreateBulk(builders ...*ScoreCreate) *ScoreCreateBulk {
+	return &ScoreCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ScoreClient) MapCreateBulk(slice any, setFunc func(*ScoreCreate, int)) *ScoreCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ScoreCreateBulk{err: fmt.Errorf("calling to ScoreClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ScoreCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ScoreCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Score.
+func (c *ScoreClient) Update() *ScoreUpdate {
+	mutation := newScoreMutation(c.config, OpUpdate)
+	return &ScoreUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ScoreClient) UpdateOne(_m *Score) *ScoreUpdateOne {
+	mutation := newScoreMutation(c.config, OpUpdateOne, withScore(_m))
+	return &ScoreUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ScoreClient) UpdateOneID(id uuid.UUID) *ScoreUpdateOne {
+	mutation := newScoreMutation(c.config, OpUpdateOne, withScoreID(id))
+	return &ScoreUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Score.
+func (c *ScoreClient) Delete() *ScoreDelete {
+	mutation := newScoreMutation(c.config, OpDelete)
+	return &ScoreDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ScoreClient) DeleteOne(_m *Score) *ScoreDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ScoreClient) DeleteOneID(id uuid.UUID) *ScoreDeleteOne {
+	builder := c.Delete().Where(score.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ScoreDeleteOne{builder}
+}
+
+// Query returns a query builder for Score.
+func (c *ScoreClient) Query() *ScoreQuery {
+	return &ScoreQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeScore},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Score entity by its id.
+func (c *ScoreClient) Get(ctx context.Context, id uuid.UUID) (*Score, error) {
+	return c.Query().Where(score.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ScoreClient) GetX(ctx context.Context, id uuid.UUID) *Score {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ScoreClient) Hooks() []Hook {
+	return c.hooks.Score
+}
+
+// Interceptors returns the client interceptors.
+func (c *ScoreClient) Interceptors() []Interceptor {
+	return c.inters.Score
+}
+
+func (c *ScoreClient) mutate(ctx context.Context, m *ScoreMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ScoreCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ScoreUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ScoreUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ScoreDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Score mutation op: %q", m.Op())
+	}
+}
+
+// ScoreEventClient is a client for the ScoreEvent schema.
+type ScoreEventClient struct {
+	config
+}
+
+// NewScoreEventClient returns a client for the ScoreEvent from the given config.
+func NewScoreEventClient(c config) *ScoreEventClient {
+	return &ScoreEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `scoreevent.Hooks(f(g(h())))`.
+func (c *ScoreEventClient) Use(hooks ...Hook) {
+	c.hooks.ScoreEvent = append(c.hooks.ScoreEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `scoreevent.Intercept(f(g(h())))`.
+func (c *ScoreEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ScoreEvent = append(c.inters.ScoreEvent, interceptors...)
+}
+
+// Create returns a builder for creating a ScoreEvent entity.
+func (c *ScoreEventClient) Create() *ScoreEventCreate {
+	mutation := newScoreEventMutation(c.config, OpCreate)
+	return &ScoreEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ScoreEvent entities.
+func (c *ScoreEventClient) CreateBulk(builders ...*ScoreEventCreate) *ScoreEventCreateBulk {
+	return &ScoreEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ScoreEventClient) MapCreateBulk(slice any, setFunc func(*ScoreEventCreate, int)) *ScoreEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ScoreEventCreateBulk{err: fmt.Errorf("calling to ScoreEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ScoreEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ScoreEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ScoreEvent.
+func (c *ScoreEventClient) Update() *ScoreEventUpdate {
+	mutation := newScoreEventMutation(c.config, OpUpdate)
+	return &ScoreEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ScoreEventClient) UpdateOne(_m *ScoreEvent) *ScoreEventUpdateOne {
+	mutation := newScoreEventMutation(c.config, OpUpdateOne, withScoreEvent(_m))
+	return &ScoreEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ScoreEventClient) UpdateOneID(id uuid.UUID) *ScoreEventUpdateOne {
+	mutation := newScoreEventMutation(c.config, OpUpdateOne, withScoreEventID(id))
+	return &ScoreEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ScoreEvent.
+func (c *ScoreEventClient) Delete() *ScoreEventDelete {
+	mutation := newScoreEventMutation(c.config, OpDelete)
+	return &ScoreEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ScoreEventClient) DeleteOne(_m *ScoreEvent) *ScoreEventDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ScoreEventClient) DeleteOneID(id uuid.UUID) *ScoreEventDeleteOne {
+	builder := c.Delete().Where(scoreevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ScoreEventDeleteOne{builder}
+}
+
+// Query returns a query builder for ScoreEvent.
+func (c *ScoreEventClient) Query() *ScoreEventQuery {
+	return &ScoreEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeScoreEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ScoreEvent entity by its id.
+func (c *ScoreEventClient) Get(ctx context.Context, id uuid.UUID) (*ScoreEvent, error) {
+	return c.Query().Where(scoreevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ScoreEventClient) GetX(ctx context.Context, id uuid.UUID) *ScoreEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ScoreEventClient) Hooks() []Hook {
+	return c.hooks.ScoreEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *ScoreEventClient) Interceptors() []Interceptor {
+	return c.inters.ScoreEvent
+}
+
+func (c *ScoreEventClient) mutate(ctx context.Context, m *ScoreEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ScoreEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ScoreEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ScoreEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ScoreEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ScoreEvent mutation op: %q", m.Op())
 	}
 }
 
@@ -891,9 +1316,10 @@ func (c *SummaryEventClient) mutate(ctx context.Context, m *SummaryEventMutation
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Post, Source, Summary, SummaryEvent []ent.Hook
+		Interest, Post, Score, ScoreEvent, Source, Summary, SummaryEvent []ent.Hook
 	}
 	inters struct {
-		Post, Source, Summary, SummaryEvent []ent.Interceptor
+		Interest, Post, Score, ScoreEvent, Source, Summary,
+		SummaryEvent []ent.Interceptor
 	}
 )

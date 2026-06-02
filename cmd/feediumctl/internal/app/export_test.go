@@ -145,3 +145,69 @@ func FactoryFromSummary(client feediumapi.SummaryServiceClient) SummaryClientFac
 		return client, func() error { return nil }, nil
 	}
 }
+
+// ── Interest client DI ──────────────────────────────────────────────────────
+
+// InterestClientFactory is the exported alias of the unexported
+// interestClientFactory type, allowing tests to inject gomock clients.
+type InterestClientFactory = interestClientFactory
+
+// NewRootCommandWithInterest creates a root command whose "interest" subcommands
+// use the provided factory.
+func NewRootCommandWithInterest(factory InterestClientFactory) *cobra.Command {
+	var g globalFlags
+	cmd := &cobra.Command{
+		Use:           "feediumctl",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	cmd.PersistentFlags().StringVar(&g.endpoint, "endpoint", "", "")
+	cmd.PersistentFlags().StringVarP(&g.output, "output", "o", "", "")
+	cmd.PersistentFlags().StringVar(&g.timeout, "timeout", "", "")
+	cmd.PersistentFlags().StringVar(&g.pageSize, "page-size", "", "")
+	cmd.PersistentFlags().StringVar(&g.config, "config", "", "")
+
+	cmd.AddCommand(newInterestCommand(cmd, &g, factory))
+	return cmd
+}
+
+// FactoryFromInterest wraps any InterestServiceClient as a factory that returns
+// it for every endpoint (no real connection opened).
+func FactoryFromInterest(client feediumapi.InterestServiceClient) InterestClientFactory {
+	return func(string) (feediumapi.InterestServiceClient, func() error, error) {
+		return client, func() error { return nil }, nil
+	}
+}
+
+// ── Feed client DI ──────────────────────────────────────────────────────────
+
+// FeedClientFactory is the exported alias of the unexported feedClientFactory
+// type, allowing tests to inject gomock clients.
+type FeedClientFactory = feedClientFactory
+
+// NewRootCommandWithFeed creates a root command whose "feed" subcommands use the
+// provided factory.
+func NewRootCommandWithFeed(factory FeedClientFactory) *cobra.Command {
+	var g globalFlags
+	cmd := &cobra.Command{
+		Use:           "feediumctl",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	cmd.PersistentFlags().StringVar(&g.endpoint, "endpoint", "", "")
+	cmd.PersistentFlags().StringVarP(&g.output, "output", "o", "", "")
+	cmd.PersistentFlags().StringVar(&g.timeout, "timeout", "", "")
+	cmd.PersistentFlags().StringVar(&g.pageSize, "page-size", "", "")
+	cmd.PersistentFlags().StringVar(&g.config, "config", "", "")
+
+	cmd.AddCommand(newFeedCommand(cmd, &g, factory))
+	return cmd
+}
+
+// FactoryFromFeed wraps any FeedServiceClient as a factory that returns it for
+// every endpoint (no real connection opened).
+func FactoryFromFeed(client feediumapi.FeedServiceClient) FeedClientFactory {
+	return func(string) (feediumapi.FeedServiceClient, func() error, error) {
+		return client, func() error { return nil }, nil
+	}
+}

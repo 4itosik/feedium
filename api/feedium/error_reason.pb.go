@@ -36,6 +36,9 @@ const (
 	ErrorReason_ERROR_REASON_SUMMARIZE_SELF_CONTAINED_SOURCE ErrorReason = 9
 	ErrorReason_ERROR_REASON_SUMMARY_NOT_FOUND               ErrorReason = 10
 	ErrorReason_ERROR_REASON_SUMMARY_EVENT_NOT_FOUND         ErrorReason = 11
+	ErrorReason_ERROR_REASON_INTEREST_NOT_FOUND              ErrorReason = 12
+	ErrorReason_ERROR_REASON_INTEREST_INVALID_ARGUMENT       ErrorReason = 13
+	ErrorReason_ERROR_REASON_INVALID_THRESHOLD               ErrorReason = 14
 )
 
 // Enum value maps for ErrorReason.
@@ -53,6 +56,9 @@ var (
 		9:  "ERROR_REASON_SUMMARIZE_SELF_CONTAINED_SOURCE",
 		10: "ERROR_REASON_SUMMARY_NOT_FOUND",
 		11: "ERROR_REASON_SUMMARY_EVENT_NOT_FOUND",
+		12: "ERROR_REASON_INTEREST_NOT_FOUND",
+		13: "ERROR_REASON_INTEREST_INVALID_ARGUMENT",
+		14: "ERROR_REASON_INVALID_THRESHOLD",
 	}
 	ErrorReason_value = map[string]int32{
 		"ERROR_REASON_UNSPECIFIED":                     0,
@@ -67,6 +73,9 @@ var (
 		"ERROR_REASON_SUMMARIZE_SELF_CONTAINED_SOURCE": 9,
 		"ERROR_REASON_SUMMARY_NOT_FOUND":               10,
 		"ERROR_REASON_SUMMARY_EVENT_NOT_FOUND":         11,
+		"ERROR_REASON_INTEREST_NOT_FOUND":              12,
+		"ERROR_REASON_INTEREST_INVALID_ARGUMENT":       13,
+		"ERROR_REASON_INVALID_THRESHOLD":               14,
 	}
 )
 
@@ -101,7 +110,7 @@ var File_api_feedium_error_reason_proto protoreflect.FileDescriptor
 
 const file_api_feedium_error_reason_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/feedium/error_reason.proto\x12\afeedium*\xdb\x03\n" +
+	"\x1eapi/feedium/error_reason.proto\x12\afeedium*\xd0\x04\n" +
 	"\vErrorReason\x12\x1c\n" +
 	"\x18ERROR_REASON_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dERROR_REASON_SOURCE_NOT_FOUND\x10\x01\x12$\n" +
@@ -115,7 +124,10 @@ const file_api_feedium_error_reason_proto_rawDesc = "" +
 	",ERROR_REASON_SUMMARIZE_SELF_CONTAINED_SOURCE\x10\t\x12\"\n" +
 	"\x1eERROR_REASON_SUMMARY_NOT_FOUND\x10\n" +
 	"\x12(\n" +
-	"$ERROR_REASON_SUMMARY_EVENT_NOT_FOUND\x10\vB\x1dZ\x1bfeedium/api/feedium;feediumb\x06proto3"
+	"$ERROR_REASON_SUMMARY_EVENT_NOT_FOUND\x10\v\x12#\n" +
+	"\x1fERROR_REASON_INTEREST_NOT_FOUND\x10\f\x12*\n" +
+	"&ERROR_REASON_INTEREST_INVALID_ARGUMENT\x10\r\x12\"\n" +
+	"\x1eERROR_REASON_INVALID_THRESHOLD\x10\x0eB\x1dZ\x1bfeedium/api/feedium;feediumb\x06proto3"
 
 var (
 	file_api_feedium_error_reason_proto_rawDescOnce sync.Once

@@ -44,6 +44,32 @@ summary:
     max_input_chars: 50000
   outbox:
     event_ttl: 24h
+scoring:
+  worker:
+    poll_interval: 5s
+    concurrency: 4
+    lease_ttl: 5m
+    heartbeat_interval: 1m
+    graceful_timeout: 10s
+    max_attempts: 5
+    backoff_base: 10s
+    backoff_max: 10m
+    event_ttl: 24h
+  scheduler:
+    poll_interval: 5s
+  reaper:
+    interval: 1m
+    grace: 30s
+  embedding:
+    timeout: 30s
+    max_retries: 3
+    provider: openai
+    providers:
+      openai:
+        api_key: "YOUR_OPENAI_API_KEY"
+        base_url: "https://api.openai.com/v1"
+        model: "text-embedding-3-small"
+  default_threshold: 0.0
 collectors:
   rss:
     poll_interval: 5m

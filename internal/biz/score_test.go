@@ -1,0 +1,342 @@
+package biz_test
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
+	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/durationpb"
+
+	"github.com/4itosik/feedium/internal/biz"
+	"github.com/4itosik/feedium/internal/biz/mock"
+	"github.com/4itosik/feedium/internal/conf"
+)
+
+func TestCosine(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	tests := []struct {
+		name    string
+		a, b    []float32
+		want    float64
+		wantErr bool
+	}{
+		{name: "identical vectors", a: []float32{1, 0}, b: []float32{1, 0}, want: 1},
+		{name: "orthogonal vectors", a: []float32{1, 0}, b: []float32{0, 1}, want: 0},
+		{name: "opposite vectors", a: []float32{1, 0}, b: []float32{-1, 0}, want: -1},
+		{name: "zero magnitude yields zero", a: []float32{0, 0}, b: []float32{1, 0}, want: 0},
+		{name: "dimension mismatch is error", a: []float32{1, 0}, b: []float32{1}, wantErr: true},
+		{name: "empty vector is error", a: []float32{}, b: []float32{1}, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			a, b := tt.a, tt.b
+
+			// Act
+			got, err := biz.Cosine(a, b)
+
+			// Assert
+			if tt.wantErr {
+				assert.ErrorIs(t, err, biz.ErrScoreValidation)
+				return
+			}
+			require.NoError(t, err)
+			assert.InDelta(t, tt.want, got, 1e-9)
+		})
+	}
+}
+
+func TestRelevance(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	tests := []struct {
+		name      string
+		post      []float32
+		interests [][]float32
+		want      float64
+		wantErr   bool
+	}{
+		{name: "empty interest set yields lowest score", post: []float32{1, 0}, interests: nil, want: 0},
+		{
+			name:      "max cosine over interests",
+			post:      []float32{1, 0},
+			interests: [][]float32{{0, 1}, {1, 0}},
+			want:      1,
+		},
+		{
+			name:      "irrelevant content clamps to zero",
+			post:      []float32{1, 0},
+			interests: [][]float32{{-1, 0}},
+			want:      0,
+		},
+		{
+			name:      "dimension mismatch is permanent error",
+			post:      []float32{1, 0},
+			interests: [][]float32{{1, 0, 0}},
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			post, interests := tt.post, tt.interests
+
+			// Act
+			got, err := biz.Relevance(post, interests)
+
+			// Assert
+			if tt.wantErr {
+				assert.ErrorIs(t, err, biz.ErrScoreValidation)
+				return
+			}
+			require.NoError(t, err)
+			assert.InDelta(t, tt.want, got, 1e-9)
+		})
+	}
+}
+
+func TestIsTransientScoreError(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{name: "nil is not transient", err: nil, want: false},
+		{name: "validation is permanent", err: biz.ErrScoreValidation, want: false},
+		{name: "context canceled is permanent", err: context.Canceled, want: false},
+		{name: "provider error is transient", err: errors.New("503 service unavailable"), want: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			err := tt.err
+
+			// Act
+			got := biz.IsTransientScoreError(err)
+
+			// Assert
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func newScoreUsecase(
+	t *testing.T,
+	scoreRepo *mock.MockScoreRepo,
+	interestRepo *mock.MockInterestRepo,
+	summaryRepo *mock.MockSummaryRepo,
+	outboxRepo *mock.MockScoreOutboxRepo,
+	scorer *mock.MockScorer,
+) *biz.ScoreUsecase {
+	t.Helper()
+	return biz.NewScoreUsecase(scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, &conf.Scoring{})
+}
+
+func TestScoreUsecase_ScorePost(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	t.Run("happy path upserts a single score", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		scoreRepo := mock.NewMockScoreRepo(ctrl)
+		interestRepo := mock.NewMockInterestRepo(ctrl)
+		summaryRepo := mock.NewMockSummaryRepo(ctrl)
+		outboxRepo := mock.NewMockScoreOutboxRepo(ctrl)
+		scorer := mock.NewMockScorer(ctrl)
+		summaryRepo.EXPECT().ListByPost(gomock.Any(), "post-1").
+			Return([]biz.Summary{{ID: "s-1", Text: "a summary"}}, nil)
+		interestRepo.EXPECT().ListEmbeddings(gomock.Any()).Return([][]float32{{1, 0}}, nil)
+		scorer.EXPECT().Embed(gomock.Any(), "a summary").Return([]float32{1, 0}, nil)
+		scorer.EXPECT().Model().Return("model-x")
+		scoreRepo.EXPECT().Upsert(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, s biz.Score) (biz.Score, error) {
+				assert.InDelta(t, 1.0, s.Value, 1e-9)
+				assert.Equal(t, "post-1", s.PostID)
+				s.ID = "score-1"
+				return s, nil
+			})
+		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer)
+
+		// Act
+		id, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+
+		// Assert
+		require.NoError(t, err)
+		assert.Equal(t, "score-1", id)
+	})
+
+	t.Run("no interests yields lowest score without embedding", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		scoreRepo := mock.NewMockScoreRepo(ctrl)
+		interestRepo := mock.NewMockInterestRepo(ctrl)
+		summaryRepo := mock.NewMockSummaryRepo(ctrl)
+		outboxRepo := mock.NewMockScoreOutboxRepo(ctrl)
+		scorer := mock.NewMockScorer(ctrl)
+		summaryRepo.EXPECT().ListByPost(gomock.Any(), "post-1").
+			Return([]biz.Summary{{ID: "s-1", Text: "a summary"}}, nil)
+		interestRepo.EXPECT().ListEmbeddings(gomock.Any()).Return(nil, nil)
+		scorer.EXPECT().Model().Return("model-x")
+		scoreRepo.EXPECT().Upsert(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, s biz.Score) (biz.Score, error) {
+				assert.InDelta(t, 0.0, s.Value, 1e-9)
+				s.ID = "score-1"
+				return s, nil
+			})
+		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer)
+
+		// Act
+		id, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+
+		// Assert
+		require.NoError(t, err)
+		assert.Equal(t, "score-1", id)
+	})
+
+	t.Run("missing summary is a permanent error", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		scoreRepo := mock.NewMockScoreRepo(ctrl)
+		interestRepo := mock.NewMockInterestRepo(ctrl)
+		summaryRepo := mock.NewMockSummaryRepo(ctrl)
+		outboxRepo := mock.NewMockScoreOutboxRepo(ctrl)
+		scorer := mock.NewMockScorer(ctrl)
+		summaryRepo.EXPECT().ListByPost(gomock.Any(), "post-1").Return(nil, nil)
+		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer)
+
+		// Act
+		_, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+
+		// Assert
+		require.ErrorIs(t, err, biz.ErrScoreValidation)
+		assert.False(t, biz.IsTransientScoreError(err))
+	})
+
+	t.Run("transient embedding failure is propagated as transient", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		scoreRepo := mock.NewMockScoreRepo(ctrl)
+		interestRepo := mock.NewMockInterestRepo(ctrl)
+		summaryRepo := mock.NewMockSummaryRepo(ctrl)
+		outboxRepo := mock.NewMockScoreOutboxRepo(ctrl)
+		scorer := mock.NewMockScorer(ctrl)
+		summaryRepo.EXPECT().ListByPost(gomock.Any(), "post-1").
+			Return([]biz.Summary{{ID: "s-1", Text: "a summary"}}, nil)
+		interestRepo.EXPECT().ListEmbeddings(gomock.Any()).Return([][]float32{{1, 0}}, nil)
+		scorer.EXPECT().Embed(gomock.Any(), "a summary").Return(nil, errors.New("503 provider"))
+		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer)
+
+		// Act
+		_, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+
+		// Assert
+		require.Error(t, err)
+		assert.True(t, biz.IsTransientScoreError(err))
+	})
+}
+
+func TestScoreUsecase_RetryPolicy(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	t.Run("policy reads worker config", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		cfg := &conf.Scoring{Worker: &conf.ScoringWorker{
+			MaxAttempts: 3,
+			BackoffBase: durationpb.New(2 * time.Second),
+			BackoffMax:  durationpb.New(time.Minute),
+		}}
+		uc := biz.NewScoreUsecase(
+			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
+			mock.NewMockSummaryRepo(ctrl), mock.NewMockScoreOutboxRepo(ctrl),
+			mock.NewMockScorer(ctrl), cfg,
+		)
+
+		// Act
+		policy := uc.RetryPolicy()
+
+		// Assert
+		assert.Equal(t, 3, policy.MaxAttempts)
+		assert.Equal(t, 2*time.Second, policy.BackoffBase)
+	})
+
+	t.Run("empty config falls back to defaults", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		uc := biz.NewScoreUsecase(
+			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
+			mock.NewMockSummaryRepo(ctrl), mock.NewMockScoreOutboxRepo(ctrl),
+			mock.NewMockScorer(ctrl), &conf.Scoring{},
+		)
+
+		// Act
+		policy := uc.RetryPolicy()
+
+		// Assert
+		assert.Positive(t, policy.MaxAttempts)
+		assert.Positive(t, policy.BackoffBase)
+		assert.Positive(t, policy.BackoffMax)
+	})
+}
+
+func TestScoreUsecase_EnqueueDue_Error(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	t.Run("outbox error is wrapped", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		outboxRepo := mock.NewMockScoreOutboxRepo(ctrl)
+		outboxRepo.EXPECT().EnqueueDuePosts(gomock.Any()).Return(0, errors.New("db down"))
+		uc := biz.NewScoreUsecase(
+			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
+			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl), &conf.Scoring{},
+		)
+
+		// Act
+		_, err := uc.EnqueueDue(context.Background())
+
+		// Assert
+		require.Error(t, err)
+	})
+}
+
+func TestScoreUsecase_ReapStuckScoreEvents_ListError(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	t.Run("list error is propagated", func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		outboxRepo := mock.NewMockScoreOutboxRepo(ctrl)
+		outboxRepo.EXPECT().ListLeaseExpired(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(nil, errors.New("db down"))
+		uc := biz.NewScoreUsecase(
+			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
+			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl), &conf.Scoring{},
+		)
+
+		// Act
+		_, err := uc.ReapStuckScoreEvents(context.Background())
+
+		// Assert
+		require.Error(t, err)
+	})
+}

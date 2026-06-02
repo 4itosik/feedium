@@ -6,8 +6,17 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Interest is the predicate function for interest builders.
+type Interest func(*sql.Selector)
+
 // Post is the predicate function for post builders.
 type Post func(*sql.Selector)
+
+// Score is the predicate function for score builders.
+type Score func(*sql.Selector)
+
+// ScoreEvent is the predicate function for scoreevent builders.
+type ScoreEvent func(*sql.Selector)
 
 // Source is the predicate function for source builders.
 type Source func(*sql.Selector)

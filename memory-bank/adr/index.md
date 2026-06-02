@@ -14,6 +14,10 @@ status: active
 - Держи в этом каталоге только реальные decision records, а не заметки или черновые исследования.
 - Если ADR пока нет, этот индекс остается пустым и служит ожидаемой точкой размещения для будущих решений.
 
+## Records
+
+- [`ADR-001`](ADR-001-scoring-method-and-vector-storage.md) — Scoring method & vector storage for AI relevance scoring (FT-010). `decision_status: accepted` (2026-06-02): embeddings + косинус, скаляр `[0,1]` + кэш интересов в JSONB без pgvector, агрегация max.
+
 
 ## Naming
 
