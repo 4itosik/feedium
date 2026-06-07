@@ -7,6 +7,7 @@ import (
 
 	"github.com/4itosik/feedium/internal/ent/interest"
 	"github.com/4itosik/feedium/internal/ent/post"
+	"github.com/4itosik/feedium/internal/ent/postembedding"
 	"github.com/4itosik/feedium/internal/ent/schema"
 	"github.com/4itosik/feedium/internal/ent/score"
 	"github.com/4itosik/feedium/internal/ent/scoreevent"
@@ -72,6 +73,30 @@ func init() {
 	postDescID := postFields[0].Descriptor()
 	// post.DefaultID holds the default value on creation for the id field.
 	post.DefaultID = postDescID.Default.(func() uuid.UUID)
+	postembeddingFields := schema.PostEmbedding{}.Fields()
+	_ = postembeddingFields
+	// postembeddingDescModel is the schema descriptor for model field.
+	postembeddingDescModel := postembeddingFields[3].Descriptor()
+	// postembedding.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	postembedding.ModelValidator = postembeddingDescModel.Validators[0].(func(string) error)
+	// postembeddingDescInputHash is the schema descriptor for input_hash field.
+	postembeddingDescInputHash := postembeddingFields[4].Descriptor()
+	// postembedding.InputHashValidator is a validator for the "input_hash" field. It is called by the builders before save.
+	postembedding.InputHashValidator = postembeddingDescInputHash.Validators[0].(func(string) error)
+	// postembeddingDescCreatedAt is the schema descriptor for created_at field.
+	postembeddingDescCreatedAt := postembeddingFields[5].Descriptor()
+	// postembedding.DefaultCreatedAt holds the default value on creation for the created_at field.
+	postembedding.DefaultCreatedAt = postembeddingDescCreatedAt.Default.(func() time.Time)
+	// postembeddingDescUpdatedAt is the schema descriptor for updated_at field.
+	postembeddingDescUpdatedAt := postembeddingFields[6].Descriptor()
+	// postembedding.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	postembedding.DefaultUpdatedAt = postembeddingDescUpdatedAt.Default.(func() time.Time)
+	// postembedding.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	postembedding.UpdateDefaultUpdatedAt = postembeddingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// postembeddingDescID is the schema descriptor for id field.
+	postembeddingDescID := postembeddingFields[0].Descriptor()
+	// postembedding.DefaultID holds the default value on creation for the id field.
+	postembedding.DefaultID = postembeddingDescID.Default.(func() uuid.UUID)
 	scoreFields := schema.Score{}.Fields()
 	_ = scoreFields
 	// scoreDescModel is the schema descriptor for model field.

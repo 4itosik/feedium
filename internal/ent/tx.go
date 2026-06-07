@@ -16,6 +16,8 @@ type Tx struct {
 	Interest *InterestClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
+	// PostEmbedding is the client for interacting with the PostEmbedding builders.
+	PostEmbedding *PostEmbeddingClient
 	// Score is the client for interacting with the Score builders.
 	Score *ScoreClient
 	// ScoreEvent is the client for interacting with the ScoreEvent builders.
@@ -159,6 +161,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Interest = NewInterestClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
+	tx.PostEmbedding = NewPostEmbeddingClient(tx.config)
 	tx.Score = NewScoreClient(tx.config)
 	tx.ScoreEvent = NewScoreEventClient(tx.config)
 	tx.Source = NewSourceClient(tx.config)

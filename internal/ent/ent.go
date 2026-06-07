@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/4itosik/feedium/internal/ent/interest"
 	"github.com/4itosik/feedium/internal/ent/post"
+	"github.com/4itosik/feedium/internal/ent/postembedding"
 	"github.com/4itosik/feedium/internal/ent/score"
 	"github.com/4itosik/feedium/internal/ent/scoreevent"
 	"github.com/4itosik/feedium/internal/ent/source"
@@ -79,13 +80,14 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			interest.Table:     interest.ValidColumn,
-			post.Table:         post.ValidColumn,
-			score.Table:        score.ValidColumn,
-			scoreevent.Table:   scoreevent.ValidColumn,
-			source.Table:       source.ValidColumn,
-			summary.Table:      summary.ValidColumn,
-			summaryevent.Table: summaryevent.ValidColumn,
+			interest.Table:      interest.ValidColumn,
+			post.Table:          post.ValidColumn,
+			postembedding.Table: postembedding.ValidColumn,
+			score.Table:         score.ValidColumn,
+			scoreevent.Table:    scoreevent.ValidColumn,
+			source.Table:        source.ValidColumn,
+			summary.Table:       summary.ValidColumn,
+			summaryevent.Table:  summaryevent.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

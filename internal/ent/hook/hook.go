@@ -33,6 +33,18 @@ func (f PostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PostMutation", m)
 }
 
+// The PostEmbeddingFunc type is an adapter to allow the use of ordinary
+// function as PostEmbedding mutator.
+type PostEmbeddingFunc func(context.Context, *ent.PostEmbeddingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PostEmbeddingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PostEmbeddingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PostEmbeddingMutation", m)
+}
+
 // The ScoreFunc type is an adapter to allow the use of ordinary
 // function as Score mutator.
 type ScoreFunc func(context.Context, *ent.ScoreMutation) (ent.Value, error)

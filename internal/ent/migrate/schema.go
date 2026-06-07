@@ -68,6 +68,29 @@ var (
 			},
 		},
 	}
+	// PostEmbeddingsColumns holds the columns for the "post_embeddings" table.
+	PostEmbeddingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "post_id", Type: field.TypeUUID},
+		{Name: "vector", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "model", Type: field.TypeString},
+		{Name: "input_hash", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// PostEmbeddingsTable holds the schema information for the "post_embeddings" table.
+	PostEmbeddingsTable = &schema.Table{
+		Name:       "post_embeddings",
+		Columns:    PostEmbeddingsColumns,
+		PrimaryKey: []*schema.Column{PostEmbeddingsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "postembedding_post_id",
+				Unique:  true,
+				Columns: []*schema.Column{PostEmbeddingsColumns[1]},
+			},
+		},
+	}
 	// ScoresColumns holds the columns for the "scores" table.
 	ScoresColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -237,6 +260,7 @@ var (
 	Tables = []*schema.Table{
 		InterestsTable,
 		PostsTable,
+		PostEmbeddingsTable,
 		ScoresTable,
 		ScoreEventsTable,
 		SourcesTable,

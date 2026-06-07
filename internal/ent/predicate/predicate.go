@@ -12,6 +12,9 @@ type Interest func(*sql.Selector)
 // Post is the predicate function for post builders.
 type Post func(*sql.Selector)
 
+// PostEmbedding is the predicate function for postembedding builders.
+type PostEmbedding func(*sql.Selector)
+
 // Score is the predicate function for score builders.
 type Score func(*sql.Selector)
 

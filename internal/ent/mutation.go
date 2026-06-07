@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/4itosik/feedium/internal/ent/interest"
 	"github.com/4itosik/feedium/internal/ent/post"
+	"github.com/4itosik/feedium/internal/ent/postembedding"
 	"github.com/4itosik/feedium/internal/ent/predicate"
 	"github.com/4itosik/feedium/internal/ent/score"
 	"github.com/4itosik/feedium/internal/ent/scoreevent"
@@ -31,13 +32,14 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeInterest     = "Interest"
-	TypePost         = "Post"
-	TypeScore        = "Score"
-	TypeScoreEvent   = "ScoreEvent"
-	TypeSource       = "Source"
-	TypeSummary      = "Summary"
-	TypeSummaryEvent = "SummaryEvent"
+	TypeInterest      = "Interest"
+	TypePost          = "Post"
+	TypePostEmbedding = "PostEmbedding"
+	TypeScore         = "Score"
+	TypeScoreEvent    = "ScoreEvent"
+	TypeSource        = "Source"
+	TypeSummary       = "Summary"
+	TypeSummaryEvent  = "SummaryEvent"
 )
 
 // InterestMutation represents an operation that mutates the Interest nodes in the graph.
@@ -1473,6 +1475,624 @@ func (m *PostMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Post edge %s", name)
+}
+
+// PostEmbeddingMutation represents an operation that mutates the PostEmbedding nodes in the graph.
+type PostEmbeddingMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	post_id       *uuid.UUID
+	vector        *[]float32
+	appendvector  []float32
+	model         *string
+	input_hash    *string
+	created_at    *time.Time
+	updated_at    *time.Time
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*PostEmbedding, error)
+	predicates    []predicate.PostEmbedding
+}
+
+var _ ent.Mutation = (*PostEmbeddingMutation)(nil)
+
+// postembeddingOption allows management of the mutation configuration using functional options.
+type postembeddingOption func(*PostEmbeddingMutation)
+
+// newPostEmbeddingMutation creates new mutation for the PostEmbedding entity.
+func newPostEmbeddingMutation(c config, op Op, opts ...postembeddingOption) *PostEmbeddingMutation {
+	m := &PostEmbeddingMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePostEmbedding,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPostEmbeddingID sets the ID field of the mutation.
+func withPostEmbeddingID(id uuid.UUID) postembeddingOption {
+	return func(m *PostEmbeddingMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PostEmbedding
+		)
+		m.oldValue = func(ctx context.Context) (*PostEmbedding, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PostEmbedding.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPostEmbedding sets the old PostEmbedding of the mutation.
+func withPostEmbedding(node *PostEmbedding) postembeddingOption {
+	return func(m *PostEmbeddingMutation) {
+		m.oldValue = func(context.Context) (*PostEmbedding, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PostEmbeddingMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PostEmbeddingMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of PostEmbedding entities.
+func (m *PostEmbeddingMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PostEmbeddingMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PostEmbeddingMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PostEmbedding.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPostID sets the "post_id" field.
+func (m *PostEmbeddingMutation) SetPostID(u uuid.UUID) {
+	m.post_id = &u
+}
+
+// PostID returns the value of the "post_id" field in the mutation.
+func (m *PostEmbeddingMutation) PostID() (r uuid.UUID, exists bool) {
+	v := m.post_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostID returns the old "post_id" field's value of the PostEmbedding entity.
+// If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostEmbeddingMutation) OldPostID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostID: %w", err)
+	}
+	return oldValue.PostID, nil
+}
+
+// ResetPostID resets all changes to the "post_id" field.
+func (m *PostEmbeddingMutation) ResetPostID() {
+	m.post_id = nil
+}
+
+// SetVector sets the "vector" field.
+func (m *PostEmbeddingMutation) SetVector(f []float32) {
+	m.vector = &f
+	m.appendvector = nil
+}
+
+// Vector returns the value of the "vector" field in the mutation.
+func (m *PostEmbeddingMutation) Vector() (r []float32, exists bool) {
+	v := m.vector
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVector returns the old "vector" field's value of the PostEmbedding entity.
+// If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostEmbeddingMutation) OldVector(ctx context.Context) (v []float32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVector is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVector requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVector: %w", err)
+	}
+	return oldValue.Vector, nil
+}
+
+// AppendVector adds f to the "vector" field.
+func (m *PostEmbeddingMutation) AppendVector(f []float32) {
+	m.appendvector = append(m.appendvector, f...)
+}
+
+// AppendedVector returns the list of values that were appended to the "vector" field in this mutation.
+func (m *PostEmbeddingMutation) AppendedVector() ([]float32, bool) {
+	if len(m.appendvector) == 0 {
+		return nil, false
+	}
+	return m.appendvector, true
+}
+
+// ResetVector resets all changes to the "vector" field.
+func (m *PostEmbeddingMutation) ResetVector() {
+	m.vector = nil
+	m.appendvector = nil
+}
+
+// SetModel sets the "model" field.
+func (m *PostEmbeddingMutation) SetModel(s string) {
+	m.model = &s
+}
+
+// Model returns the value of the "model" field in the mutation.
+func (m *PostEmbeddingMutation) Model() (r string, exists bool) {
+	v := m.model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModel returns the old "model" field's value of the PostEmbedding entity.
+// If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostEmbeddingMutation) OldModel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModel: %w", err)
+	}
+	return oldValue.Model, nil
+}
+
+// ResetModel resets all changes to the "model" field.
+func (m *PostEmbeddingMutation) ResetModel() {
+	m.model = nil
+}
+
+// SetInputHash sets the "input_hash" field.
+func (m *PostEmbeddingMutation) SetInputHash(s string) {
+	m.input_hash = &s
+}
+
+// InputHash returns the value of the "input_hash" field in the mutation.
+func (m *PostEmbeddingMutation) InputHash() (r string, exists bool) {
+	v := m.input_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInputHash returns the old "input_hash" field's value of the PostEmbedding entity.
+// If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostEmbeddingMutation) OldInputHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInputHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInputHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInputHash: %w", err)
+	}
+	return oldValue.InputHash, nil
+}
+
+// ResetInputHash resets all changes to the "input_hash" field.
+func (m *PostEmbeddingMutation) ResetInputHash() {
+	m.input_hash = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *PostEmbeddingMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *PostEmbeddingMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the PostEmbedding entity.
+// If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostEmbeddingMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *PostEmbeddingMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *PostEmbeddingMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *PostEmbeddingMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the PostEmbedding entity.
+// If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostEmbeddingMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *PostEmbeddingMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the PostEmbeddingMutation builder.
+func (m *PostEmbeddingMutation) Where(ps ...predicate.PostEmbedding) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PostEmbeddingMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PostEmbeddingMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PostEmbedding, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PostEmbeddingMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PostEmbeddingMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (PostEmbedding).
+func (m *PostEmbeddingMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PostEmbeddingMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.post_id != nil {
+		fields = append(fields, postembedding.FieldPostID)
+	}
+	if m.vector != nil {
+		fields = append(fields, postembedding.FieldVector)
+	}
+	if m.model != nil {
+		fields = append(fields, postembedding.FieldModel)
+	}
+	if m.input_hash != nil {
+		fields = append(fields, postembedding.FieldInputHash)
+	}
+	if m.created_at != nil {
+		fields = append(fields, postembedding.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, postembedding.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PostEmbeddingMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case postembedding.FieldPostID:
+		return m.PostID()
+	case postembedding.FieldVector:
+		return m.Vector()
+	case postembedding.FieldModel:
+		return m.Model()
+	case postembedding.FieldInputHash:
+		return m.InputHash()
+	case postembedding.FieldCreatedAt:
+		return m.CreatedAt()
+	case postembedding.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PostEmbeddingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case postembedding.FieldPostID:
+		return m.OldPostID(ctx)
+	case postembedding.FieldVector:
+		return m.OldVector(ctx)
+	case postembedding.FieldModel:
+		return m.OldModel(ctx)
+	case postembedding.FieldInputHash:
+		return m.OldInputHash(ctx)
+	case postembedding.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case postembedding.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown PostEmbedding field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PostEmbeddingMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case postembedding.FieldPostID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostID(v)
+		return nil
+	case postembedding.FieldVector:
+		v, ok := value.([]float32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVector(v)
+		return nil
+	case postembedding.FieldModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModel(v)
+		return nil
+	case postembedding.FieldInputHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInputHash(v)
+		return nil
+	case postembedding.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case postembedding.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PostEmbedding field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PostEmbeddingMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PostEmbeddingMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PostEmbeddingMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown PostEmbedding numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PostEmbeddingMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PostEmbeddingMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PostEmbeddingMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown PostEmbedding nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PostEmbeddingMutation) ResetField(name string) error {
+	switch name {
+	case postembedding.FieldPostID:
+		m.ResetPostID()
+		return nil
+	case postembedding.FieldVector:
+		m.ResetVector()
+		return nil
+	case postembedding.FieldModel:
+		m.ResetModel()
+		return nil
+	case postembedding.FieldInputHash:
+		m.ResetInputHash()
+		return nil
+	case postembedding.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case postembedding.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown PostEmbedding field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PostEmbeddingMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PostEmbeddingMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PostEmbeddingMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PostEmbeddingMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PostEmbeddingMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PostEmbeddingMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PostEmbeddingMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown PostEmbedding unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PostEmbeddingMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown PostEmbedding edge %s", name)
 }
 
 // ScoreMutation represents an operation that mutates the Score nodes in the graph.

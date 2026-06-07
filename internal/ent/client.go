@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/4itosik/feedium/internal/ent/interest"
 	"github.com/4itosik/feedium/internal/ent/post"
+	"github.com/4itosik/feedium/internal/ent/postembedding"
 	"github.com/4itosik/feedium/internal/ent/score"
 	"github.com/4itosik/feedium/internal/ent/scoreevent"
 	"github.com/4itosik/feedium/internal/ent/source"
@@ -34,6 +35,8 @@ type Client struct {
 	Interest *InterestClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
+	// PostEmbedding is the client for interacting with the PostEmbedding builders.
+	PostEmbedding *PostEmbeddingClient
 	// Score is the client for interacting with the Score builders.
 	Score *ScoreClient
 	// ScoreEvent is the client for interacting with the ScoreEvent builders.
@@ -57,6 +60,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Interest = NewInterestClient(c.config)
 	c.Post = NewPostClient(c.config)
+	c.PostEmbedding = NewPostEmbeddingClient(c.config)
 	c.Score = NewScoreClient(c.config)
 	c.ScoreEvent = NewScoreEventClient(c.config)
 	c.Source = NewSourceClient(c.config)
@@ -152,15 +156,16 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Interest:     NewInterestClient(cfg),
-		Post:         NewPostClient(cfg),
-		Score:        NewScoreClient(cfg),
-		ScoreEvent:   NewScoreEventClient(cfg),
-		Source:       NewSourceClient(cfg),
-		Summary:      NewSummaryClient(cfg),
-		SummaryEvent: NewSummaryEventClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		Interest:      NewInterestClient(cfg),
+		Post:          NewPostClient(cfg),
+		PostEmbedding: NewPostEmbeddingClient(cfg),
+		Score:         NewScoreClient(cfg),
+		ScoreEvent:    NewScoreEventClient(cfg),
+		Source:        NewSourceClient(cfg),
+		Summary:       NewSummaryClient(cfg),
+		SummaryEvent:  NewSummaryEventClient(cfg),
 	}, nil
 }
 
@@ -178,15 +183,16 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Interest:     NewInterestClient(cfg),
-		Post:         NewPostClient(cfg),
-		Score:        NewScoreClient(cfg),
-		ScoreEvent:   NewScoreEventClient(cfg),
-		Source:       NewSourceClient(cfg),
-		Summary:      NewSummaryClient(cfg),
-		SummaryEvent: NewSummaryEventClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		Interest:      NewInterestClient(cfg),
+		Post:          NewPostClient(cfg),
+		PostEmbedding: NewPostEmbeddingClient(cfg),
+		Score:         NewScoreClient(cfg),
+		ScoreEvent:    NewScoreEventClient(cfg),
+		Source:        NewSourceClient(cfg),
+		Summary:       NewSummaryClient(cfg),
+		SummaryEvent:  NewSummaryEventClient(cfg),
 	}, nil
 }
 
@@ -216,7 +222,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Interest, c.Post, c.Score, c.ScoreEvent, c.Source, c.Summary, c.SummaryEvent,
+		c.Interest, c.Post, c.PostEmbedding, c.Score, c.ScoreEvent, c.Source, c.Summary,
+		c.SummaryEvent,
 	} {
 		n.Use(hooks...)
 	}
@@ -226,7 +233,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Interest, c.Post, c.Score, c.ScoreEvent, c.Source, c.Summary, c.SummaryEvent,
+		c.Interest, c.Post, c.PostEmbedding, c.Score, c.ScoreEvent, c.Source, c.Summary,
+		c.SummaryEvent,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -239,6 +247,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Interest.mutate(ctx, m)
 	case *PostMutation:
 		return c.Post.mutate(ctx, m)
+	case *PostEmbeddingMutation:
+		return c.PostEmbedding.mutate(ctx, m)
 	case *ScoreMutation:
 		return c.Score.mutate(ctx, m)
 	case *ScoreEventMutation:
@@ -549,6 +559,139 @@ func (c *PostClient) mutate(ctx context.Context, m *PostMutation) (Value, error)
 		return (&PostDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Post mutation op: %q", m.Op())
+	}
+}
+
+// PostEmbeddingClient is a client for the PostEmbedding schema.
+type PostEmbeddingClient struct {
+	config
+}
+
+// NewPostEmbeddingClient returns a client for the PostEmbedding from the given config.
+func NewPostEmbeddingClient(c config) *PostEmbeddingClient {
+	return &PostEmbeddingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `postembedding.Hooks(f(g(h())))`.
+func (c *PostEmbeddingClient) Use(hooks ...Hook) {
+	c.hooks.PostEmbedding = append(c.hooks.PostEmbedding, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `postembedding.Intercept(f(g(h())))`.
+func (c *PostEmbeddingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PostEmbedding = append(c.inters.PostEmbedding, interceptors...)
+}
+
+// Create returns a builder for creating a PostEmbedding entity.
+func (c *PostEmbeddingClient) Create() *PostEmbeddingCreate {
+	mutation := newPostEmbeddingMutation(c.config, OpCreate)
+	return &PostEmbeddingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PostEmbedding entities.
+func (c *PostEmbeddingClient) CreateBulk(builders ...*PostEmbeddingCreate) *PostEmbeddingCreateBulk {
+	return &PostEmbeddingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PostEmbeddingClient) MapCreateBulk(slice any, setFunc func(*PostEmbeddingCreate, int)) *PostEmbeddingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PostEmbeddingCreateBulk{err: fmt.Errorf("calling to PostEmbeddingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PostEmbeddingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PostEmbeddingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PostEmbedding.
+func (c *PostEmbeddingClient) Update() *PostEmbeddingUpdate {
+	mutation := newPostEmbeddingMutation(c.config, OpUpdate)
+	return &PostEmbeddingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PostEmbeddingClient) UpdateOne(_m *PostEmbedding) *PostEmbeddingUpdateOne {
+	mutation := newPostEmbeddingMutation(c.config, OpUpdateOne, withPostEmbedding(_m))
+	return &PostEmbeddingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PostEmbeddingClient) UpdateOneID(id uuid.UUID) *PostEmbeddingUpdateOne {
+	mutation := newPostEmbeddingMutation(c.config, OpUpdateOne, withPostEmbeddingID(id))
+	return &PostEmbeddingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PostEmbedding.
+func (c *PostEmbeddingClient) Delete() *PostEmbeddingDelete {
+	mutation := newPostEmbeddingMutation(c.config, OpDelete)
+	return &PostEmbeddingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PostEmbeddingClient) DeleteOne(_m *PostEmbedding) *PostEmbeddingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PostEmbeddingClient) DeleteOneID(id uuid.UUID) *PostEmbeddingDeleteOne {
+	builder := c.Delete().Where(postembedding.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PostEmbeddingDeleteOne{builder}
+}
+
+// Query returns a query builder for PostEmbedding.
+func (c *PostEmbeddingClient) Query() *PostEmbeddingQuery {
+	return &PostEmbeddingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePostEmbedding},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PostEmbedding entity by its id.
+func (c *PostEmbeddingClient) Get(ctx context.Context, id uuid.UUID) (*PostEmbedding, error) {
+	return c.Query().Where(postembedding.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PostEmbeddingClient) GetX(ctx context.Context, id uuid.UUID) *PostEmbedding {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PostEmbeddingClient) Hooks() []Hook {
+	return c.hooks.PostEmbedding
+}
+
+// Interceptors returns the client interceptors.
+func (c *PostEmbeddingClient) Interceptors() []Interceptor {
+	return c.inters.PostEmbedding
+}
+
+func (c *PostEmbeddingClient) mutate(ctx context.Context, m *PostEmbeddingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PostEmbeddingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PostEmbeddingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PostEmbeddingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PostEmbeddingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PostEmbedding mutation op: %q", m.Op())
 	}
 }
 
@@ -1316,10 +1459,11 @@ func (c *SummaryEventClient) mutate(ctx context.Context, m *SummaryEventMutation
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Interest, Post, Score, ScoreEvent, Source, Summary, SummaryEvent []ent.Hook
+		Interest, Post, PostEmbedding, Score, ScoreEvent, Source, Summary,
+		SummaryEvent []ent.Hook
 	}
 	inters struct {
-		Interest, Post, Score, ScoreEvent, Source, Summary,
+		Interest, Post, PostEmbedding, Score, ScoreEvent, Source, Summary,
 		SummaryEvent []ent.Interceptor
 	}
 )
