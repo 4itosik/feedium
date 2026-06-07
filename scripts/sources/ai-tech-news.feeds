@@ -1,0 +1,46 @@
+# Feedium source seed list — topic: AI & technology news (RSS only)
+#
+# Format:  <feed_url>  [optional label/notes]
+#   - First whitespace-separated token is the RSS feed URL (used as the
+#     dedup key). Everything after it on the line is a human label.
+#   - Lines starting with '#' and blank lines are ignored.
+#   - Trailing slashes are normalized away when comparing/creating.
+#
+# Seed with:  scripts/sources/seed-sources.sh
+# Re-running is safe — already-registered feeds are skipped (idempotent).
+#
+# All feeds below were verified live (HTTP 200 + valid XML) on 2026-06-02.
+# Re-check with: scripts/sources/check-feeds.sh
+
+# ─────────────────────────── EN · AI-first (primary sources) ──────────────────
+https://openai.com/news/rss.xml                              OpenAI — news/research
+https://deepmind.google/blog/rss.xml                         Google DeepMind — blog
+https://blog.google/innovation-and-ai/technology/ai/rss/     Google — AI blog
+https://huggingface.co/blog/feed.xml                         Hugging Face — blog
+https://bair.berkeley.edu/blog/feed.xml                      Berkeley AI Research (BAIR)
+https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml  MIT News — Artificial Intelligence
+https://importai.substack.com/feed                           Import AI (Jack Clark) — weekly
+https://simonwillison.net/atom/everything/                   Simon Willison — LLM/AI weblog
+
+# ─────────────────────────── EN · AI research (arXiv) ─────────────────────────
+https://export.arxiv.org/rss/cs.AI                           arXiv — cs.AI (Artificial Intelligence)
+https://export.arxiv.org/rss/cs.LG                           arXiv — cs.LG (Machine Learning)
+https://export.arxiv.org/rss/cs.CL                           arXiv — cs.CL (Computation & Language / NLP)
+
+# ─────────────────────────── EN · tech media (strong AI desk) ─────────────────
+https://techcrunch.com/category/artificial-intelligence/feed/   TechCrunch — AI
+https://www.theverge.com/rss/ai-artificial-intelligence/index.xml  The Verge — AI
+https://www.technologyreview.com/feed/                       MIT Technology Review
+https://venturebeat.com/category/ai/feed                     VentureBeat — AI
+https://feeds.arstechnica.com/arstechnica/index              Ars Technica — main
+https://www.wired.com/feed/tag/ai/latest/rss                 WIRED — AI
+https://hnrss.org/frontpage                                  Hacker News — front page
+
+# ─────────────────────────── RU · tech & AI media ─────────────────────────────
+https://habr.com/ru/rss/hubs/artificial_intelligence/articles/?fl=ru  Habr — хаб «Искусственный интеллект»
+https://habr.com/ru/rss/hubs/machine_learning/articles/?fl=ru         Habr — хаб «Машинное обучение»
+https://nplus1.ru/rss                                        N+1 — наука и технологии
+https://3dnews.ru/news/rss/                                  3DNews — новости
+https://www.ixbt.com/export/news.rss                         iXBT — новости
+https://hightech.fm/feed                                     Хайтек (hightech.fm)
+https://vc.ru/rss/all                                        vc.ru — все материалы
