@@ -15,7 +15,7 @@ derived_from:
   - ../FT-004-posts-management/spec.md
   - ../../engineering/database.md
 status: active
-delivery_status: planned
+delivery_status: done
 ---
 
 # FT-013: Post Embedding Persistence

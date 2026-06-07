@@ -5,7 +5,7 @@ doc_function: derived
 purpose: "Execution-план реализации FT-013 (персистентность эмбеддинга поста и авто-переоценка при смене интересов). Фиксирует discovery context, шаги TDD, риски и test strategy без переопределения canonical feature-фактов из feature.md."
 derived_from:
   - feature.md
-status: active
+status: archived
 ---
 
 # План имплементации
