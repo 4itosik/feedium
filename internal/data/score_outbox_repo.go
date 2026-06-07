@@ -23,6 +23,15 @@ const scoreEventColumnsQualified = `
 // enqueueScanLimit bounds how many due posts a single enqueue pass considers.
 const enqueueScanLimit = 500
 
+// scoreEventInsertQuery inserts a pending score_event, idempotent via ON CONFLICT
+// DO NOTHING on the partial unique index over active statuses (INV-04). Shared by
+// EnqueueDuePosts and EnqueueScoredPosts to prevent drift.
+const scoreEventInsertQuery = `
+INSERT INTO score_events (id, post_id, status, attempt_count, created_at)
+VALUES ($1, $2, 'pending', 0, now())
+ON CONFLICT (post_id) WHERE status IN ('pending', 'processing') DO NOTHING
+`
+
 type scoreOutboxRepo struct {
 	data *Data
 }
@@ -47,14 +56,9 @@ func (r *scoreOutboxRepo) EnqueueDuePosts(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	const insertQuery = `
-INSERT INTO score_events (id, post_id, status, attempt_count, created_at)
-VALUES ($1, $2, 'pending', 0, now())
-ON CONFLICT (post_id) WHERE status IN ('pending', 'processing') DO NOTHING
-`
 	enqueued := 0
 	for _, pid := range postIDs {
-		res, insErr := ex.ExecContext(ctx, insertQuery, uuid.Must(uuid.NewV7()), pid)
+		res, insErr := ex.ExecContext(ctx, scoreEventInsertQuery, uuid.Must(uuid.NewV7()), pid)
 		if insErr != nil {
 			return enqueued, fmt.Errorf("insert score event: %w", insErr)
 		}
@@ -65,6 +69,65 @@ ON CONFLICT (post_id) WHERE status IN ('pending', 'processing') DO NOTHING
 		enqueued += int(affected)
 	}
 	return enqueued, nil
+}
+
+// EnqueueScoredPosts inserts a pending score_event for each already-scored post
+// without an active event — the re-scoring path on interest change (FT-013 CTR-03).
+// Idempotent via ON CONFLICT DO NOTHING on the partial unique index (INV-04).
+// Returns the number of events actually enqueued.
+func (r *scoreOutboxRepo) EnqueueScoredPosts(ctx context.Context) (int, error) {
+	ex := sqlExecerFromContext(ctx, r.data.DB)
+
+	postIDs, err := r.scoredCandidatePostIDs(ctx, ex)
+	if err != nil {
+		return 0, err
+	}
+
+	enqueued := 0
+	for _, pid := range postIDs {
+		res, insErr := ex.ExecContext(ctx, scoreEventInsertQuery, uuid.Must(uuid.NewV7()), pid)
+		if insErr != nil {
+			return enqueued, fmt.Errorf("insert rescore event: %w", insErr)
+		}
+		affected, affErr := res.RowsAffected()
+		if affErr != nil {
+			return enqueued, fmt.Errorf("rescore rows affected: %w", affErr)
+		}
+		enqueued += int(affected)
+	}
+	return enqueued, nil
+}
+
+// scoredCandidatePostIDs returns post ids that already have a score and no active
+// score_event — the posts eligible for re-score enqueue.
+func (r *scoreOutboxRepo) scoredCandidatePostIDs(ctx context.Context, ex sqlExecer) ([]uuid.UUID, error) {
+	const candidateQuery = `
+SELECT sc.post_id
+FROM scores sc
+WHERE NOT EXISTS (
+    SELECT 1 FROM score_events se
+    WHERE se.post_id = sc.post_id AND se.status IN ('pending', 'processing')
+)
+LIMIT $1
+`
+	rows, err := ex.QueryContext(ctx, candidateQuery, enqueueScanLimit)
+	if err != nil {
+		return nil, fmt.Errorf("query scored posts: %w", err)
+	}
+	defer rows.Close()
+
+	var postIDs []uuid.UUID
+	for rows.Next() {
+		var pid uuid.UUID
+		if scanErr := rows.Scan(&pid); scanErr != nil {
+			return nil, fmt.Errorf("scan scored post: %w", scanErr)
+		}
+		postIDs = append(postIDs, pid)
+	}
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return nil, fmt.Errorf("rows scored posts: %w", rowsErr)
+	}
+	return postIDs, nil
 }
 
 // dueCandidatePostIDs returns post ids that have a summary, no score, and no

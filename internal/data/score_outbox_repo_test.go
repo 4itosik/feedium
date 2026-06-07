@@ -31,6 +31,103 @@ func seedSummary(t *testing.T, d *data.Data, sourceID, postID string) {
 	require.NoError(t, err)
 }
 
+// seedScore persists a score for the given post so it becomes eligible for the
+// re-scoring enqueue path (EnqueueScoredPosts).
+func seedScore(t *testing.T, d *data.Data, postID string, value float64) {
+	t.Helper()
+	repo := data.NewScoreRepo(d)
+	now := time.Now()
+	_, err := repo.Upsert(context.Background(), biz.Score{
+		ID:        uuid.Must(uuid.NewV7()).String(),
+		PostID:    postID,
+		Value:     value,
+		Model:     "test-model",
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+	require.NoError(t, err)
+}
+
+func TestIntegration_ScoreOutbox_EnqueueScoredPostsIdempotent(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	// Arrange
+	ctx := context.Background()
+	d, cleanup := setupTestData(t)
+	defer cleanup()
+	repo := data.NewScoreOutboxRepo(d)
+	sourceID := seedSource(t, d)
+	postID := seedPost(t, d, sourceID, "ext-1", time.Now())
+	seedSummary(t, d, sourceID, postID)
+	seedScore(t, d, postID, 0.5)
+	// A post without a score must NOT be enqueued by EnqueueScoredPosts.
+	unscored := seedPost(t, d, sourceID, "ext-2", time.Now())
+	seedSummary(t, d, sourceID, unscored)
+
+	// Act
+	first, err := repo.EnqueueScoredPosts(ctx)
+	require.NoError(t, err)
+	second, err := repo.EnqueueScoredPosts(ctx)
+	require.NoError(t, err)
+
+	// Assert
+	assert.Equal(t, 1, first, "the scored post is enqueued for re-scoring")
+	assert.Equal(t, 0, second, "an active event blocks re-enqueue (INV-04)")
+
+	var active int
+	row := d.DB.QueryRowContext(ctx,
+		`SELECT count(*) FROM score_events WHERE post_id = $1 AND status IN ('pending', 'processing')`,
+		postID)
+	require.NoError(t, row.Scan(&active))
+	assert.Equal(t, 1, active, "exactly one active re-score event for the scored post")
+
+	var unscoredEvents int
+	row = d.DB.QueryRowContext(ctx,
+		`SELECT count(*) FROM score_events WHERE post_id = $1`, unscored)
+	require.NoError(t, row.Scan(&unscoredEvents))
+	assert.Equal(t, 0, unscoredEvents, "an unscored post is not enqueued by EnqueueScoredPosts")
+}
+
+func TestIntegration_ScoreOutbox_EnqueueScoredPostsReenqueuesAfterCompletion(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	// Arrange
+	ctx := context.Background()
+	d, cleanup := setupTestData(t)
+	defer cleanup()
+	repo := data.NewScoreOutboxRepo(d)
+	sourceID := seedSource(t, d)
+	postID := seedPost(t, d, sourceID, "ext-1", time.Now())
+	seedSummary(t, d, sourceID, postID)
+	seedScore(t, d, postID, 0.5)
+
+	// Act: first enqueue produces one event; drive it to terminal completion via
+	// the real outbox lifecycle (claim under lease, then finalize as completed).
+	first, err := repo.EnqueueScoredPosts(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, first, "the scored post is enqueued for re-scoring")
+
+	claimed, err := repo.ClaimOne(ctx, "worker-1", 5*time.Minute)
+	require.NoError(t, err)
+	require.Equal(t, postID, claimed.PostID)
+	require.NoError(t, repo.FinalizeWithLease(ctx, claimed.ID, "worker-1", biz.ScoreEventStatusCompleted, nil))
+
+	// With no active event remaining, the scored post must be re-enqueueable —
+	// this is the core re-scoring path STEP-07's interest-change trigger relies on.
+	second, err := repo.EnqueueScoredPosts(ctx)
+	require.NoError(t, err)
+
+	// Assert
+	assert.Equal(t, 1, second, "completed event no longer blocks re-enqueue (INV-04)")
+
+	var active int
+	row := d.DB.QueryRowContext(ctx,
+		`SELECT count(*) FROM score_events WHERE post_id = $1 AND status IN ('pending', 'processing')`,
+		postID)
+	require.NoError(t, row.Scan(&active))
+	assert.Equal(t, 1, active, "exactly one active re-score event after completion")
+}
+
 func TestIntegration_ScoreOutbox_EnqueueDuePostsIdempotent(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 

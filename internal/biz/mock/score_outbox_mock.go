@@ -72,6 +72,21 @@ func (mr *MockScoreOutboxRepoMockRecorder) EnqueueDuePosts(ctx any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueDuePosts", reflect.TypeOf((*MockScoreOutboxRepo)(nil).EnqueueDuePosts), ctx)
 }
 
+// EnqueueScoredPosts mocks base method.
+func (m *MockScoreOutboxRepo) EnqueueScoredPosts(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueScoredPosts", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnqueueScoredPosts indicates an expected call of EnqueueScoredPosts.
+func (mr *MockScoreOutboxRepoMockRecorder) EnqueueScoredPosts(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueScoredPosts", reflect.TypeOf((*MockScoreOutboxRepo)(nil).EnqueueScoredPosts), ctx)
+}
+
 // ExtendLease mocks base method.
 func (m *MockScoreOutboxRepo) ExtendLease(ctx context.Context, eventID, workerID string, leaseTTL time.Duration) error {
 	m.ctrl.T.Helper()

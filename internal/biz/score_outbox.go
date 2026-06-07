@@ -45,6 +45,11 @@ type ScoreOutboxRepo interface {
 	// INSERT ... ON CONFLICT DO NOTHING on the partial unique index (INV-04).
 	// Returns the number of events enqueued.
 	EnqueueDuePosts(ctx context.Context) (int, error)
+	// EnqueueScoredPosts inserts a pending score_event for every post that already
+	// has a score and no active event — the re-scoring path on interest change
+	// (FT-013 CTR-03). Idempotent via ON CONFLICT DO NOTHING on the partial unique
+	// index (INV-04). Returns the number of events enqueued.
+	EnqueueScoredPosts(ctx context.Context) (int, error)
 	// ClaimOne atomically claims one eligible event (pending+due, or processing
 	// with expired lease) under FOR UPDATE SKIP LOCKED, marking it processing
 	// with the caller's lease and incrementing attempt_count. Returns
