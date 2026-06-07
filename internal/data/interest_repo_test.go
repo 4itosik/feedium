@@ -75,8 +75,8 @@ func TestIntegration_InterestRepo_NotFound(t *testing.T) {
 	delErr := repo.Delete(ctx, missing.ID)
 
 	// Assert
-	assert.ErrorIs(t, updErr, biz.ErrInterestNotFound)
-	assert.ErrorIs(t, delErr, biz.ErrInterestNotFound)
+	require.ErrorIs(t, updErr, biz.ErrInterestNotFound)
+	require.ErrorIs(t, delErr, biz.ErrInterestNotFound)
 }
 
 func TestIntegration_InterestRepo_ListEmbeddings(t *testing.T) {
