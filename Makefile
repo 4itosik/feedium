@@ -36,4 +36,4 @@ generate:
 	make wire
 
 migrate:
-	goose -dir migrations postgres "postgres://feesium:feesium@127.0.0.1:5432/feesium?sslmode=disable" up
+	goose -dir migrations postgres "postgres://feedium:feedium@127.0.0.1:5432/feedium?sslmode=disable" up
