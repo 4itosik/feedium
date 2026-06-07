@@ -57,6 +57,13 @@ type Scorer interface {
 	Model() string
 }
 
+// InterestVector is an interest embedding tagged with the model that produced it,
+// so scoring never cosines vectors across models (FT-013 INV-01).
+type InterestVector struct {
+	Embedding []float32
+	Model     string
+}
+
 // InterestRepo persists interests and exposes their cached embeddings to scoring.
 type InterestRepo interface {
 	Save(ctx context.Context, interest Interest) (Interest, error)
@@ -67,6 +74,8 @@ type InterestRepo interface {
 	// ListEmbeddings returns the cached embedding of every interest, used by the
 	// scorer to compute relevance (DEC-04).
 	ListEmbeddings(ctx context.Context) ([][]float32, error)
+	// ListInterestVectors returns every interest embedding with its model (INV-01).
+	ListInterestVectors(ctx context.Context) ([]InterestVector, error)
 }
 
 // InterestUsecase handles business logic for Interest operations.

@@ -150,6 +150,19 @@ func (r *interestRepo) ListEmbeddings(ctx context.Context) ([][]float32, error) 
 	return embeddings, nil
 }
 
+// ListInterestVectors returns each interest embedding tagged with its model (INV-01).
+func (r *interestRepo) ListInterestVectors(ctx context.Context) ([]biz.InterestVector, error) {
+	entInterests, err := r.data.Ent.Interest.Query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list interest vectors: %w", err)
+	}
+	vectors := make([]biz.InterestVector, 0, len(entInterests))
+	for _, ei := range entInterests {
+		vectors = append(vectors, biz.InterestVector{Embedding: ei.Embedding, Model: ei.Model})
+	}
+	return vectors, nil
+}
+
 func mapInterestToDomain(ei *entgo.Interest) biz.Interest {
 	return biz.Interest{
 		ID:        ei.ID.String(),
