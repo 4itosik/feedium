@@ -1,0 +1,88 @@
+=== RUN   TestScoreUsecase_EnqueueDue
+=== RUN   TestScoreUsecase_EnqueueDue/delegates_to_the_outbox_and_returns_the_count
+--- PASS: TestScoreUsecase_EnqueueDue (0.00s)
+    --- PASS: TestScoreUsecase_EnqueueDue/delegates_to_the_outbox_and_returns_the_count (0.00s)
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents/under-budget_events_are_skipped,_at-budget_are_terminated
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents/a_lost_race_does_not_count_as_terminated
+--- PASS: TestScoreUsecase_ReapStuckScoreEvents (0.00s)
+    --- PASS: TestScoreUsecase_ReapStuckScoreEvents/under-budget_events_are_skipped,_at-budget_are_terminated (0.00s)
+    --- PASS: TestScoreUsecase_ReapStuckScoreEvents/a_lost_race_does_not_count_as_terminated (0.00s)
+=== RUN   TestCosine
+=== RUN   TestCosine/identical_vectors
+=== RUN   TestCosine/orthogonal_vectors
+=== RUN   TestCosine/opposite_vectors
+=== RUN   TestCosine/zero_magnitude_yields_zero
+=== RUN   TestCosine/dimension_mismatch_is_error
+=== RUN   TestCosine/empty_vector_is_error
+--- PASS: TestCosine (0.00s)
+    --- PASS: TestCosine/identical_vectors (0.00s)
+    --- PASS: TestCosine/orthogonal_vectors (0.00s)
+    --- PASS: TestCosine/opposite_vectors (0.00s)
+    --- PASS: TestCosine/zero_magnitude_yields_zero (0.00s)
+    --- PASS: TestCosine/dimension_mismatch_is_error (0.00s)
+    --- PASS: TestCosine/empty_vector_is_error (0.00s)
+=== RUN   TestRelevance
+=== RUN   TestRelevance/empty_interest_set_yields_lowest_score
+=== RUN   TestRelevance/max_cosine_over_interests
+=== RUN   TestRelevance/irrelevant_content_clamps_to_zero
+=== RUN   TestRelevance/dimension_mismatch_is_permanent_error
+--- PASS: TestRelevance (0.00s)
+    --- PASS: TestRelevance/empty_interest_set_yields_lowest_score (0.00s)
+    --- PASS: TestRelevance/max_cosine_over_interests (0.00s)
+    --- PASS: TestRelevance/irrelevant_content_clamps_to_zero (0.00s)
+    --- PASS: TestRelevance/dimension_mismatch_is_permanent_error (0.00s)
+=== RUN   TestIsTransientScoreError
+=== RUN   TestIsTransientScoreError/nil_is_not_transient
+=== RUN   TestIsTransientScoreError/validation_is_permanent
+=== RUN   TestIsTransientScoreError/context_canceled_is_permanent
+=== RUN   TestIsTransientScoreError/provider_error_is_transient
+--- PASS: TestIsTransientScoreError (0.00s)
+    --- PASS: TestIsTransientScoreError/nil_is_not_transient (0.00s)
+    --- PASS: TestIsTransientScoreError/validation_is_permanent (0.00s)
+    --- PASS: TestIsTransientScoreError/context_canceled_is_permanent (0.00s)
+    --- PASS: TestIsTransientScoreError/provider_error_is_transient (0.00s)
+=== RUN   TestScoreUsecase_ScorePost
+=== RUN   TestScoreUsecase_ScorePost/happy_path_upserts_a_single_score
+=== RUN   TestScoreUsecase_ScorePost/no_interests_yields_lowest_score_without_embedding
+=== RUN   TestScoreUsecase_ScorePost/missing_summary_is_a_permanent_error
+=== RUN   TestScoreUsecase_ScorePost/transient_embedding_failure_is_propagated_as_transient
+--- PASS: TestScoreUsecase_ScorePost (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/happy_path_upserts_a_single_score (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/no_interests_yields_lowest_score_without_embedding (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/missing_summary_is_a_permanent_error (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/transient_embedding_failure_is_propagated_as_transient (0.00s)
+=== RUN   TestScorePost_VectorReuse
+=== RUN   TestScorePost_VectorReuse/reuse_on_matching_hash_and_model
+=== RUN   TestScorePost_VectorReuse/recompute_on_input_hash_change
+=== RUN   TestScorePost_VectorReuse/recompute_on_post_model_change
+=== RUN   TestScorePost_VectorReuse/recompute_when_no_stored_vector
+=== RUN   TestScorePost_VectorReuse/interest_model_mismatch_fails_terminally_before_embed
+=== RUN   TestScorePost_VectorReuse/generic_Get_error_is_propagated_without_embed_or_upsert
+--- PASS: TestScorePost_VectorReuse (0.00s)
+    --- PASS: TestScorePost_VectorReuse/reuse_on_matching_hash_and_model (0.00s)
+    --- PASS: TestScorePost_VectorReuse/recompute_on_input_hash_change (0.00s)
+    --- PASS: TestScorePost_VectorReuse/recompute_on_post_model_change (0.00s)
+    --- PASS: TestScorePost_VectorReuse/recompute_when_no_stored_vector (0.00s)
+    --- PASS: TestScorePost_VectorReuse/interest_model_mismatch_fails_terminally_before_embed (0.00s)
+    --- PASS: TestScorePost_VectorReuse/generic_Get_error_is_propagated_without_embed_or_upsert (0.00s)
+=== RUN   TestScoreUsecase_RetryPolicy
+=== RUN   TestScoreUsecase_RetryPolicy/policy_reads_worker_config
+=== RUN   TestScoreUsecase_RetryPolicy/empty_config_falls_back_to_defaults
+--- PASS: TestScoreUsecase_RetryPolicy (0.00s)
+    --- PASS: TestScoreUsecase_RetryPolicy/policy_reads_worker_config (0.00s)
+    --- PASS: TestScoreUsecase_RetryPolicy/empty_config_falls_back_to_defaults (0.00s)
+=== RUN   TestScoreUsecase_EnqueueDue_Error
+=== RUN   TestScoreUsecase_EnqueueDue_Error/outbox_error_is_wrapped
+--- PASS: TestScoreUsecase_EnqueueDue_Error (0.00s)
+    --- PASS: TestScoreUsecase_EnqueueDue_Error/outbox_error_is_wrapped (0.00s)
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents_ListError
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents_ListError/list_error_is_propagated
+--- PASS: TestScoreUsecase_ReapStuckScoreEvents_ListError (0.00s)
+    --- PASS: TestScoreUsecase_ReapStuckScoreEvents_ListError/list_error_is_propagated (0.00s)
+=== RUN   TestSummaryUsecase_PromptResolveError_IsTerminal_SelfContained
+--- PASS: TestSummaryUsecase_PromptResolveError_IsTerminal_SelfContained (0.00s)
+=== RUN   TestSummaryUsecase_PromptResolvedOncePerEvent
+--- PASS: TestSummaryUsecase_PromptResolvedOncePerEvent (1.00s)
+PASS
+ok  	github.com/4itosik/feedium/internal/biz	1.285s

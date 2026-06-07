@@ -1,0 +1,435 @@
+=== RUN   TestValidateCreatePost
+=== RUN   TestValidateCreatePost/empty_sourceID
+=== RUN   TestValidateCreatePost/invalid_UUID_sourceID
+=== RUN   TestValidateCreatePost/empty_externalID
+=== RUN   TestValidateCreatePost/empty_text
+=== RUN   TestValidateCreatePost/whitespace-only_text
+=== RUN   TestValidateCreatePost/zero_publishedAt
+=== RUN   TestValidateCreatePost/valid
+--- PASS: TestValidateCreatePost (0.00s)
+    --- PASS: TestValidateCreatePost/empty_sourceID (0.00s)
+    --- PASS: TestValidateCreatePost/invalid_UUID_sourceID (0.00s)
+    --- PASS: TestValidateCreatePost/empty_externalID (0.00s)
+    --- PASS: TestValidateCreatePost/empty_text (0.00s)
+    --- PASS: TestValidateCreatePost/whitespace-only_text (0.00s)
+    --- PASS: TestValidateCreatePost/zero_publishedAt (0.00s)
+    --- PASS: TestValidateCreatePost/valid (0.00s)
+=== RUN   TestValidateUpdatePost
+=== RUN   TestValidateUpdatePost/empty_externalID
+=== RUN   TestValidateUpdatePost/empty_text
+=== RUN   TestValidateUpdatePost/valid
+--- PASS: TestValidateUpdatePost (0.00s)
+    --- PASS: TestValidateUpdatePost/empty_externalID (0.00s)
+    --- PASS: TestValidateUpdatePost/empty_text (0.00s)
+    --- PASS: TestValidateUpdatePost/valid (0.00s)
+=== RUN   TestValidateListPostsFilter
+=== RUN   TestValidateListPostsFilter/valid
+=== RUN   TestValidateListPostsFilter/valid_with_sourceID
+=== RUN   TestValidateListPostsFilter/invalid_OrderBy_zero
+=== RUN   TestValidateListPostsFilter/invalid_OrderBy_unknown
+=== RUN   TestValidateListPostsFilter/invalid_OrderDir_zero
+=== RUN   TestValidateListPostsFilter/invalid_OrderDir_unknown
+=== RUN   TestValidateListPostsFilter/invalid_SourceID
+=== RUN   TestValidateListPostsFilter/empty_SourceID_is_valid
+--- PASS: TestValidateListPostsFilter (0.00s)
+    --- PASS: TestValidateListPostsFilter/valid (0.00s)
+    --- PASS: TestValidateListPostsFilter/valid_with_sourceID (0.00s)
+    --- PASS: TestValidateListPostsFilter/invalid_OrderBy_zero (0.00s)
+    --- PASS: TestValidateListPostsFilter/invalid_OrderBy_unknown (0.00s)
+    --- PASS: TestValidateListPostsFilter/invalid_OrderDir_zero (0.00s)
+    --- PASS: TestValidateListPostsFilter/invalid_OrderDir_unknown (0.00s)
+    --- PASS: TestValidateListPostsFilter/invalid_SourceID (0.00s)
+    --- PASS: TestValidateListPostsFilter/empty_SourceID_is_valid (0.00s)
+=== RUN   TestValidateSourceConfig_ValidCases
+=== RUN   TestValidateSourceConfig_ValidCases/valid_telegram_channel
+=== RUN   TestValidateSourceConfig_ValidCases/valid_telegram_group
+=== RUN   TestValidateSourceConfig_ValidCases/valid_rss
+=== RUN   TestValidateSourceConfig_ValidCases/valid_html
+--- PASS: TestValidateSourceConfig_ValidCases (0.00s)
+    --- PASS: TestValidateSourceConfig_ValidCases/valid_telegram_channel (0.00s)
+    --- PASS: TestValidateSourceConfig_ValidCases/valid_telegram_group (0.00s)
+    --- PASS: TestValidateSourceConfig_ValidCases/valid_rss (0.00s)
+    --- PASS: TestValidateSourceConfig_ValidCases/valid_html (0.00s)
+=== RUN   TestValidateSourceConfig_InvalidCases
+=== RUN   TestValidateSourceConfig_InvalidCases/telegram_channel_without_tg_id
+=== RUN   TestValidateSourceConfig_InvalidCases/telegram_group_without_tg_id
+=== RUN   TestValidateSourceConfig_InvalidCases/rss_without_feed_url
+=== RUN   TestValidateSourceConfig_InvalidCases/rss_with_invalid_URL
+=== RUN   TestValidateSourceConfig_InvalidCases/html_without_url
+=== RUN   TestValidateSourceConfig_InvalidCases/html_with_invalid_URL
+=== RUN   TestValidateSourceConfig_InvalidCases/nil_config
+=== RUN   TestValidateSourceConfig_InvalidCases/unknown_type
+--- PASS: TestValidateSourceConfig_InvalidCases (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/telegram_channel_without_tg_id (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/telegram_group_without_tg_id (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/rss_without_feed_url (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/rss_with_invalid_URL (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/html_without_url (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/html_with_invalid_URL (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/nil_config (0.00s)
+    --- PASS: TestValidateSourceConfig_InvalidCases/unknown_type (0.00s)
+=== RUN   TestProcessingModeForType
+=== RUN   TestProcessingModeForType/telegram_channel
+=== RUN   TestProcessingModeForType/telegram_group
+=== RUN   TestProcessingModeForType/rss
+=== RUN   TestProcessingModeForType/html
+--- PASS: TestProcessingModeForType (0.00s)
+    --- PASS: TestProcessingModeForType/telegram_channel (0.00s)
+    --- PASS: TestProcessingModeForType/telegram_group (0.00s)
+    --- PASS: TestProcessingModeForType/rss (0.00s)
+    --- PASS: TestProcessingModeForType/html (0.00s)
+=== RUN   TestValidateSourceType
+=== RUN   TestValidateSourceType/valid_telegram_channel
+=== RUN   TestValidateSourceType/valid_telegram_group
+=== RUN   TestValidateSourceType/valid_rss
+=== RUN   TestValidateSourceType/valid_html
+=== RUN   TestValidateSourceType/invalid_type
+--- PASS: TestValidateSourceType (0.00s)
+    --- PASS: TestValidateSourceType/valid_telegram_channel (0.00s)
+    --- PASS: TestValidateSourceType/valid_telegram_group (0.00s)
+    --- PASS: TestValidateSourceType/valid_rss (0.00s)
+    --- PASS: TestValidateSourceType/valid_html (0.00s)
+    --- PASS: TestValidateSourceType/invalid_type (0.00s)
+=== RUN   TestNewSummaryEvent
+=== RUN   TestNewSummaryEvent/self_contained
+=== RUN   TestNewSummaryEvent/cumulative
+=== RUN   TestNewSummaryEvent/generates_unique_IDs
+--- PASS: TestNewSummaryEvent (0.00s)
+    --- PASS: TestNewSummaryEvent/self_contained (0.00s)
+    --- PASS: TestNewSummaryEvent/cumulative (0.00s)
+    --- PASS: TestNewSummaryEvent/generates_unique_IDs (0.00s)
+=== RUN   TestValidateSummary
+=== RUN   TestValidateSummary/valid_text
+=== RUN   TestValidateSummary/empty_text
+=== RUN   TestValidateSummary/whitespace_only
+=== RUN   TestValidateSummary/text_with_leading/trailing_whitespace
+--- PASS: TestValidateSummary (0.00s)
+    --- PASS: TestValidateSummary/valid_text (0.00s)
+    --- PASS: TestValidateSummary/empty_text (0.00s)
+    --- PASS: TestValidateSummary/whitespace_only (0.00s)
+    --- PASS: TestValidateSummary/text_with_leading/trailing_whitespace (0.00s)
+=== RUN   TestSummaryInvariant
+=== RUN   TestSummaryInvariant/self_contained_has_PostID
+=== RUN   TestSummaryInvariant/cumulative_has_nil_PostID
+--- PASS: TestSummaryInvariant (0.00s)
+    --- PASS: TestSummaryInvariant/self_contained_has_PostID (0.00s)
+    --- PASS: TestSummaryInvariant/cumulative_has_nil_PostID (0.00s)
+=== RUN   TestFilterTextItems
+=== RUN   TestFilterTextItems/empty_input
+=== RUN   TestFilterTextItems/all_text_kept
+=== RUN   TestFilterTextItems/all_non-text_dropped
+=== RUN   TestFilterTextItems/mixed_set_keeps_only_text
+--- PASS: TestFilterTextItems (0.00s)
+    --- PASS: TestFilterTextItems/empty_input (0.00s)
+    --- PASS: TestFilterTextItems/all_text_kept (0.00s)
+    --- PASS: TestFilterTextItems/all_non-text_dropped (0.00s)
+    --- PASS: TestFilterTextItems/mixed_set_keeps_only_text (0.00s)
+=== RUN   TestFilterTextItems_DoesNotMutateInput
+--- PASS: TestFilterTextItems_DoesNotMutateInput (0.00s)
+=== RUN   TestCollectUsecase_CollectSource
+=== RUN   TestCollectUsecase_CollectSource/persists_each_text_item_with_mapped_fields
+=== RUN   TestCollectUsecase_CollectSource/empty_fetch_persists_nothing_and_is_not_an_error
+=== RUN   TestCollectUsecase_CollectSource/non-text_item_never_reaches_Create
+=== RUN   TestCollectUsecase_CollectSource/duplicate_item_returned_by_Create_is_not_fatal
+=== RUN   TestCollectUsecase_CollectSource/fetch_error_is_wrapped_and_Create_is_never_called
+=== RUN   TestCollectUsecase_CollectSource/ErrPostSourceNotFound_on_one_item_is_skipped,_others_persist
+=== RUN   TestCollectUsecase_CollectSource/unexpected_Create_error_aborts_the_cycle
+--- PASS: TestCollectUsecase_CollectSource (0.00s)
+    --- PASS: TestCollectUsecase_CollectSource/persists_each_text_item_with_mapped_fields (0.00s)
+    --- PASS: TestCollectUsecase_CollectSource/empty_fetch_persists_nothing_and_is_not_an_error (0.00s)
+    --- PASS: TestCollectUsecase_CollectSource/non-text_item_never_reaches_Create (0.00s)
+    --- PASS: TestCollectUsecase_CollectSource/duplicate_item_returned_by_Create_is_not_fatal (0.00s)
+    --- PASS: TestCollectUsecase_CollectSource/fetch_error_is_wrapped_and_Create_is_never_called (0.00s)
+    --- PASS: TestCollectUsecase_CollectSource/ErrPostSourceNotFound_on_one_item_is_skipped,_others_persist (0.00s)
+    --- PASS: TestCollectUsecase_CollectSource/unexpected_Create_error_aborts_the_cycle (0.00s)
+=== RUN   TestCollectUsecase_CollectItems
+=== RUN   TestCollectUsecase_CollectItems/non-text_item_filtered,_text_item_persisted_(push_path)
+=== RUN   TestCollectUsecase_CollectItems/ErrPostSourceNotFound_on_an_item_is_skipped,_no_error_returned
+=== RUN   TestCollectUsecase_CollectItems/unexpected_Create_error_aborts_the_batch_and_is_returned
+--- PASS: TestCollectUsecase_CollectItems (0.00s)
+    --- PASS: TestCollectUsecase_CollectItems/non-text_item_filtered,_text_item_persisted_(push_path) (0.00s)
+    --- PASS: TestCollectUsecase_CollectItems/ErrPostSourceNotFound_on_an_item_is_skipped,_no_error_returned (0.00s)
+    --- PASS: TestCollectUsecase_CollectItems/unexpected_Create_error_aborts_the_batch_and_is_returned (0.00s)
+=== RUN   TestFeedUsecase_RankedFeed
+=== RUN   TestFeedUsecase_RankedFeed/valid_query_is_delegated_with_clamped_page_size
+=== RUN   TestFeedUsecase_RankedFeed/threshold_below_zero_is_rejected
+=== RUN   TestFeedUsecase_RankedFeed/threshold_above_one_is_rejected
+=== RUN   TestFeedUsecase_RankedFeed/inverted_time_range_is_rejected
+--- PASS: TestFeedUsecase_RankedFeed (0.00s)
+    --- PASS: TestFeedUsecase_RankedFeed/valid_query_is_delegated_with_clamped_page_size (0.00s)
+    --- PASS: TestFeedUsecase_RankedFeed/threshold_below_zero_is_rejected (0.00s)
+    --- PASS: TestFeedUsecase_RankedFeed/threshold_above_one_is_rejected (0.00s)
+    --- PASS: TestFeedUsecase_RankedFeed/inverted_time_range_is_rejected (0.00s)
+=== RUN   TestInterestUsecase_Create
+=== RUN   TestInterestUsecase_Create/valid_topic_is_embedded,_saved_and_triggers_rescore
+=== RUN   TestInterestUsecase_Create/empty_topic_is_rejected_before_embedding
+=== RUN   TestInterestUsecase_Create/embedding_failure_is_propagated_before_tx
+=== RUN   TestInterestUsecase_Create/enqueue_failure_rolls_back_and_propagates
+--- PASS: TestInterestUsecase_Create (0.00s)
+    --- PASS: TestInterestUsecase_Create/valid_topic_is_embedded,_saved_and_triggers_rescore (0.00s)
+    --- PASS: TestInterestUsecase_Create/empty_topic_is_rejected_before_embedding (0.00s)
+    --- PASS: TestInterestUsecase_Create/embedding_failure_is_propagated_before_tx (0.00s)
+    --- PASS: TestInterestUsecase_Create/enqueue_failure_rolls_back_and_propagates (0.00s)
+=== RUN   TestInterestUsecase_Update
+=== RUN   TestInterestUsecase_Update/topic_is_re-embedded,_updated_and_triggers_rescore
+=== RUN   TestInterestUsecase_Update/missing_interest_is_propagated
+=== RUN   TestInterestUsecase_Update/enqueue_failure_rolls_back_and_propagates
+--- PASS: TestInterestUsecase_Update (0.00s)
+    --- PASS: TestInterestUsecase_Update/topic_is_re-embedded,_updated_and_triggers_rescore (0.00s)
+    --- PASS: TestInterestUsecase_Update/missing_interest_is_propagated (0.00s)
+    --- PASS: TestInterestUsecase_Update/enqueue_failure_rolls_back_and_propagates (0.00s)
+=== RUN   TestInterestUsecase_List
+=== RUN   TestInterestUsecase_List/page_size_is_clamped_to_the_minimum
+--- PASS: TestInterestUsecase_List (0.00s)
+    --- PASS: TestInterestUsecase_List/page_size_is_clamped_to_the_minimum (0.00s)
+=== RUN   TestInterestUsecase_Get
+=== RUN   TestInterestUsecase_Get/get_delegates_to_repo
+--- PASS: TestInterestUsecase_Get (0.00s)
+    --- PASS: TestInterestUsecase_Get/get_delegates_to_repo (0.00s)
+=== RUN   TestInterestUsecase_Delete
+=== RUN   TestInterestUsecase_Delete/delete_delegates_to_repo_and_triggers_rescore
+=== RUN   TestInterestUsecase_Delete/enqueue_failure_rolls_back_and_propagates
+=== RUN   TestInterestUsecase_Delete/repo_delete_failure_short-circuits_before_enqueue
+--- PASS: TestInterestUsecase_Delete (0.00s)
+    --- PASS: TestInterestUsecase_Delete/delete_delegates_to_repo_and_triggers_rescore (0.00s)
+    --- PASS: TestInterestUsecase_Delete/enqueue_failure_rolls_back_and_propagates (0.00s)
+    --- PASS: TestInterestUsecase_Delete/repo_delete_failure_short-circuits_before_enqueue (0.00s)
+=== RUN   TestPostUsecase_Create
+=== RUN   TestPostUsecase_Create/valid_fields
+=== RUN   TestPostUsecase_Create/invalid_fields
+=== RUN   TestPostUsecase_Create/idempotent_upsert
+=== RUN   TestPostUsecase_Create/nil_author_is_allowed
+--- PASS: TestPostUsecase_Create (0.00s)
+    --- PASS: TestPostUsecase_Create/valid_fields (0.00s)
+    --- PASS: TestPostUsecase_Create/invalid_fields (0.00s)
+    --- PASS: TestPostUsecase_Create/idempotent_upsert (0.00s)
+    --- PASS: TestPostUsecase_Create/nil_author_is_allowed (0.00s)
+=== RUN   TestPostUsecase_Update
+=== RUN   TestPostUsecase_Update/valid_update
+=== RUN   TestPostUsecase_Update/not_found
+=== RUN   TestPostUsecase_Update/conflict_external_id
+=== RUN   TestPostUsecase_Update/empty_text_validation_error
+--- PASS: TestPostUsecase_Update (0.00s)
+    --- PASS: TestPostUsecase_Update/valid_update (0.00s)
+    --- PASS: TestPostUsecase_Update/not_found (0.00s)
+    --- PASS: TestPostUsecase_Update/conflict_external_id (0.00s)
+    --- PASS: TestPostUsecase_Update/empty_text_validation_error (0.00s)
+=== RUN   TestPostUsecase_Delete
+=== RUN   TestPostUsecase_Delete/valid
+=== RUN   TestPostUsecase_Delete/not_found
+--- PASS: TestPostUsecase_Delete (0.00s)
+    --- PASS: TestPostUsecase_Delete/valid (0.00s)
+    --- PASS: TestPostUsecase_Delete/not_found (0.00s)
+=== RUN   TestPostUsecase_Get
+=== RUN   TestPostUsecase_Get/found
+=== RUN   TestPostUsecase_Get/not_found
+--- PASS: TestPostUsecase_Get (0.00s)
+    --- PASS: TestPostUsecase_Get/found (0.00s)
+    --- PASS: TestPostUsecase_Get/not_found (0.00s)
+=== RUN   TestPostUsecase_List
+=== RUN   TestPostUsecase_List/page_size_<_1_clamped_to_1
+=== RUN   TestPostUsecase_List/page_size_>_500_clamped_to_500
+=== RUN   TestPostUsecase_List/invalid_OrderBy
+=== RUN   TestPostUsecase_List/invalid_OrderDir
+=== RUN   TestPostUsecase_List/valid_filter
+=== RUN   TestPostUsecase_List/clamping_happens_before_validation
+--- PASS: TestPostUsecase_List (0.00s)
+    --- PASS: TestPostUsecase_List/page_size_<_1_clamped_to_1 (0.00s)
+    --- PASS: TestPostUsecase_List/page_size_>_500_clamped_to_500 (0.00s)
+    --- PASS: TestPostUsecase_List/invalid_OrderBy (0.00s)
+    --- PASS: TestPostUsecase_List/invalid_OrderDir (0.00s)
+    --- PASS: TestPostUsecase_List/valid_filter (0.00s)
+    --- PASS: TestPostUsecase_List/clamping_happens_before_validation (0.00s)
+=== RUN   TestScoreUsecase_EnqueueDue
+=== RUN   TestScoreUsecase_EnqueueDue/delegates_to_the_outbox_and_returns_the_count
+--- PASS: TestScoreUsecase_EnqueueDue (0.00s)
+    --- PASS: TestScoreUsecase_EnqueueDue/delegates_to_the_outbox_and_returns_the_count (0.00s)
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents/under-budget_events_are_skipped,_at-budget_are_terminated
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents/a_lost_race_does_not_count_as_terminated
+--- PASS: TestScoreUsecase_ReapStuckScoreEvents (0.00s)
+    --- PASS: TestScoreUsecase_ReapStuckScoreEvents/under-budget_events_are_skipped,_at-budget_are_terminated (0.00s)
+    --- PASS: TestScoreUsecase_ReapStuckScoreEvents/a_lost_race_does_not_count_as_terminated (0.00s)
+=== RUN   TestCosine
+=== RUN   TestCosine/identical_vectors
+=== RUN   TestCosine/orthogonal_vectors
+=== RUN   TestCosine/opposite_vectors
+=== RUN   TestCosine/zero_magnitude_yields_zero
+=== RUN   TestCosine/dimension_mismatch_is_error
+=== RUN   TestCosine/empty_vector_is_error
+--- PASS: TestCosine (0.00s)
+    --- PASS: TestCosine/identical_vectors (0.00s)
+    --- PASS: TestCosine/orthogonal_vectors (0.00s)
+    --- PASS: TestCosine/opposite_vectors (0.00s)
+    --- PASS: TestCosine/zero_magnitude_yields_zero (0.00s)
+    --- PASS: TestCosine/dimension_mismatch_is_error (0.00s)
+    --- PASS: TestCosine/empty_vector_is_error (0.00s)
+=== RUN   TestRelevance
+=== RUN   TestRelevance/empty_interest_set_yields_lowest_score
+=== RUN   TestRelevance/max_cosine_over_interests
+=== RUN   TestRelevance/irrelevant_content_clamps_to_zero
+=== RUN   TestRelevance/dimension_mismatch_is_permanent_error
+--- PASS: TestRelevance (0.00s)
+    --- PASS: TestRelevance/empty_interest_set_yields_lowest_score (0.00s)
+    --- PASS: TestRelevance/max_cosine_over_interests (0.00s)
+    --- PASS: TestRelevance/irrelevant_content_clamps_to_zero (0.00s)
+    --- PASS: TestRelevance/dimension_mismatch_is_permanent_error (0.00s)
+=== RUN   TestIsTransientScoreError
+=== RUN   TestIsTransientScoreError/nil_is_not_transient
+=== RUN   TestIsTransientScoreError/validation_is_permanent
+=== RUN   TestIsTransientScoreError/context_canceled_is_permanent
+=== RUN   TestIsTransientScoreError/provider_error_is_transient
+--- PASS: TestIsTransientScoreError (0.00s)
+    --- PASS: TestIsTransientScoreError/nil_is_not_transient (0.00s)
+    --- PASS: TestIsTransientScoreError/validation_is_permanent (0.00s)
+    --- PASS: TestIsTransientScoreError/context_canceled_is_permanent (0.00s)
+    --- PASS: TestIsTransientScoreError/provider_error_is_transient (0.00s)
+=== RUN   TestScoreUsecase_ScorePost
+=== RUN   TestScoreUsecase_ScorePost/happy_path_upserts_a_single_score
+=== RUN   TestScoreUsecase_ScorePost/no_interests_yields_lowest_score_without_embedding
+=== RUN   TestScoreUsecase_ScorePost/missing_summary_is_a_permanent_error
+=== RUN   TestScoreUsecase_ScorePost/transient_embedding_failure_is_propagated_as_transient
+--- PASS: TestScoreUsecase_ScorePost (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/happy_path_upserts_a_single_score (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/no_interests_yields_lowest_score_without_embedding (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/missing_summary_is_a_permanent_error (0.00s)
+    --- PASS: TestScoreUsecase_ScorePost/transient_embedding_failure_is_propagated_as_transient (0.00s)
+=== RUN   TestScorePost_VectorReuse
+=== RUN   TestScorePost_VectorReuse/reuse_on_matching_hash_and_model
+=== RUN   TestScorePost_VectorReuse/recompute_on_input_hash_change
+=== RUN   TestScorePost_VectorReuse/recompute_on_post_model_change
+=== RUN   TestScorePost_VectorReuse/recompute_when_no_stored_vector
+=== RUN   TestScorePost_VectorReuse/interest_model_mismatch_fails_terminally_before_embed
+=== RUN   TestScorePost_VectorReuse/generic_Get_error_is_propagated_without_embed_or_upsert
+--- PASS: TestScorePost_VectorReuse (0.00s)
+    --- PASS: TestScorePost_VectorReuse/reuse_on_matching_hash_and_model (0.00s)
+    --- PASS: TestScorePost_VectorReuse/recompute_on_input_hash_change (0.00s)
+    --- PASS: TestScorePost_VectorReuse/recompute_on_post_model_change (0.00s)
+    --- PASS: TestScorePost_VectorReuse/recompute_when_no_stored_vector (0.00s)
+    --- PASS: TestScorePost_VectorReuse/interest_model_mismatch_fails_terminally_before_embed (0.00s)
+    --- PASS: TestScorePost_VectorReuse/generic_Get_error_is_propagated_without_embed_or_upsert (0.00s)
+=== RUN   TestScoreUsecase_RetryPolicy
+=== RUN   TestScoreUsecase_RetryPolicy/policy_reads_worker_config
+=== RUN   TestScoreUsecase_RetryPolicy/empty_config_falls_back_to_defaults
+--- PASS: TestScoreUsecase_RetryPolicy (0.00s)
+    --- PASS: TestScoreUsecase_RetryPolicy/policy_reads_worker_config (0.00s)
+    --- PASS: TestScoreUsecase_RetryPolicy/empty_config_falls_back_to_defaults (0.00s)
+=== RUN   TestScoreUsecase_EnqueueDue_Error
+=== RUN   TestScoreUsecase_EnqueueDue_Error/outbox_error_is_wrapped
+--- PASS: TestScoreUsecase_EnqueueDue_Error (0.00s)
+    --- PASS: TestScoreUsecase_EnqueueDue_Error/outbox_error_is_wrapped (0.00s)
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents_ListError
+=== RUN   TestScoreUsecase_ReapStuckScoreEvents_ListError/list_error_is_propagated
+--- PASS: TestScoreUsecase_ReapStuckScoreEvents_ListError (0.00s)
+    --- PASS: TestScoreUsecase_ReapStuckScoreEvents_ListError/list_error_is_propagated (0.00s)
+=== RUN   TestSourceUsecase_Create
+=== RUN   TestSourceUsecase_Create/valid_RSS_source
+=== RUN   TestSourceUsecase_Create/invalid_source_type
+=== RUN   TestSourceUsecase_Create/invalid_config
+--- PASS: TestSourceUsecase_Create (0.00s)
+    --- PASS: TestSourceUsecase_Create/valid_RSS_source (0.00s)
+    --- PASS: TestSourceUsecase_Create/invalid_source_type (0.00s)
+    --- PASS: TestSourceUsecase_Create/invalid_config (0.00s)
+=== RUN   TestSourceUsecase_Update
+=== RUN   TestSourceUsecase_Update/valid_update
+=== RUN   TestSourceUsecase_Update/type_immutable
+=== RUN   TestSourceUsecase_Update/not_found
+=== RUN   TestSourceUsecase_Update/invalid_config
+--- PASS: TestSourceUsecase_Update (0.00s)
+    --- PASS: TestSourceUsecase_Update/valid_update (0.00s)
+    --- PASS: TestSourceUsecase_Update/type_immutable (0.00s)
+    --- PASS: TestSourceUsecase_Update/not_found (0.00s)
+    --- PASS: TestSourceUsecase_Update/invalid_config (0.00s)
+=== RUN   TestSourceUsecase_Delete
+=== RUN   TestSourceUsecase_Delete/successful_delete
+=== RUN   TestSourceUsecase_Delete/not_found
+--- PASS: TestSourceUsecase_Delete (0.00s)
+    --- PASS: TestSourceUsecase_Delete/successful_delete (0.00s)
+    --- PASS: TestSourceUsecase_Delete/not_found (0.00s)
+=== RUN   TestSourceUsecase_Get
+=== RUN   TestSourceUsecase_Get/found
+=== RUN   TestSourceUsecase_Get/not_found
+--- PASS: TestSourceUsecase_Get (0.00s)
+    --- PASS: TestSourceUsecase_Get/found (0.00s)
+    --- PASS: TestSourceUsecase_Get/not_found (0.00s)
+=== RUN   TestSourceUsecase_List
+=== RUN   TestSourceUsecase_List/happy_path_with_pagination
+=== RUN   TestSourceUsecase_List/empty_list
+=== RUN   TestSourceUsecase_List/page_size_<_1_clamped_to_1
+=== RUN   TestSourceUsecase_List/page_size_>_500_clamped_to_500
+=== RUN   TestSourceUsecase_List/invalid_type_filter
+--- PASS: TestSourceUsecase_List (0.00s)
+    --- PASS: TestSourceUsecase_List/happy_path_with_pagination (0.00s)
+    --- PASS: TestSourceUsecase_List/empty_list (0.00s)
+    --- PASS: TestSourceUsecase_List/page_size_<_1_clamped_to_1 (0.00s)
+    --- PASS: TestSourceUsecase_List/page_size_>_500_clamped_to_500 (0.00s)
+    --- PASS: TestSourceUsecase_List/invalid_type_filter (0.00s)
+=== RUN   TestRetryPolicy_CalculateBackoff_Monotonic
+--- PASS: TestRetryPolicy_CalculateBackoff_Monotonic (0.00s)
+=== RUN   TestRetryPolicy_CalculateBackoff_CappedAtMax
+--- PASS: TestRetryPolicy_CalculateBackoff_CappedAtMax (0.00s)
+=== RUN   TestRetryPolicy_CalculateBackoff_FirstAttempt
+--- PASS: TestRetryPolicy_CalculateBackoff_FirstAttempt (0.00s)
+=== RUN   TestRetryPolicy_ShouldRetry_TerminalAfterMax
+--- PASS: TestRetryPolicy_ShouldRetry_TerminalAfterMax (0.00s)
+=== RUN   TestRetryPolicy_ShouldRetry_PermanentNotRetried
+=== RUN   TestRetryPolicy_ShouldRetry_PermanentNotRetried/validation
+=== RUN   TestRetryPolicy_ShouldRetry_PermanentNotRetried/self_contained
+=== RUN   TestRetryPolicy_ShouldRetry_PermanentNotRetried/post_not_found
+=== RUN   TestRetryPolicy_ShouldRetry_PermanentNotRetried/source_not_found
+=== RUN   TestRetryPolicy_ShouldRetry_PermanentNotRetried/context_cancelled
+=== RUN   TestRetryPolicy_ShouldRetry_PermanentNotRetried/context_deadline
+--- PASS: TestRetryPolicy_ShouldRetry_PermanentNotRetried (0.00s)
+    --- PASS: TestRetryPolicy_ShouldRetry_PermanentNotRetried/validation (0.00s)
+    --- PASS: TestRetryPolicy_ShouldRetry_PermanentNotRetried/self_contained (0.00s)
+    --- PASS: TestRetryPolicy_ShouldRetry_PermanentNotRetried/post_not_found (0.00s)
+    --- PASS: TestRetryPolicy_ShouldRetry_PermanentNotRetried/source_not_found (0.00s)
+    --- PASS: TestRetryPolicy_ShouldRetry_PermanentNotRetried/context_cancelled (0.00s)
+    --- PASS: TestRetryPolicy_ShouldRetry_PermanentNotRetried/context_deadline (0.00s)
+=== RUN   TestRetryPolicy_ShouldRetry_NilErrorNotRetried
+--- PASS: TestRetryPolicy_ShouldRetry_NilErrorNotRetried (0.00s)
+=== RUN   TestIsTransientError
+--- PASS: TestIsTransientError (0.00s)
+=== RUN   TestSummaryUsecase_TriggerSourceSummarize_BumpsNextSummaryAtInTx
+--- PASS: TestSummaryUsecase_TriggerSourceSummarize_BumpsNextSummaryAtInTx (0.00s)
+=== RUN   TestSummaryUsecase_TriggerSourceSummarize_ExistingEventNoTx
+--- PASS: TestSummaryUsecase_TriggerSourceSummarize_ExistingEventNoTx (0.00s)
+=== RUN   TestSummaryUsecase_PromptByMode_SelfContained
+--- PASS: TestSummaryUsecase_PromptByMode_SelfContained (0.00s)
+=== RUN   TestSummaryUsecase_PromptByMode_Cumulative
+--- PASS: TestSummaryUsecase_PromptByMode_Cumulative (0.00s)
+=== RUN   TestSummaryUsecase_PromptByMode_Isolation
+=== RUN   TestSummaryUsecase_PromptByMode_Isolation/self_contained_does_not_leak_cumulative_body
+=== RUN   TestSummaryUsecase_PromptByMode_Isolation/cumulative_does_not_leak_self_contained_body
+--- PASS: TestSummaryUsecase_PromptByMode_Isolation (0.00s)
+    --- PASS: TestSummaryUsecase_PromptByMode_Isolation/self_contained_does_not_leak_cumulative_body (0.00s)
+    --- PASS: TestSummaryUsecase_PromptByMode_Isolation/cumulative_does_not_leak_self_contained_body (0.00s)
+=== RUN   TestSummaryUsecase_PromptResolveError_IsTerminal_SelfContained
+--- PASS: TestSummaryUsecase_PromptResolveError_IsTerminal_SelfContained (0.00s)
+=== RUN   TestSummaryUsecase_PromptResolvedOncePerEvent
+--- PASS: TestSummaryUsecase_PromptResolvedOncePerEvent (1.00s)
+PASS
+ok  	github.com/4itosik/feedium/internal/biz	1.487s
+?   	github.com/4itosik/feedium/internal/biz/mock	[no test files]
+=== RUN   TestNewResolver_ProvidesAllModes
+=== RUN   TestNewResolver_ProvidesAllModes/self_contained
+=== RUN   TestNewResolver_ProvidesAllModes/cumulative
+--- PASS: TestNewResolver_ProvidesAllModes (0.00s)
+    --- PASS: TestNewResolver_ProvidesAllModes/self_contained (0.00s)
+    --- PASS: TestNewResolver_ProvidesAllModes/cumulative (0.00s)
+=== RUN   TestNewResolver_BodiesDiffer
+--- PASS: TestNewResolver_BodiesDiffer (0.00s)
+=== RUN   TestNewResolver_BodiesNonEmpty
+--- PASS: TestNewResolver_BodiesNonEmpty (0.00s)
+=== RUN   TestResolver_For_UnknownMode
+--- PASS: TestResolver_For_UnknownMode (0.00s)
+=== RUN   TestResolver_Validate_MissingMode
+--- PASS: TestResolver_Validate_MissingMode (0.00s)
+=== RUN   TestResolver_Validate_EmptyBody
+--- PASS: TestResolver_Validate_EmptyBody (0.00s)
+=== RUN   TestNewResolver_PanicsOnDriftingState
+--- PASS: TestNewResolver_PanicsOnDriftingState (0.00s)
+=== RUN   TestNewResolver_Production_DoesNotPanic
+--- PASS: TestNewResolver_Production_DoesNotPanic (0.00s)
+PASS
+ok  	github.com/4itosik/feedium/internal/biz/prompt	0.842s

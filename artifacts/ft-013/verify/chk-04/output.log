@@ -1,0 +1,52 @@
+=== make lint ===
+golangci-lint run ./... -c .golangci.yml
+level=warning msg="[runner/exclusion_rules] Skipped 0 issues by rules: [Text: \"package comment should be of the form \\\".+\\\"\", Source: \"// ?(nolint|TODO)\", Linters: \"revive\"]"
+level=warning msg="[runner/exclusion_rules] Skipped 0 issues by rules: [Text: \"comment on exported \\\\S+ \\\\S+ should be of the form \\\".+\\\"\", Source: \"// ?(nolint|TODO)\", Linters: \"revive, staticcheck\"]"
+level=warning msg="[runner/exclusion_rules] Skipped 0 issues by rules: [Source: \"TODO\", Linters: \"godot\"]"
+0 issues.
+=== make test ===
+go test ./...
+?   	github.com/4itosik/feedium/api/feedium	[no test files]
+?   	github.com/4itosik/feedium/cmd/feedium	[no test files]
+?   	github.com/4itosik/feedium/cmd/feediumctl	[no test files]
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/app	(cached)
+?   	github.com/4itosik/feedium/cmd/feediumctl/internal/app/mock	[no test files]
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/config	(cached)
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/render	(cached)
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/resolve	(cached)
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/sourcetype	(cached)
+?   	github.com/4itosik/feedium/cmd/feediumctl/internal/transport	[no test files]
+?   	github.com/4itosik/feedium/cmd/migrate	[no test files]
+ok  	github.com/4itosik/feedium/internal/biz	1.395s
+?   	github.com/4itosik/feedium/internal/biz/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/biz/prompt	(cached)
+ok  	github.com/4itosik/feedium/internal/conf	(cached)
+ok  	github.com/4itosik/feedium/internal/data	76.320s
+?   	github.com/4itosik/feedium/internal/ent	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/enttest	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/hook	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/interest	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/migrate	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/post	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/postembedding	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/predicate	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/runtime	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/schema	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/score	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/scoreevent	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/source	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/summary	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/summaryevent	[no test files]
+?   	github.com/4itosik/feedium/internal/server	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/feed	0.695s
+?   	github.com/4itosik/feedium/internal/service/feed/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/health	11.179s
+ok  	github.com/4itosik/feedium/internal/service/interest	1.012s
+?   	github.com/4itosik/feedium/internal/service/interest/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/post	1.327s
+?   	github.com/4itosik/feedium/internal/service/post/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/source	2.075s
+?   	github.com/4itosik/feedium/internal/service/source/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/summary	2.449s
+?   	github.com/4itosik/feedium/internal/service/summary/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/task	33.407s

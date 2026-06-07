@@ -1,0 +1,182 @@
+=== RUN   TestIntegration_InterestRepo_CRUD
+2026/06/07 21:20:57 github.com/testcontainers/testcontainers-go - Connected to docker: 
+  Server Version: 29.4.2
+  API Version: 1.54
+  Operating System: Docker Desktop
+  Total Memory: 7936 MB
+  Labels:
+    com.docker.desktop.address=unix:///Users/aay/Library/Containers/com.docker.docker/Data/docker-cli.sock
+  Testcontainers for Go Version: v0.42.0
+  Resolved Docker Host: unix:///var/run/docker.sock
+  Resolved Docker Socket Path: /var/run/docker.sock
+  Test SessionID: ecd63383d52b646a524d68c062c59399265e637885635a186731b1874ade53f5
+  Test ProcessID: e73e7086-b6b2-4096-a84e-dd3634724363
+2026/06/07 21:20:57 🐳 Creating container for image postgres:18.3-alpine
+2026/06/07 21:20:57 🐳 Creating container for image testcontainers/ryuk:0.13.0
+2026/06/07 21:20:57 ✅ Container created: e7169193691f
+2026/06/07 21:20:57 🐳 Starting container: e7169193691f
+2026/06/07 21:20:57 ✅ Container started: e7169193691f
+2026/06/07 21:20:57 ⏳ Waiting for container id e7169193691f image: testcontainers/ryuk:0.13.0. Waiting for: port 8080/tcp to be listening
+2026/06/07 21:20:57 Shell not found in container
+2026/06/07 21:20:57 🔔 Container is ready: e7169193691f
+2026/06/07 21:20:57 ✅ Container created: fcd43be660a1
+2026/06/07 21:20:57 🐳 Starting container: fcd43be660a1
+2026/06/07 21:20:57 ✅ Container started: fcd43be660a1
+2026/06/07 21:20:57 ⏳ Waiting for container id fcd43be660a1 image: postgres:18.3-alpine. Waiting for: all of: [log message "database system is ready to accept connections" (occurrence: 2)]
+2026/06/07 21:20:57 🔔 Container is ready: fcd43be660a1
+2026/06/07 21:20:57 EMPTY 20260413000000_baseline.sql (1ms)
+2026/06/07 21:20:57 OK   20260413100000_create_sources_table.sql (3.3ms)
+2026/06/07 21:20:57 OK   20260414100000_create_posts_table.sql (3.67ms)
+2026/06/07 21:20:57 OK   20260415100000_create_summaries_and_events.sql (7.51ms)
+2026/06/07 21:20:57 OK   20260423100000_summary_events_lease.sql (2.45ms)
+2026/06/07 21:20:57 OK   20260423100100_sources_next_summary_at.sql (1.51ms)
+2026/06/07 21:20:58 OK   20260602100000_create_interests_table.sql (2.52ms)
+2026/06/07 21:20:58 OK   20260602100100_create_scores_table.sql (3.35ms)
+2026/06/07 21:20:58 OK   20260602100200_create_score_events_table.sql (3.83ms)
+2026/06/07 21:20:58 OK   20260607120000_create_post_embeddings_table.sql (2.5ms)
+2026/06/07 21:20:58 goose: successfully migrated database to version: 20260607120000
+2026/06/07 21:20:58 🐳 Stopping container: fcd43be660a1
+2026/06/07 21:20:58 ✅ Container stopped: fcd43be660a1
+2026/06/07 21:20:58 🐳 Terminating container: fcd43be660a1
+2026/06/07 21:20:58 🚫 Container terminated: fcd43be660a1
+--- PASS: TestIntegration_InterestRepo_CRUD (1.21s)
+=== RUN   TestIntegration_InterestRepo_NotFound
+2026/06/07 21:20:58 🐳 Creating container for image postgres:18.3-alpine
+2026/06/07 21:20:58 ✅ Container created: 6b2c3e348093
+2026/06/07 21:20:58 🐳 Starting container: 6b2c3e348093
+2026/06/07 21:20:58 ✅ Container started: 6b2c3e348093
+2026/06/07 21:20:58 ⏳ Waiting for container id 6b2c3e348093 image: postgres:18.3-alpine. Waiting for: all of: [log message "database system is ready to accept connections" (occurrence: 2)]
+2026/06/07 21:20:58 🔔 Container is ready: 6b2c3e348093
+2026/06/07 21:20:58 EMPTY 20260413000000_baseline.sql (805.42µs)
+2026/06/07 21:20:58 OK   20260413100000_create_sources_table.sql (2.62ms)
+2026/06/07 21:20:58 OK   20260414100000_create_posts_table.sql (3.31ms)
+2026/06/07 21:20:59 OK   20260415100000_create_summaries_and_events.sql (6.23ms)
+2026/06/07 21:20:59 OK   20260423100000_summary_events_lease.sql (2.03ms)
+2026/06/07 21:20:59 OK   20260423100100_sources_next_summary_at.sql (1.28ms)
+2026/06/07 21:20:59 OK   20260602100000_create_interests_table.sql (1.98ms)
+2026/06/07 21:20:59 OK   20260602100100_create_scores_table.sql (2.59ms)
+2026/06/07 21:20:59 OK   20260602100200_create_score_events_table.sql (3.05ms)
+2026/06/07 21:20:59 OK   20260607120000_create_post_embeddings_table.sql (2.42ms)
+2026/06/07 21:20:59 goose: successfully migrated database to version: 20260607120000
+2026/06/07 21:20:59 🐳 Stopping container: 6b2c3e348093
+2026/06/07 21:20:59 ✅ Container stopped: 6b2c3e348093
+2026/06/07 21:20:59 🐳 Terminating container: 6b2c3e348093
+2026/06/07 21:20:59 🚫 Container terminated: 6b2c3e348093
+--- PASS: TestIntegration_InterestRepo_NotFound (0.95s)
+=== RUN   TestIntegration_InterestRepo_ListInterestVectors
+2026/06/07 21:20:59 🐳 Creating container for image postgres:18.3-alpine
+2026/06/07 21:20:59 ✅ Container created: 6bf9e4e918fc
+2026/06/07 21:20:59 🐳 Starting container: 6bf9e4e918fc
+2026/06/07 21:20:59 ✅ Container started: 6bf9e4e918fc
+2026/06/07 21:20:59 ⏳ Waiting for container id 6bf9e4e918fc image: postgres:18.3-alpine. Waiting for: all of: [log message "database system is ready to accept connections" (occurrence: 2)]
+2026/06/07 21:20:59 🔔 Container is ready: 6bf9e4e918fc
+2026/06/07 21:20:59 EMPTY 20260413000000_baseline.sql (928.67µs)
+2026/06/07 21:20:59 OK   20260413100000_create_sources_table.sql (3.07ms)
+2026/06/07 21:20:59 OK   20260414100000_create_posts_table.sql (3.62ms)
+2026/06/07 21:20:59 OK   20260415100000_create_summaries_and_events.sql (6.64ms)
+2026/06/07 21:20:59 OK   20260423100000_summary_events_lease.sql (2.15ms)
+2026/06/07 21:20:59 OK   20260423100100_sources_next_summary_at.sql (1.51ms)
+2026/06/07 21:20:59 OK   20260602100000_create_interests_table.sql (2.29ms)
+2026/06/07 21:20:59 OK   20260602100100_create_scores_table.sql (2.77ms)
+2026/06/07 21:20:59 OK   20260602100200_create_score_events_table.sql (3.32ms)
+2026/06/07 21:20:59 OK   20260607120000_create_post_embeddings_table.sql (2.29ms)
+2026/06/07 21:20:59 goose: successfully migrated database to version: 20260607120000
+2026/06/07 21:20:59 🐳 Stopping container: 6bf9e4e918fc
+2026/06/07 21:21:00 ✅ Container stopped: 6bf9e4e918fc
+2026/06/07 21:21:00 🐳 Terminating container: 6bf9e4e918fc
+2026/06/07 21:21:00 🚫 Container terminated: 6bf9e4e918fc
+--- PASS: TestIntegration_InterestRepo_ListInterestVectors (1.00s)
+=== RUN   TestIntegration_InterestRepo_ListPagination
+2026/06/07 21:21:00 🐳 Creating container for image postgres:18.3-alpine
+2026/06/07 21:21:00 ✅ Container created: f8838f7f36a9
+2026/06/07 21:21:00 🐳 Starting container: f8838f7f36a9
+2026/06/07 21:21:00 ✅ Container started: f8838f7f36a9
+2026/06/07 21:21:00 ⏳ Waiting for container id f8838f7f36a9 image: postgres:18.3-alpine. Waiting for: all of: [log message "database system is ready to accept connections" (occurrence: 2)]
+2026/06/07 21:21:00 🔔 Container is ready: f8838f7f36a9
+2026/06/07 21:21:00 EMPTY 20260413000000_baseline.sql (994.63µs)
+2026/06/07 21:21:00 OK   20260413100000_create_sources_table.sql (3.24ms)
+2026/06/07 21:21:00 OK   20260414100000_create_posts_table.sql (3.86ms)
+2026/06/07 21:21:00 OK   20260415100000_create_summaries_and_events.sql (6.95ms)
+2026/06/07 21:21:00 OK   20260423100000_summary_events_lease.sql (2.14ms)
+2026/06/07 21:21:00 OK   20260423100100_sources_next_summary_at.sql (1.42ms)
+2026/06/07 21:21:00 OK   20260602100000_create_interests_table.sql (2.3ms)
+2026/06/07 21:21:00 OK   20260602100100_create_scores_table.sql (2.87ms)
+2026/06/07 21:21:00 OK   20260602100200_create_score_events_table.sql (3.22ms)
+2026/06/07 21:21:00 OK   20260607120000_create_post_embeddings_table.sql (2.35ms)
+2026/06/07 21:21:00 goose: successfully migrated database to version: 20260607120000
+2026/06/07 21:21:00 🐳 Stopping container: f8838f7f36a9
+2026/06/07 21:21:01 ✅ Container stopped: f8838f7f36a9
+2026/06/07 21:21:01 🐳 Terminating container: f8838f7f36a9
+2026/06/07 21:21:01 🚫 Container terminated: f8838f7f36a9
+--- PASS: TestIntegration_InterestRepo_ListPagination (1.01s)
+=== RUN   TestIntegration_PostEmbeddingRepo_UpsertGetRoundTrip
+2026/06/07 21:21:01 🐳 Creating container for image postgres:18.3-alpine
+2026/06/07 21:21:01 ✅ Container created: 355b70b86a62
+2026/06/07 21:21:01 🐳 Starting container: 355b70b86a62
+2026/06/07 21:21:01 ✅ Container started: 355b70b86a62
+2026/06/07 21:21:01 ⏳ Waiting for container id 355b70b86a62 image: postgres:18.3-alpine. Waiting for: all of: [log message "database system is ready to accept connections" (occurrence: 2)]
+2026/06/07 21:21:01 🔔 Container is ready: 355b70b86a62
+2026/06/07 21:21:01 EMPTY 20260413000000_baseline.sql (842.29µs)
+2026/06/07 21:21:01 OK   20260413100000_create_sources_table.sql (3.2ms)
+2026/06/07 21:21:01 OK   20260414100000_create_posts_table.sql (3.73ms)
+2026/06/07 21:21:01 OK   20260415100000_create_summaries_and_events.sql (6.49ms)
+2026/06/07 21:21:01 OK   20260423100000_summary_events_lease.sql (2.15ms)
+2026/06/07 21:21:01 OK   20260423100100_sources_next_summary_at.sql (1.4ms)
+2026/06/07 21:21:01 OK   20260602100000_create_interests_table.sql (2.08ms)
+2026/06/07 21:21:01 OK   20260602100100_create_scores_table.sql (2.69ms)
+2026/06/07 21:21:01 OK   20260602100200_create_score_events_table.sql (3.08ms)
+2026/06/07 21:21:01 OK   20260607120000_create_post_embeddings_table.sql (2.23ms)
+2026/06/07 21:21:01 goose: successfully migrated database to version: 20260607120000
+2026/06/07 21:21:01 🐳 Stopping container: 355b70b86a62
+2026/06/07 21:21:02 ✅ Container stopped: 355b70b86a62
+2026/06/07 21:21:02 🐳 Terminating container: 355b70b86a62
+2026/06/07 21:21:02 🚫 Container terminated: 355b70b86a62
+--- PASS: TestIntegration_PostEmbeddingRepo_UpsertGetRoundTrip (1.03s)
+=== RUN   TestIntegration_PostEmbeddingRepo_UpsertOverwritesSingleRow
+2026/06/07 21:21:02 🐳 Creating container for image postgres:18.3-alpine
+2026/06/07 21:21:02 ✅ Container created: e39d24c23103
+2026/06/07 21:21:02 🐳 Starting container: e39d24c23103
+2026/06/07 21:21:02 ✅ Container started: e39d24c23103
+2026/06/07 21:21:02 ⏳ Waiting for container id e39d24c23103 image: postgres:18.3-alpine. Waiting for: all of: [log message "database system is ready to accept connections" (occurrence: 2)]
+2026/06/07 21:21:02 🔔 Container is ready: e39d24c23103
+2026/06/07 21:21:02 EMPTY 20260413000000_baseline.sql (726.46µs)
+2026/06/07 21:21:02 OK   20260413100000_create_sources_table.sql (2.68ms)
+2026/06/07 21:21:02 OK   20260414100000_create_posts_table.sql (3.3ms)
+2026/06/07 21:21:02 OK   20260415100000_create_summaries_and_events.sql (5.82ms)
+2026/06/07 21:21:02 OK   20260423100000_summary_events_lease.sql (1.74ms)
+2026/06/07 21:21:02 OK   20260423100100_sources_next_summary_at.sql (1.05ms)
+2026/06/07 21:21:03 OK   20260602100000_create_interests_table.sql (1.84ms)
+2026/06/07 21:21:03 OK   20260602100100_create_scores_table.sql (2.51ms)
+2026/06/07 21:21:03 OK   20260602100200_create_score_events_table.sql (2.72ms)
+2026/06/07 21:21:03 OK   20260607120000_create_post_embeddings_table.sql (1.79ms)
+2026/06/07 21:21:03 goose: successfully migrated database to version: 20260607120000
+2026/06/07 21:21:03 🐳 Stopping container: e39d24c23103
+2026/06/07 21:21:03 ✅ Container stopped: e39d24c23103
+2026/06/07 21:21:03 🐳 Terminating container: e39d24c23103
+2026/06/07 21:21:03 🚫 Container terminated: e39d24c23103
+--- PASS: TestIntegration_PostEmbeddingRepo_UpsertOverwritesSingleRow (1.01s)
+=== RUN   TestIntegration_PostEmbeddingRepo_GetNotFound
+2026/06/07 21:21:03 🐳 Creating container for image postgres:18.3-alpine
+2026/06/07 21:21:03 ✅ Container created: cdce3c32249e
+2026/06/07 21:21:03 🐳 Starting container: cdce3c32249e
+2026/06/07 21:21:03 ✅ Container started: cdce3c32249e
+2026/06/07 21:21:03 ⏳ Waiting for container id cdce3c32249e image: postgres:18.3-alpine. Waiting for: all of: [log message "database system is ready to accept connections" (occurrence: 2)]
+2026/06/07 21:21:03 🔔 Container is ready: cdce3c32249e
+2026/06/07 21:21:03 EMPTY 20260413000000_baseline.sql (969.04µs)
+2026/06/07 21:21:03 OK   20260413100000_create_sources_table.sql (3.11ms)
+2026/06/07 21:21:03 OK   20260414100000_create_posts_table.sql (3.67ms)
+2026/06/07 21:21:03 OK   20260415100000_create_summaries_and_events.sql (6.7ms)
+2026/06/07 21:21:03 OK   20260423100000_summary_events_lease.sql (2.17ms)
+2026/06/07 21:21:04 OK   20260423100100_sources_next_summary_at.sql (1.44ms)
+2026/06/07 21:21:04 OK   20260602100000_create_interests_table.sql (2.15ms)
+2026/06/07 21:21:04 OK   20260602100100_create_scores_table.sql (2.74ms)
+2026/06/07 21:21:04 OK   20260602100200_create_score_events_table.sql (3.02ms)
+2026/06/07 21:21:04 OK   20260607120000_create_post_embeddings_table.sql (2.3ms)
+2026/06/07 21:21:04 goose: successfully migrated database to version: 20260607120000
+2026/06/07 21:21:04 🐳 Stopping container: cdce3c32249e
+2026/06/07 21:21:04 ✅ Container stopped: cdce3c32249e
+2026/06/07 21:21:04 🐳 Terminating container: cdce3c32249e
+2026/06/07 21:21:04 🚫 Container terminated: cdce3c32249e
+--- PASS: TestIntegration_PostEmbeddingRepo_GetNotFound (1.00s)
+PASS
+ok  	github.com/4itosik/feedium/internal/data	7.701s
