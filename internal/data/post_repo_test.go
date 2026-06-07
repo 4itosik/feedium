@@ -40,7 +40,7 @@ func (c *queryCounter) Exec(ctx context.Context, query string, args, v any) erro
 }
 
 // setupTestDBWithCounter creates test DB and returns both regular client and counter client.
-func setupTestDBWithCounter(t *testing.T) (*entgo.Client, *entgo.Client, *queryCounter, func()) {
+func setupTestDBWithCounter(t *testing.T) (*entgo.Client, *entgo.Client, *sql.DB, *queryCounter, func()) {
 	t.Helper()
 
 	// Use same pattern as setupTestDB from source_repo_test.go
@@ -95,7 +95,7 @@ func setupTestDBWithCounter(t *testing.T) (*entgo.Client, *entgo.Client, *queryC
 		}
 	}
 
-	return entClient, counterClient, counter, cleanup
+	return entClient, counterClient, db, counter, cleanup
 }
 
 // createTestSource creates a minimal source for FK constraint.
@@ -119,10 +119,11 @@ func TestIntegration_PostSave(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	postRepo := data.NewPostRepo(&data.Data{Ent: client})
+	client := d.Ent
+	postRepo := data.NewPostRepo(d)
 	sourceID := createTestSource(ctx, t, client)
 
 	t.Run("save valid post", func(t *testing.T) {
@@ -248,14 +249,72 @@ func TestIntegration_PostSave(t *testing.T) {
 	})
 }
 
+// TestIntegration_PostSaveIdempotentWithinTx reproduces the production
+// idempotent re-collect path: PostUsecase.Create wraps Save in a transaction
+// (for outbox atomicity), and collectors re-poll the same (source_id,
+// external_id) on every cycle. A plain INSERT that hit 23505 inside the tx
+// poisoned it, so the fallback SELECT failed with 25P02 ("current transaction
+// is aborted"). The standalone idempotency test above misses this because it
+// runs Save in autocommit, where a failed INSERT rolls back only that one
+// statement. Save must stay tx-safe: the re-collect returns the existing row
+// with created=false and no error.
+func TestIntegration_PostSaveIdempotentWithinTx(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	ctx := context.Background()
+	d, cleanup := setupTestData(t)
+	defer cleanup()
+
+	postRepo := data.NewPostRepo(d)
+	txManager := data.NewTxManager(d)
+	sourceID := createTestSource(ctx, t, d.Ent)
+
+	now := time.Now()
+	mkPost := func() biz.Post {
+		return biz.Post{
+			ID:          uuid.Must(uuid.NewV7()).String(),
+			SourceID:    sourceID,
+			ExternalID:  "https://example.com/re-collected-article",
+			PublishedAt: now,
+			Text:        "collected once",
+			Metadata:    map[string]string{"k": "v"},
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+	}
+
+	// First poll: inside a transaction, the post is newly created.
+	var firstID string
+	err := txManager.InTx(ctx, func(txCtx context.Context) error {
+		saved, created, sErr := postRepo.Save(txCtx, mkPost())
+		require.NoError(t, sErr)
+		assert.True(t, created, "first save must report created=true")
+		firstID = saved.ID
+		return nil
+	})
+	require.NoError(t, err)
+
+	// Re-poll: same (source_id, external_id) in a fresh transaction. Before the
+	// fix this returned 25P02 from the fallback SELECT on the poisoned tx.
+	err = txManager.InTx(ctx, func(txCtx context.Context) error {
+		saved, created, sErr := postRepo.Save(txCtx, mkPost())
+		require.NoError(t, sErr, "re-collect inside a tx must not abort the tx (25P02)")
+		assert.False(t, created, "re-collect must report created=false")
+		assert.Equal(t, firstID, saved.ID, "re-collect must return the original row")
+		return nil
+	})
+	require.NoError(t, err)
+}
+
 func TestIntegration_PostUpdate(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	postRepo := data.NewPostRepo(&data.Data{Ent: client})
+	client := d.Ent
+	postRepo := data.NewPostRepo(d)
 	sourceID := createTestSource(ctx, t, client)
 
 	t.Run("update valid post", func(t *testing.T) {
@@ -397,10 +456,11 @@ func TestIntegration_PostDelete(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	postRepo := data.NewPostRepo(&data.Data{Ent: client})
+	client := d.Ent
+	postRepo := data.NewPostRepo(d)
 	sourceID := createTestSource(ctx, t, client)
 
 	t.Run("delete existing post", func(t *testing.T) {
@@ -436,10 +496,11 @@ func TestIntegration_PostGet(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	postRepo := data.NewPostRepo(&data.Data{Ent: client})
+	client := d.Ent
+	postRepo := data.NewPostRepo(d)
 	sourceID := createTestSource(ctx, t, client)
 
 	t.Run("get existing post with SourceInfo", func(t *testing.T) {
@@ -482,10 +543,11 @@ func TestIntegration_PostList(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
-	postRepo := data.NewPostRepo(&data.Data{Ent: client})
+	client := d.Ent
+	postRepo := data.NewPostRepo(d)
 	sourceID := createTestSource(ctx, t, client)
 	secondSourceID := createTestSource(ctx, t, client)
 
@@ -639,10 +701,10 @@ func TestIntegration_PostGetSQLCount(t *testing.T) {
 
 	ctx := context.Background()
 	// Use setupTestDBWithCounter to get both regular and counter clients
-	regularClient, counterClient, counter, cleanup := setupTestDBWithCounter(t)
+	regularClient, counterClient, db, counter, cleanup := setupTestDBWithCounter(t)
 	defer cleanup()
 
-	postRepo := data.NewPostRepo(&data.Data{Ent: regularClient})
+	postRepo := data.NewPostRepo(&data.Data{Ent: regularClient, DB: db})
 	sourceID := createTestSource(ctx, t, regularClient)
 
 	// Create a post using regular client
@@ -681,10 +743,10 @@ func TestIntegration_PostListSQLCount(t *testing.T) {
 
 	ctx := context.Background()
 	// Use setupTestDBWithCounter to get both regular and counter clients
-	regularClient, counterClient, counter, cleanup := setupTestDBWithCounter(t)
+	regularClient, counterClient, db, counter, cleanup := setupTestDBWithCounter(t)
 	defer cleanup()
 
-	postRepo := data.NewPostRepo(&data.Data{Ent: regularClient})
+	postRepo := data.NewPostRepo(&data.Data{Ent: regularClient, DB: db})
 	sourceID := createTestSource(ctx, t, regularClient)
 
 	// Create 5 posts using regular client

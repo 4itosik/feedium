@@ -12,10 +12,9 @@ import (
 
 	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/data"
-	entgo "github.com/4itosik/feedium/internal/ent"
 )
 
-func createTestPost(ctx context.Context, t *testing.T, client *entgo.Client, sourceID string) string {
+func createTestPost(ctx context.Context, t *testing.T, d *data.Data, sourceID string) string {
 	t.Helper()
 	now := time.Now()
 	post := biz.Post{
@@ -28,7 +27,7 @@ func createTestPost(ctx context.Context, t *testing.T, client *entgo.Client, sou
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	saved, _, err := data.NewPostRepo(&data.Data{Ent: client}).Save(ctx, post)
+	saved, _, err := data.NewPostRepo(d).Save(ctx, post)
 	require.NoError(t, err)
 	return saved.ID
 }
@@ -73,12 +72,13 @@ func TestIntegration_SummaryRepo_Save_SelfContained(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
+	client := d.Ent
 	repo := data.NewSummaryRepo(&data.Data{Ent: client})
 	sourceID := createTestSource(ctx, t, client)
-	postID := createTestPost(ctx, t, client, sourceID)
+	postID := createTestPost(ctx, t, d, sourceID)
 
 	id := uuid.Must(uuid.NewV7()).String()
 	summary := biz.Summary{
@@ -129,12 +129,13 @@ func TestIntegration_SummaryRepo_ListByPost(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	ctx := context.Background()
-	client, cleanup := setupTestDB(t)
+	d, cleanup := setupTestData(t)
 	defer cleanup()
 
+	client := d.Ent
 	repo := data.NewSummaryRepo(&data.Data{Ent: client})
 	sourceID := createTestSource(ctx, t, client)
-	postID := createTestPost(ctx, t, client, sourceID)
+	postID := createTestPost(ctx, t, d, sourceID)
 
 	baseTime := time.Now()
 	var savedIDs []string

@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -28,8 +30,13 @@ func NewPostRepo(data *Data) *postRepo {
 	return &postRepo{data: data}
 }
 
-// Save creates a new post in the database using upsert (idempotent).
-// If post with same (source_id, external_id) exists, returns existing without modification.
+// Save inserts a post idempotently by (source_id, external_id) (REQ-06). It uses
+// INSERT ... ON CONFLICT DO NOTHING so a re-collected post never raises a unique
+// violation: a 23505 would abort the surrounding transaction (PostUsecase.Create
+// wraps Save in a tx for outbox atomicity) and make the follow-up read fail with
+// 25P02 ("current transaction is aborted"). The returned bool reports whether
+// this call created the row (true) or it already existed (false); callers gate
+// the summary outbox event on it. An existing row is returned unmodified.
 func (pr *postRepo) Save(ctx context.Context, post biz.Post) (biz.Post, bool, error) {
 	sourceID, err := uuid.Parse(post.SourceID)
 	if err != nil {
@@ -41,52 +48,60 @@ func (pr *postRepo) Save(ctx context.Context, post biz.Post) (biz.Post, bool, er
 		return biz.Post{}, false, fmt.Errorf("invalid post id: %w", err)
 	}
 
-	// Ensure metadata is not nil (use empty map as default)
+	// Ensure metadata is not nil (use empty map as default), then encode to the
+	// jsonb column as text so lib/pq binds it without a bytea/jsonb mismatch.
 	metadata := post.Metadata
 	if metadata == nil {
 		metadata = map[string]string{}
 	}
-
-	client := clientFromContext(ctx, pr.data.Ent)
-
-	// Try to insert the post
-	// If conflict occurs (same source_id + external_id), fetch the existing one
-	entPost, err := client.Post.Create().
-		SetID(postID).
-		SetSourceID(sourceID).
-		SetExternalID(post.ExternalID).
-		SetPublishedAt(post.PublishedAt).
-		SetNillableAuthor(post.Author).
-		SetText(post.Text).
-		SetMetadata(metadata).
-		SetCreatedAt(post.CreatedAt).
-		SetUpdatedAt(post.UpdatedAt).
-		Save(ctx)
-
+	metadataJSON, err := json.Marshal(metadata)
 	if err != nil {
-		// Check for unique constraint violation (post already exists with same source_id + external_id)
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-			// Unique violation - fetch existing post
-			existing, fetchErr := pr.getBySourceAndExternalID(ctx, sourceID, post.ExternalID)
-			return existing, false, fetchErr
-		}
+		return biz.Post{}, false, fmt.Errorf("marshal post metadata: %w", err)
+	}
 
-		// Check for FK violation (source doesn't exist)
-		if errors.As(err, &pqErr) && pqErr.Code == "23503" {
+	var author any
+	if post.Author != nil {
+		author = *post.Author
+	}
+
+	const insertQuery = `
+INSERT INTO posts (id, source_id, external_id, published_at, author, text, metadata, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
+ON CONFLICT (source_id, external_id) DO NOTHING
+RETURNING id
+`
+	// Raw SQL through the tx-aware execer keeps the INSERT and the read below on
+	// the same transaction as PostUsecase.Create (txState backs both ent and raw
+	// SQL with one sql.Tx). DO NOTHING never aborts the tx, so the read succeeds.
+	ex := sqlExecerFromContext(ctx, pr.data.DB)
+	var insertedID uuid.UUID
+	scanErr := ex.QueryRowContext(ctx, insertQuery,
+		postID, sourceID, post.ExternalID, post.PublishedAt, author,
+		post.Text, string(metadataJSON), post.CreatedAt, post.UpdatedAt,
+	).Scan(&insertedID)
+
+	var created bool
+	switch {
+	case scanErr == nil:
+		created = true
+	case errors.Is(scanErr, sql.ErrNoRows):
+		// Conflict: the row already existed, DO NOTHING returned no row, so
+		// created stays false. The transaction stays usable for the read below
+		// (this is the fix).
+	default:
+		// A foreign-key violation means the source was deleted concurrently.
+		var pqErr *pq.Error
+		if errors.As(scanErr, &pqErr) && pqErr.Code == "23503" {
 			return biz.Post{}, false, biz.ErrPostSourceNotFound
 		}
-
-		return biz.Post{}, false, fmt.Errorf("save post: %w", err)
+		return biz.Post{}, false, fmt.Errorf("save post: %w", scanErr)
 	}
 
-	// Get the source info for eager loading
-	src, err := client.Source.Get(ctx, entPost.SourceID)
+	saved, err := pr.getBySourceAndExternalID(ctx, sourceID, post.ExternalID)
 	if err != nil {
-		return biz.Post{}, false, fmt.Errorf("get source for post: %w", err)
+		return biz.Post{}, false, err
 	}
-
-	return pr.mapEntToDomain(entPost, src), true, nil
+	return saved, created, nil
 }
 
 // getBySourceAndExternalID fetches existing post by (source_id, external_id) with source info.
