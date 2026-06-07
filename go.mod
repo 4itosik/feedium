@@ -60,6 +60,7 @@ require (
 	github.com/go-openapi/inflect v0.21.5 // indirect
 	github.com/go-playground/form/v4 v4.2.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/google/subcommands v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gotd/ige v0.2.2 // indirect
 	github.com/gotd/neo v0.1.5 // indirect
