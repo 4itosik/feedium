@@ -138,21 +138,6 @@ func (mr *MockInterestRepoMockRecorder) List(ctx, filter any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockInterestRepo)(nil).List), ctx, filter)
 }
 
-// ListEmbeddings mocks base method.
-func (m *MockInterestRepo) ListEmbeddings(ctx context.Context) ([][]float32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListEmbeddings", ctx)
-	ret0, _ := ret[0].([][]float32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListEmbeddings indicates an expected call of ListEmbeddings.
-func (mr *MockInterestRepoMockRecorder) ListEmbeddings(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEmbeddings", reflect.TypeOf((*MockInterestRepo)(nil).ListEmbeddings), ctx)
-}
-
 // ListInterestVectors mocks base method.
 func (m *MockInterestRepo) ListInterestVectors(ctx context.Context) ([]biz.InterestVector, error) {
 	m.ctrl.T.Helper()

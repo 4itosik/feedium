@@ -69,6 +69,7 @@ func newTestScoreUsecase(t *testing.T, d *data.Data, cfg *conf.Scoring, scorer b
 		data.NewSummaryRepo(d),
 		data.NewScoreOutboxRepo(d),
 		scorer,
+		data.NewPostEmbeddingRepo(d),
 		cfg,
 	)
 }

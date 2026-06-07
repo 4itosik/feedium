@@ -27,7 +27,8 @@ func TestScoreUsecase_EnqueueDue(t *testing.T) {
 		outboxRepo.EXPECT().EnqueueDuePosts(gomock.Any()).Return(3, nil)
 		uc := biz.NewScoreUsecase(
 			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
-			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl), &conf.Scoring{},
+			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl),
+			mock.NewMockPostEmbeddingRepo(ctrl), &conf.Scoring{},
 		)
 
 		// Act
@@ -62,7 +63,8 @@ func TestScoreUsecase_ReapStuckScoreEvents(t *testing.T) {
 			Return(true, nil)
 		uc := biz.NewScoreUsecase(
 			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
-			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl), cfg,
+			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl),
+			mock.NewMockPostEmbeddingRepo(ctrl), cfg,
 		)
 
 		// Act
@@ -85,7 +87,8 @@ func TestScoreUsecase_ReapStuckScoreEvents(t *testing.T) {
 			Return(false, nil)
 		uc := biz.NewScoreUsecase(
 			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
-			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl), cfg,
+			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl),
+			mock.NewMockPostEmbeddingRepo(ctrl), cfg,
 		)
 
 		// Act

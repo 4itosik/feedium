@@ -2,6 +2,7 @@ package data_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -79,7 +80,7 @@ func TestIntegration_InterestRepo_NotFound(t *testing.T) {
 	require.ErrorIs(t, delErr, biz.ErrInterestNotFound)
 }
 
-func TestIntegration_InterestRepo_ListEmbeddings(t *testing.T) {
+func TestIntegration_InterestRepo_ListInterestVectors(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
 	// Arrange
@@ -93,11 +94,20 @@ func TestIntegration_InterestRepo_ListEmbeddings(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	embeddings, err := repo.ListEmbeddings(ctx)
+	vectors, err := repo.ListInterestVectors(ctx)
 
 	// Assert
 	require.NoError(t, err)
-	assert.Len(t, embeddings, 2)
+	require.Len(t, vectors, 2)
+	embeddings := make(map[string]struct{}, len(vectors))
+	for _, v := range vectors {
+		// newInterest tags every interest with "test-model"; ListInterestVectors
+		// must round-trip that model tag (INV-01), not just the embedding.
+		assert.Equal(t, "test-model", v.Model)
+		embeddings[fmt.Sprint(v.Embedding)] = struct{}{}
+	}
+	assert.Contains(t, embeddings, fmt.Sprint([]float32{1, 0}))
+	assert.Contains(t, embeddings, fmt.Sprint([]float32{0, 1}))
 }
 
 func TestIntegration_InterestRepo_ListPagination(t *testing.T) {

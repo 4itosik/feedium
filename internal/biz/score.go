@@ -47,8 +47,6 @@ type PostEmbeddingRepo interface {
 }
 
 // hashInput is the content hash that keys vector validity (INV-02).
-//
-//nolint:unused // wired into ScorePost via resolvePostVector in FT-013 STEP-05
 func hashInput(text string) string {
 	sum := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(sum[:])
@@ -137,12 +135,13 @@ type ScoreRepo interface {
 
 // ScoreUsecase executes the per-post scoring business logic (REQ-02, REQ-03).
 type ScoreUsecase struct {
-	scoreRepo    ScoreRepo
-	interestRepo InterestRepo
-	summaryRepo  SummaryRepo
-	outboxRepo   ScoreOutboxRepo
-	scorer       Scorer
-	cfg          *conf.Scoring
+	scoreRepo         ScoreRepo
+	interestRepo      InterestRepo
+	summaryRepo       SummaryRepo
+	outboxRepo        ScoreOutboxRepo
+	scorer            Scorer
+	postEmbeddingRepo PostEmbeddingRepo
+	cfg               *conf.Scoring
 }
 
 // NewScoreUsecase creates a new ScoreUsecase.
@@ -152,15 +151,17 @@ func NewScoreUsecase(
 	summaryRepo SummaryRepo,
 	outboxRepo ScoreOutboxRepo,
 	scorer Scorer,
+	postEmbeddingRepo PostEmbeddingRepo,
 	cfg *conf.Scoring,
 ) *ScoreUsecase {
 	return &ScoreUsecase{
-		scoreRepo:    scoreRepo,
-		interestRepo: interestRepo,
-		summaryRepo:  summaryRepo,
-		outboxRepo:   outboxRepo,
-		scorer:       scorer,
-		cfg:          cfg,
+		scoreRepo:         scoreRepo,
+		interestRepo:      interestRepo,
+		summaryRepo:       summaryRepo,
+		outboxRepo:        outboxRepo,
+		scorer:            scorer,
+		postEmbeddingRepo: postEmbeddingRepo,
+		cfg:               cfg,
 	}
 }
 
@@ -220,17 +221,30 @@ func (uc *ScoreUsecase) ScorePost(ctx context.Context, event ScoreEvent) (string
 		return "", fmt.Errorf("%w: post has no summary", ErrScoreValidation)
 	}
 
-	interestEmbeddings, err := uc.interestRepo.ListEmbeddings(ctx)
+	model := uc.scorer.Model()
+	interestVectors, err := uc.interestRepo.ListInterestVectors(ctx)
 	if err != nil {
-		return "", fmt.Errorf("list interest embeddings: %w", err)
+		return "", fmt.Errorf("list interest vectors: %w", err)
+	}
+	// Never cosine across embedding models (INV-01). A stale-model interest is a
+	// permanent, observable failure (the worker logs the failed event via FM-08) —
+	// never a silent wrong score. OQ-01 default: fail terminally; auto re-embedding
+	// interests on model change is a follow-up.
+	interestEmbeddings := make([][]float32, 0, len(interestVectors))
+	for _, iv := range interestVectors {
+		if iv.Model != model {
+			return "", fmt.Errorf("%w: interest embedded with model %q, current %q",
+				ErrScoreValidation, iv.Model, model)
+		}
+		interestEmbeddings = append(interestEmbeddings, iv.Embedding)
 	}
 
 	value := 0.0
-	// No interests means the lowest score; skip the paid embed call entirely (FM-09).
+	// No same-model interests means the lowest score; skip the paid embed (FM-09).
 	if len(interestEmbeddings) > 0 {
-		postEmbedding, embedErr := uc.scorer.Embed(ctx, summaries[0].Text)
+		postEmbedding, embedErr := uc.resolvePostVector(ctx, event.PostID, summaries[0].Text, model)
 		if embedErr != nil {
-			return "", fmt.Errorf("embed summary: %w", embedErr)
+			return "", embedErr
 		}
 		value, err = Relevance(postEmbedding, interestEmbeddings)
 		if err != nil {
@@ -243,7 +257,7 @@ func (uc *ScoreUsecase) ScorePost(ctx context.Context, event ScoreEvent) (string
 		ID:        uuid.Must(uuid.NewV7()).String(),
 		PostID:    event.PostID,
 		Value:     value,
-		Model:     uc.scorer.Model(),
+		Model:     model,
 		CreatedAt: now,
 		UpdatedAt: now,
 	})
@@ -251,6 +265,32 @@ func (uc *ScoreUsecase) ScorePost(ctx context.Context, event ScoreEvent) (string
 		return "", fmt.Errorf("upsert score: %w", err)
 	}
 	return saved.ID, nil
+}
+
+// resolvePostVector returns the post's embedding, reusing the persisted vector when
+// (input_hash, model) still match (INV-02) and otherwise recomputing and persisting
+// it. The paid Embed call happens only on the recompute path (REQ-01, REQ-02, REQ-03).
+func (uc *ScoreUsecase) resolvePostVector(
+	ctx context.Context, postID, text, model string,
+) ([]float32, error) {
+	inputHash := hashInput(text)
+	stored, err := uc.postEmbeddingRepo.Get(ctx, postID)
+	switch {
+	case err == nil && stored.Model == model && stored.InputHash == inputHash:
+		return stored.Vector, nil
+	case err != nil && !errors.Is(err, ErrPostEmbeddingNotFound):
+		return nil, fmt.Errorf("get post embedding: %w", err)
+	}
+	vector, embedErr := uc.scorer.Embed(ctx, text)
+	if embedErr != nil {
+		return nil, fmt.Errorf("embed summary: %w", embedErr)
+	}
+	if _, upErr := uc.postEmbeddingRepo.Upsert(ctx, PostEmbedding{
+		PostID: postID, Vector: vector, Model: model, InputHash: inputHash,
+	}); upErr != nil {
+		return nil, fmt.Errorf("persist post embedding: %w", upErr)
+	}
+	return vector, nil
 }
 
 // RetryPolicy returns the scoring worker retry policy from config with code-level

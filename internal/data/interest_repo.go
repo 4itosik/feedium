@@ -137,19 +137,6 @@ func (r *interestRepo) List(ctx context.Context, filter biz.ListInterestsFilter)
 	return result, nil
 }
 
-// ListEmbeddings returns the cached embedding of every interest (DEC-04).
-func (r *interestRepo) ListEmbeddings(ctx context.Context) ([][]float32, error) {
-	entInterests, err := r.data.Ent.Interest.Query().All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list interest embeddings: %w", err)
-	}
-	embeddings := make([][]float32, 0, len(entInterests))
-	for _, ei := range entInterests {
-		embeddings = append(embeddings, ei.Embedding)
-	}
-	return embeddings, nil
-}
-
 // ListInterestVectors returns each interest embedding tagged with its model (INV-01).
 func (r *interestRepo) ListInterestVectors(ctx context.Context) ([]biz.InterestVector, error) {
 	entInterests, err := r.data.Ent.Interest.Query().All(ctx)

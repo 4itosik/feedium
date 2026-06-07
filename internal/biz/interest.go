@@ -71,9 +71,6 @@ type InterestRepo interface {
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, id string) (Interest, error)
 	List(ctx context.Context, filter ListInterestsFilter) (ListInterestsResult, error)
-	// ListEmbeddings returns the cached embedding of every interest, used by the
-	// scorer to compute relevance (DEC-04).
-	ListEmbeddings(ctx context.Context) ([][]float32, error)
 	// ListInterestVectors returns every interest embedding with its model (INV-01).
 	ListInterestVectors(ctx context.Context) ([]InterestVector, error)
 }
