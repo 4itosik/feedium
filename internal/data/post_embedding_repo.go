@@ -86,8 +86,11 @@ RETURNING post_id, vector, model, input_hash, created_at, updated_at`
 		createdAt time.Time
 		updatedAt time.Time
 	)
+	// newID is only used on INSERT; on ON CONFLICT DO UPDATE it is ignored (id is
+	// not in the SET clause).
+	newID := uuid.Must(uuid.NewV7())
 	err = ex.QueryRowContext(ctx, query,
-		uuid.Must(uuid.NewV7()), pid, string(vectorJSON), pe.Model, pe.InputHash).
+		newID, pid, string(vectorJSON), pe.Model, pe.InputHash).
 		Scan(&outPostID, &outVector, &model, &inputHash, &createdAt, &updatedAt)
 	if err != nil {
 		return biz.PostEmbedding{}, fmt.Errorf("upsert post embedding: %w", err)

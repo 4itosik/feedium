@@ -270,6 +270,13 @@ func (uc *ScoreUsecase) ScorePost(ctx context.Context, event ScoreEvent) (string
 // resolvePostVector returns the post's embedding, reusing the persisted vector when
 // (input_hash, model) still match (INV-02) and otherwise recomputing and persisting
 // it. The paid Embed call happens only on the recompute path (REQ-01, REQ-02, REQ-03).
+//
+// Non-atomicity is deliberate: Embed + vector Upsert (here) and the subsequent score
+// Upsert in ScorePost are NOT wrapped in a single DB transaction. Embed is an
+// external/paid network call, and holding a DB transaction open across it is the
+// ER-01 hazard. The post vector is a recoverable cache (INV-03): a crash between the
+// vector Upsert and the score Upsert is safely handled by the score-event retry,
+// which finds and reuses the persisted vector. Do NOT wrap this sequence in a tx.
 func (uc *ScoreUsecase) resolvePostVector(
 	ctx context.Context, postID, text, model string,
 ) ([]float32, error) {
