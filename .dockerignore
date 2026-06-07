@@ -1,0 +1,35 @@
+# Keep the build context small and free of secrets / local artifacts.
+.git
+.github
+.idea
+.cache
+.worktrees
+.ferry
+.ai-setup
+.playwright-cli
+
+# Local secrets and profiles — never bake into the image.
+.env
+.env.local
+.env.prod
+configs/local/
+configs/prod/
+
+# Prebuilt binaries and test/coverage artifacts.
+bin/
+feedium
+data.test
+health.test
+coverage.out
+coverage.html
+*.test
+
+# Docs and notes that don't belong in the image.
+memory-bank/
+docs/
+homeworks/
+evals/
+briefs/
+session-*.md
+post.txt
+README.md

@@ -12,6 +12,10 @@
 
 configs/local/
 
+# Production secrets (mounted config + compose env) — never commit.
+configs/prod/
+.env.prod
+
 # Локальные образцы тел запросов для smoke-тестов API (см. README шаг 6)
 post.txt
 

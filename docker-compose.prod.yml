@@ -1,0 +1,63 @@
+# Production deployment for a single VPS: PostgreSQL + one-shot migrate + app.
+#
+# Secrets are NOT in this file:
+#   - Postgres credentials come from an env file (see .env.prod.example).
+#   - The app's secrets (DB password, OpenRouter API key) live in a mounted
+#     config file at ./configs/prod/config.yaml (gitignored).
+#
+# Bring up:  docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# See docs/deploy.md for the full procedure.
+name: feedium
+
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    container_name: feedium-pg
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - feedium-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # One-shot: applies goose migrations, then exits. The app waits for it to
+  # finish successfully before starting.
+  migrate:
+    build: .
+    image: feedium:latest
+    command: ["migrate", "-dir", "/app/migrations", "up"]
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build: .
+    image: feedium:latest
+    command: ["feedium", "-conf", "/etc/feedium/config.yaml"]
+    volumes:
+      # Mounted secret config. data.database.* here MUST match .env.prod, and
+      # data.database.host MUST be "postgres" (the service name on this network).
+      - ./configs/prod/config.yaml:/etc/feedium/config.yaml:ro
+    ports:
+      # Bound to localhost only — there is no built-in auth. Put a reverse proxy
+      # (TLS) in front for public HTTP, or reach gRPC/feediumctl over SSH.
+      - "127.0.0.1:8000:8000"   # HTTP API
+      - "127.0.0.1:9000:9000"   # gRPC (feediumctl)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  feedium-pg-data:

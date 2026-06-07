@@ -1,0 +1,91 @@
+# Production config template. Copy to configs/prod/config.yaml (gitignored),
+# fill in the secrets, and it gets mounted read-only into the app container.
+#
+# IMPORTANT:
+#   - data.database.host MUST be "postgres" (the compose service name).
+#   - data.database.user/password/database MUST match .env.prod.
+#   - All Duration fields are protojson: seconds only, e.g. "300s" (NOT "5m"/"1h").
+server:
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 10s
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 10s
+data:
+  database:
+    host: postgres
+    port: 5432
+    database: feedium
+    user: feedium
+    password: CHANGE_ME_TO_A_STRONG_PASSWORD
+    sslmode: disable
+summary:
+  worker:
+    poll_interval: 5s
+    concurrency: 4
+    lease_ttl: 300s
+    heartbeat_interval: 60s
+    graceful_timeout: 10s
+    max_attempts: 5
+    backoff_base: 10s
+    backoff_max: 600s
+  source_scheduler:
+    poll_interval: 5s
+  reaper:
+    interval: 60s
+    grace: 30s
+  cron:
+    interval: 3600s
+  llm:
+    timeout: 30s
+    max_retries: 3
+    provider: openrouter
+    providers:
+      openrouter:
+        api_key: "REPLACE_WITH_YOUR_OPENROUTER_API_KEY"
+        base_url: "https://openrouter.ai/api/v1"
+        model: "deepseek/deepseek-v4-flash"
+  cumulative:
+    max_window: 259200s
+    max_input_chars: 50000
+  outbox:
+    event_ttl: 86400s
+scoring:
+  worker:
+    poll_interval: 5s
+    concurrency: 4
+    lease_ttl: 300s
+    heartbeat_interval: 60s
+    graceful_timeout: 10s
+    max_attempts: 5
+    backoff_base: 10s
+    backoff_max: 600s
+    event_ttl: 86400s
+  scheduler:
+    poll_interval: 5s
+  reaper:
+    interval: 60s
+    grace: 30s
+  embedding:
+    timeout: 30s
+    max_retries: 3
+    provider: openrouter
+    providers:
+      openrouter:
+        api_key: "REPLACE_WITH_YOUR_OPENROUTER_API_KEY"
+        base_url: "https://openrouter.ai/api/v1"
+        model: "qwen/qwen3-embedding-8b"
+  default_threshold: 0.0
+collectors:
+  rss:
+    poll_interval: 300s
+  web:
+    poll_interval: 900s
+  # Telegram userbot collector (FT-009). Leave api_id=0 / empty to keep it
+  # idle; live login is gated (AG-02). Secrets here are NOT committed.
+  telegram:
+    api_id: 0
+    api_hash: ""
+    phone: ""
+    session_path: "/var/lib/feedium/tg.session"
