@@ -63,7 +63,8 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		cleanup()
 		return nil, nil, err
 	}
-	interestUsecase := biz.NewInterestUsecase(interestRepo, embeddingProvider)
+	scoreOutboxRepo := data.NewScoreOutboxRepo(dataData)
+	interestUsecase := biz.NewInterestUsecase(interestRepo, embeddingProvider, scoreOutboxRepo, txManager)
 	interestService := interest.NewInterestService(interestUsecase)
 	scoreRepo := data.NewScoreRepo(dataData)
 	scoring := newScoringConfigFromBootstrap(bc)
@@ -74,8 +75,8 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	eventWorkerPool := task.NewEventWorkerPool(summaryOutboxRepo, summaryUsecase, confSummary, logger)
 	sourceDueScheduler := task.NewSourceDueScheduler(summaryUsecase, confSummary, logger)
 	stuckEventReaper := task.NewStuckEventReaper(summaryUsecase, confSummary, logger)
-	scoreOutboxRepo := data.NewScoreOutboxRepo(dataData)
-	scoreUsecase := biz.NewScoreUsecase(scoreRepo, interestRepo, summaryRepo, scoreOutboxRepo, embeddingProvider, scoring)
+	postEmbeddingRepo := data.NewPostEmbeddingRepo(dataData)
+	scoreUsecase := biz.NewScoreUsecase(scoreRepo, interestRepo, summaryRepo, scoreOutboxRepo, embeddingProvider, postEmbeddingRepo, scoring)
 	scoreEventWorkerPool := task.NewScoreEventWorkerPool(scoreOutboxRepo, scoreUsecase, scoring, logger)
 	scoreDueScheduler := task.NewScoreDueScheduler(scoreUsecase, scoring, logger)
 	stuckScoreEventReaper := task.NewStuckScoreEventReaper(scoreUsecase, scoring, logger)
