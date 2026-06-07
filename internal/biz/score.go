@@ -2,6 +2,8 @@ package biz
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -22,6 +24,34 @@ type Score struct {
 	Model     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+// PostEmbedding is a post's persisted embedding vector, reused across scorings
+// while (InputHash, Model) match the current input text and embedding model (FT-013 INV-02).
+type PostEmbedding struct {
+	PostID    string
+	Vector    []float32
+	Model     string
+	InputHash string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// ErrPostEmbeddingNotFound means no embedding is stored for the post yet.
+var ErrPostEmbeddingNotFound = errors.New("post embedding not found")
+
+// PostEmbeddingRepo persists exactly one embedding per post (CTR-01).
+type PostEmbeddingRepo interface {
+	Get(ctx context.Context, postID string) (PostEmbedding, error)
+	Upsert(ctx context.Context, pe PostEmbedding) (PostEmbedding, error)
+}
+
+// hashInput is the content hash that keys vector validity (INV-02).
+//
+//nolint:unused // wired into ScorePost via resolvePostVector in FT-013 STEP-05
+func hashInput(text string) string {
+	sum := sha256.Sum256([]byte(text))
+	return hex.EncodeToString(sum[:])
 }
 
 // Sentinel errors for scoring.

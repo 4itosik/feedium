@@ -17,6 +17,60 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
+// MockPostEmbeddingRepo is a mock of PostEmbeddingRepo interface.
+type MockPostEmbeddingRepo struct {
+	ctrl     *gomock.Controller
+	recorder *MockPostEmbeddingRepoMockRecorder
+	isgomock struct{}
+}
+
+// MockPostEmbeddingRepoMockRecorder is the mock recorder for MockPostEmbeddingRepo.
+type MockPostEmbeddingRepoMockRecorder struct {
+	mock *MockPostEmbeddingRepo
+}
+
+// NewMockPostEmbeddingRepo creates a new mock instance.
+func NewMockPostEmbeddingRepo(ctrl *gomock.Controller) *MockPostEmbeddingRepo {
+	mock := &MockPostEmbeddingRepo{ctrl: ctrl}
+	mock.recorder = &MockPostEmbeddingRepoMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPostEmbeddingRepo) EXPECT() *MockPostEmbeddingRepoMockRecorder {
+	return m.recorder
+}
+
+// Get mocks base method.
+func (m *MockPostEmbeddingRepo) Get(ctx context.Context, postID string) (biz.PostEmbedding, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, postID)
+	ret0, _ := ret[0].(biz.PostEmbedding)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockPostEmbeddingRepoMockRecorder) Get(ctx, postID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPostEmbeddingRepo)(nil).Get), ctx, postID)
+}
+
+// Upsert mocks base method.
+func (m *MockPostEmbeddingRepo) Upsert(ctx context.Context, pe biz.PostEmbedding) (biz.PostEmbedding, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Upsert", ctx, pe)
+	ret0, _ := ret[0].(biz.PostEmbedding)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Upsert indicates an expected call of Upsert.
+func (mr *MockPostEmbeddingRepoMockRecorder) Upsert(ctx, pe any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockPostEmbeddingRepo)(nil).Upsert), ctx, pe)
+}
+
 // MockScoreRepo is a mock of ScoreRepo interface.
 type MockScoreRepo struct {
 	ctrl     *gomock.Controller
