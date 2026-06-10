@@ -1,10 +1,22 @@
-import { useState, useEffect } from 'react'
-import { listPosts, listPostSummaries, type Post, type Summary } from '../api'
+import { useState, useEffect, useCallback } from 'react'
+import {
+  listPosts, listSources, listPostSummaries,
+  type Post, type Summary, type Source, type PostSortField, type SortDirection,
+} from '../api'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
+}
+
+function sourceLabel(source: Source): string {
+  const cfg = source.config as Record<string, unknown>
+  if (cfg.telegramChannel) return `@${(cfg.telegramChannel as { username?: string }).username ?? source.id}`
+  if (cfg.telegramGroup)   return `@${(cfg.telegramGroup as { username?: string }).username ?? source.id}`
+  if (cfg.rss)             return (cfg.rss as { feedUrl?: string }).feedUrl ?? source.id
+  if (cfg.html)            return (cfg.html as { url?: string }).url ?? source.id
+  return source.id
 }
 
 function PostRow({ post }: { post: Post }) {
@@ -49,22 +61,13 @@ function PostRow({ post }: { post: Post }) {
       {open && (
         <div className="border-t border-gray-100 px-4 py-3 bg-gray-50">
           <p className="text-sm text-gray-700 whitespace-pre-wrap mb-3">{post.text}</p>
-
           <div className="border-t border-gray-200 pt-3">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Summaries</h3>
-
-            {loadingSummaries && (
-              <p className="text-sm text-gray-400">Loading summaries…</p>
-            )}
-
-            {summaryError && (
-              <p className="text-sm text-red-600">{summaryError}</p>
-            )}
-
+            {loadingSummaries && <p className="text-sm text-gray-400">Loading summaries…</p>}
+            {summaryError && <p className="text-sm text-red-600">{summaryError}</p>}
             {!loadingSummaries && !summaryError && summaries.length === 0 && (
               <p className="text-sm text-gray-400">No summaries yet.</p>
             )}
-
             {summaries.map(s => (
               <div key={s.id} className="mb-2 last:mb-0">
                 <p className="text-sm text-gray-800">{s.text}</p>
@@ -84,11 +87,26 @@ export default function PostsView() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const load = async (token?: string) => {
+  const [sources, setSources] = useState<Source[]>([])
+  const [sourceId, setSourceId] = useState('')
+  const [orderBy, setOrderBy] = useState<PostSortField>('POST_SORT_FIELD_PUBLISHED_AT')
+  const [orderDir, setOrderDir] = useState<SortDirection>('SORT_DIRECTION_DESC')
+
+  useEffect(() => {
+    listSources().then(r => setSources(r.items ?? [])).catch(() => {})
+  }, [])
+
+  const load = useCallback(async (token?: string) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await listPosts({ pageSize: 50, pageToken: token })
+      const res = await listPosts({
+        pageSize: 50,
+        pageToken: token,
+        sourceId: sourceId || undefined,
+        orderBy,
+        orderDir,
+      })
       setPosts(prev => token ? [...prev, ...(res.items ?? [])] : (res.items ?? []))
       setNextToken(res.nextPageToken || undefined)
     } catch (e) {
@@ -96,19 +114,54 @@ export default function PostsView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [sourceId, orderBy, orderDir])
 
-  useEffect(() => { load() }, [])
+  // Reload when filters change
+  useEffect(() => { load() }, [load])
+
+  const toggleDir = () =>
+    setOrderDir(d => d === 'SORT_DIRECTION_DESC' ? 'SORT_DIRECTION_ASC' : 'SORT_DIRECTION_DESC')
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h1 className="text-2xl font-bold text-gray-900">Posts</h1>
         <button
           onClick={() => load()}
           className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm"
         >
           Refresh
+        </button>
+      </div>
+
+      {/* Filter / sort bar */}
+      <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-white border border-gray-200 rounded-lg">
+        <select
+          value={sourceId}
+          onChange={e => setSourceId(e.target.value)}
+          className="border border-gray-300 rounded px-2 py-1.5 text-sm min-w-0 flex-1 max-w-xs"
+        >
+          <option value="">All sources</option>
+          {sources.map(s => (
+            <option key={s.id} value={s.id}>{sourceLabel(s)}</option>
+          ))}
+        </select>
+
+        <select
+          value={orderBy}
+          onChange={e => setOrderBy(e.target.value as PostSortField)}
+          className="border border-gray-300 rounded px-2 py-1.5 text-sm"
+        >
+          <option value="POST_SORT_FIELD_PUBLISHED_AT">Published at</option>
+          <option value="POST_SORT_FIELD_CREATED_AT">Created at</option>
+        </select>
+
+        <button
+          onClick={toggleDir}
+          className="flex items-center gap-1 border border-gray-300 rounded px-2 py-1.5 text-sm hover:bg-gray-50"
+          title={orderDir === 'SORT_DIRECTION_DESC' ? 'Newest first' : 'Oldest first'}
+        >
+          {orderDir === 'SORT_DIRECTION_DESC' ? '↓ Newest' : '↑ Oldest'}
         </button>
       </div>
 

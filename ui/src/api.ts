@@ -153,15 +153,22 @@ export function deleteInterest(id: string): Promise<unknown> {
   return apiFetch(`/v1/interests/${id}`, { method: 'DELETE' })
 }
 
+export type PostSortField = 'POST_SORT_FIELD_PUBLISHED_AT' | 'POST_SORT_FIELD_CREATED_AT'
+export type SortDirection = 'SORT_DIRECTION_DESC' | 'SORT_DIRECTION_ASC'
+
 // Posts
 export function listPosts(params?: {
   pageSize?: number
   pageToken?: string
   sourceId?: string
+  orderBy?: PostSortField
+  orderDir?: SortDirection
 }): Promise<PostsResponse> {
   const q = new URLSearchParams({ page_size: String(params?.pageSize ?? 50) })
   if (params?.pageToken) q.set('page_token', params.pageToken)
   if (params?.sourceId) q.set('source_id', params.sourceId)
+  if (params?.orderBy) q.set('order_by', params.orderBy)
+  if (params?.orderDir) q.set('order_dir', params.orderDir)
   return apiFetch<PostsResponse>(`/v1/posts?${q}`)
 }
 
