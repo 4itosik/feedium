@@ -105,17 +105,24 @@ func (r *scoreRepo) ListRanked(ctx context.Context, query biz.FeedQuery) (biz.Fe
 	args = append(args, query.PageSize+1)
 
 	sqlText := `
-SELECT p.id, p.source_id, p.author, COALESCE(sm.text, p.text), p.published_at, s.value
+SELECT p.id, p.source_id, p.author, COALESCE(sm.text, p.text), p.published_at, s.value,
+       COALESCE(p.metadata->>'link', ''),
+       COALESCE(src.config->'telegramChannel'->>'username',
+                src.config->'telegramGroup'->>'username', ''),
+       COALESCE(p.external_id, ''),
+       COALESCE(pr.signal, '')
 FROM scores s
 JOIN posts p ON p.id = s.post_id
+LEFT JOIN sources src ON src.id = p.source_id
+LEFT JOIN post_reactions pr ON pr.post_id = p.id
 LEFT JOIN LATERAL (
     SELECT text FROM summaries
     WHERE post_id = p.id
     ORDER BY created_at DESC
     LIMIT 1
 ) sm ON true
-WHERE ` + strings.Join(conds, " AND ") + `
-ORDER BY s.value DESC, p.id ASC
+WHERE ` + strings.Join(conds, " AND ") + ` AND COALESCE(pr.signal, '') != 'dislike'
+ORDER BY (CASE WHEN pr.signal = 'like' THEN s.value + 0.1 ELSE s.value END) DESC, p.id ASC
 LIMIT $` + strconv.Itoa(len(args))
 
 	rows, err := ex.QueryContext(ctx, sqlText, args...)
@@ -132,10 +139,21 @@ LIMIT $` + strconv.Itoa(len(args))
 			text             string
 			publishedAt      time.Time
 			value            float64
+			metaLink         string
+			tgUsername       string
+			externalID       string
+			reactionSignal   string
 		)
-		if scanErr := rows.Scan(&postID, &sourceID, &author, &text, &publishedAt, &value); scanErr != nil {
+		if scanErr := rows.Scan(&postID, &sourceID, &author, &text, &publishedAt, &value,
+			&metaLink, &tgUsername, &externalID, &reactionSignal); scanErr != nil {
 			return biz.FeedResult{}, fmt.Errorf("scan feed row: %w", scanErr)
 		}
+
+		url := metaLink
+		if url == "" && tgUsername != "" && externalID != "" {
+			url = "https://t.me/" + tgUsername + "/" + externalID
+		}
+
 		post := biz.Post{
 			ID:          postID.String(),
 			SourceID:    sourceID.String(),
@@ -146,7 +164,7 @@ LIMIT $` + strconv.Itoa(len(args))
 			a := author.String
 			post.Author = &a
 		}
-		items = append(items, biz.FeedItem{Post: post, Score: value})
+		items = append(items, biz.FeedItem{Post: post, Score: value, URL: url, Reaction: reactionSignal})
 	}
 	if rowsErr := rows.Err(); rowsErr != nil {
 		return biz.FeedResult{}, fmt.Errorf("rows feed: %w", rowsErr)

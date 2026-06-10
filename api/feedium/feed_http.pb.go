@@ -20,14 +20,17 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationFeedServiceV1ListFeed = "/feedium.FeedService/V1ListFeed"
+const OperationFeedServiceV1ReactToPost = "/feedium.FeedService/V1ReactToPost"
 
 type FeedServiceHTTPServer interface {
 	V1ListFeed(context.Context, *V1ListFeedRequest) (*V1ListFeedResponse, error)
+	V1ReactToPost(context.Context, *V1ReactToPostRequest) (*V1ReactToPostResponse, error)
 }
 
 func RegisterFeedServiceHTTPServer(s *http.Server, srv FeedServiceHTTPServer) {
 	r := s.Route("/")
 	r.GET("/v1/feed", _FeedService_V1ListFeed0_HTTP_Handler(srv))
+	r.POST("/v1/posts/{post_id}/react", _FeedService_V1ReactToPost0_HTTP_Handler(srv))
 }
 
 func _FeedService_V1ListFeed0_HTTP_Handler(srv FeedServiceHTTPServer) func(ctx http.Context) error {
@@ -49,8 +52,34 @@ func _FeedService_V1ListFeed0_HTTP_Handler(srv FeedServiceHTTPServer) func(ctx h
 	}
 }
 
+func _FeedService_V1ReactToPost0_HTTP_Handler(srv FeedServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in V1ReactToPostRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationFeedServiceV1ReactToPost)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.V1ReactToPost(ctx, req.(*V1ReactToPostRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*V1ReactToPostResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 type FeedServiceHTTPClient interface {
 	V1ListFeed(ctx context.Context, req *V1ListFeedRequest, opts ...http.CallOption) (rsp *V1ListFeedResponse, err error)
+	V1ReactToPost(ctx context.Context, req *V1ReactToPostRequest, opts ...http.CallOption) (rsp *V1ReactToPostResponse, err error)
 }
 
 type FeedServiceHTTPClientImpl struct {
@@ -68,6 +97,19 @@ func (c *FeedServiceHTTPClientImpl) V1ListFeed(ctx context.Context, in *V1ListFe
 	opts = append(opts, http.Operation(OperationFeedServiceV1ListFeed))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *FeedServiceHTTPClientImpl) V1ReactToPost(ctx context.Context, in *V1ReactToPostRequest, opts ...http.CallOption) (*V1ReactToPostResponse, error) {
+	var out V1ReactToPostResponse
+	pattern := "/v1/posts/{post_id}/react"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationFeedServiceV1ReactToPost))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

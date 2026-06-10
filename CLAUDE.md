@@ -1,5 +1,4 @@
 Прочитай главный индекс Memory Bank: [memory-bank/index.md](memory-bank/index.md)
-
 ## Tool-use rules (lessons learned)
 
 - **Не параллелить Bash-вызовы, которые мутируют файловую систему или делят CWD** (`mockgen`, `go generate`, `go build` в подпапке, `git stash`, генерация артефактов). Параллельно запускай только независимые read-only пробы (`git status`, `git diff`, `git log`, `Read`, `Grep`).

@@ -107,6 +107,7 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 		wire.Bind(new(summaryservice.Usecase), new(*biz.SummaryUsecase)),
 		wire.Bind(new(interestservice.Usecase), new(*biz.InterestUsecase)),
 		wire.Bind(new(feedservice.Usecase), new(*biz.FeedUsecase)),
+		wire.Bind(new(feedservice.ReactionUsecase), new(*biz.ReactionUsecase)),
 		wire.Bind(new(task.EventProcessor), new(*biz.SummaryUsecase)),
 		wire.Bind(new(task.SourceScheduler), new(*biz.SummaryUsecase)),
 		wire.Bind(new(task.StuckReaper), new(*biz.SummaryUsecase)),

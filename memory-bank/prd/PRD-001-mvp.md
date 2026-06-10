@@ -114,3 +114,8 @@ Canonical-определения метрик MET-01..MET-05 — в [`../domain/
 | `FT-010` AI-скоринг и ранжирование | Embeddings + интересы, score для постов | planned (подход не определён, см. OQ-01) |
 | `FT-011` React UI | Лента с саммари, фильтрация по источнику/времени | done |
 | `FT-012` OpenClaw бот | Telegram-бот: дайджест, управление источниками | planned |
+| `FT-014` Date quick filters | Кнопки "Сегодня / Вчера / 7 дней" в Feed view | backlog |
+| `FT-015` Source name in feed | Имя источника вместо UUID в карточках ленты | backlog |
+| `FT-016` Feed stats | Счётчик новых постов и активных источников (пульс системы) | backlog |
+| `FT-017` Open original URL | Ссылка на оригинальный материал в карточке Feed | backlog |
+| `FT-018` Mark as read | Пометить пост прочитанным; при следующем открытии — только новое | backlog |

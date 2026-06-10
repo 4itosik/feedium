@@ -15,6 +15,10 @@ message FeedItem {
   string text = 4;
   google.protobuf.Timestamp published_at = 5;
   double score = 6;
+  // url is a best-effort link to the original source material; empty when unavailable.
+  string url = 7;
+  // reaction is the current user reaction: "like", "dislike", or "" if none.
+  string reaction = 8;
 }
 
 message V1ListFeedRequest {
@@ -32,10 +36,24 @@ message V1ListFeedResponse {
   string next_page_token = 2;
 }
 
+message V1ReactToPostRequest {
+  string post_id = 1;
+  // signal must be "like" or "dislike".
+  string signal = 2;
+}
+
+message V1ReactToPostResponse {}
+
 service FeedService {
   rpc V1ListFeed(V1ListFeedRequest) returns (V1ListFeedResponse) {
     option (google.api.http) = {
       get: "/v1/feed"
+    };
+  }
+  rpc V1ReactToPost(V1ReactToPostRequest) returns (V1ReactToPostResponse) {
+    option (google.api.http) = {
+      post: "/v1/posts/{post_id}/react"
+      body: "*"
     };
   }
 }

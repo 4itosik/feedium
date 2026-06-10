@@ -25,13 +25,17 @@ const (
 
 // FeedItem is a post paired with its current relevance score (FT-010 CTR-04).
 type FeedItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	SourceId      string                 `protobuf:"bytes,2,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
-	Author        string                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
-	Text          string                 `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
-	PublishedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
-	Score         float64                `protobuf:"fixed64,6,opt,name=score,proto3" json:"score,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	PostId      string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	SourceId    string                 `protobuf:"bytes,2,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
+	Author      string                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
+	Text        string                 `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
+	PublishedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
+	Score       float64                `protobuf:"fixed64,6,opt,name=score,proto3" json:"score,omitempty"`
+	// url is a best-effort link to the original source material; empty when unavailable.
+	Url string `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
+	// reaction is the current user reaction: "like", "dislike", or "" if none.
+	Reaction      string `protobuf:"bytes,8,opt,name=reaction,proto3" json:"reaction,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -106,6 +110,20 @@ func (x *FeedItem) GetScore() float64 {
 		return x.Score
 	}
 	return 0
+}
+
+func (x *FeedItem) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *FeedItem) GetReaction() string {
+	if x != nil {
+		return x.Reaction
+	}
+	return ""
 }
 
 type V1ListFeedRequest struct {
@@ -238,18 +256,109 @@ func (x *V1ListFeedResponse) GetNextPageToken() string {
 	return ""
 }
 
+type V1ReactToPostRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	PostId string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	// signal must be "like" or "dislike".
+	Signal        string `protobuf:"bytes,2,opt,name=signal,proto3" json:"signal,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *V1ReactToPostRequest) Reset() {
+	*x = V1ReactToPostRequest{}
+	mi := &file_api_feedium_feed_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *V1ReactToPostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*V1ReactToPostRequest) ProtoMessage() {}
+
+func (x *V1ReactToPostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_feedium_feed_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use V1ReactToPostRequest.ProtoReflect.Descriptor instead.
+func (*V1ReactToPostRequest) Descriptor() ([]byte, []int) {
+	return file_api_feedium_feed_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *V1ReactToPostRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *V1ReactToPostRequest) GetSignal() string {
+	if x != nil {
+		return x.Signal
+	}
+	return ""
+}
+
+type V1ReactToPostResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *V1ReactToPostResponse) Reset() {
+	*x = V1ReactToPostResponse{}
+	mi := &file_api_feedium_feed_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *V1ReactToPostResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*V1ReactToPostResponse) ProtoMessage() {}
+
+func (x *V1ReactToPostResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_feedium_feed_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use V1ReactToPostResponse.ProtoReflect.Descriptor instead.
+func (*V1ReactToPostResponse) Descriptor() ([]byte, []int) {
+	return file_api_feedium_feed_proto_rawDescGZIP(), []int{4}
+}
+
 var File_api_feedium_feed_proto protoreflect.FileDescriptor
 
 const file_api_feedium_feed_proto_rawDesc = "" +
 	"\n" +
-	"\x16api/feedium/feed.proto\x12\afeedium\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc1\x01\n" +
+	"\x16api/feedium/feed.proto\x12\afeedium\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xef\x01\n" +
 	"\bFeedItem\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x1b\n" +
 	"\tsource_id\x18\x02 \x01(\tR\bsourceId\x12\x16\n" +
 	"\x06author\x18\x03 \x01(\tR\x06author\x12\x12\n" +
 	"\x04text\x18\x04 \x01(\tR\x04text\x12=\n" +
 	"\fpublished_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedAt\x12\x14\n" +
-	"\x05score\x18\x06 \x01(\x01R\x05score\"\xc8\x01\n" +
+	"\x05score\x18\x06 \x01(\x01R\x05score\x12\x10\n" +
+	"\x03url\x18\a \x01(\tR\x03url\x12\x1a\n" +
+	"\breaction\x18\b \x01(\tR\breaction\"\xc8\x01\n" +
 	"\x11V1ListFeedRequest\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1b\n" +
@@ -259,11 +368,16 @@ const file_api_feedium_feed_proto_rawDesc = "" +
 	"page_token\x18\x05 \x01(\tR\tpageToken\"e\n" +
 	"\x12V1ListFeedResponse\x12'\n" +
 	"\x05items\x18\x01 \x03(\v2\x11.feedium.FeedItemR\x05items\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken2f\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"G\n" +
+	"\x14V1ReactToPostRequest\x12\x17\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x16\n" +
+	"\x06signal\x18\x02 \x01(\tR\x06signal\"\x17\n" +
+	"\x15V1ReactToPostResponse2\xdc\x01\n" +
 	"\vFeedService\x12W\n" +
 	"\n" +
 	"V1ListFeed\x12\x1a.feedium.V1ListFeedRequest\x1a\x1b.feedium.V1ListFeedResponse\"\x10\x82\xd3\xe4\x93\x02\n" +
-	"\x12\b/v1/feedB\x1dZ\x1bfeedium/api/feedium;feediumb\x06proto3"
+	"\x12\b/v1/feed\x12t\n" +
+	"\rV1ReactToPost\x12\x1d.feedium.V1ReactToPostRequest\x1a\x1e.feedium.V1ReactToPostResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/posts/{post_id}/reactB\x1dZ\x1bfeedium/api/feedium;feediumb\x06proto3"
 
 var (
 	file_api_feedium_feed_proto_rawDescOnce sync.Once
@@ -277,22 +391,26 @@ func file_api_feedium_feed_proto_rawDescGZIP() []byte {
 	return file_api_feedium_feed_proto_rawDescData
 }
 
-var file_api_feedium_feed_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_api_feedium_feed_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_feedium_feed_proto_goTypes = []any{
 	(*FeedItem)(nil),              // 0: feedium.FeedItem
 	(*V1ListFeedRequest)(nil),     // 1: feedium.V1ListFeedRequest
 	(*V1ListFeedResponse)(nil),    // 2: feedium.V1ListFeedResponse
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*V1ReactToPostRequest)(nil),  // 3: feedium.V1ReactToPostRequest
+	(*V1ReactToPostResponse)(nil), // 4: feedium.V1ReactToPostResponse
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_api_feedium_feed_proto_depIdxs = []int32{
-	3, // 0: feedium.FeedItem.published_at:type_name -> google.protobuf.Timestamp
-	3, // 1: feedium.V1ListFeedRequest.from:type_name -> google.protobuf.Timestamp
-	3, // 2: feedium.V1ListFeedRequest.to:type_name -> google.protobuf.Timestamp
+	5, // 0: feedium.FeedItem.published_at:type_name -> google.protobuf.Timestamp
+	5, // 1: feedium.V1ListFeedRequest.from:type_name -> google.protobuf.Timestamp
+	5, // 2: feedium.V1ListFeedRequest.to:type_name -> google.protobuf.Timestamp
 	0, // 3: feedium.V1ListFeedResponse.items:type_name -> feedium.FeedItem
 	1, // 4: feedium.FeedService.V1ListFeed:input_type -> feedium.V1ListFeedRequest
-	2, // 5: feedium.FeedService.V1ListFeed:output_type -> feedium.V1ListFeedResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
+	3, // 5: feedium.FeedService.V1ReactToPost:input_type -> feedium.V1ReactToPostRequest
+	2, // 6: feedium.FeedService.V1ListFeed:output_type -> feedium.V1ListFeedResponse
+	4, // 7: feedium.FeedService.V1ReactToPost:output_type -> feedium.V1ReactToPostResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
 	4, // [4:4] is the sub-list for extension extendee
 	0, // [0:4] is the sub-list for field type_name
@@ -309,7 +427,7 @@ func file_api_feedium_feed_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_feedium_feed_proto_rawDesc), len(file_api_feedium_feed_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

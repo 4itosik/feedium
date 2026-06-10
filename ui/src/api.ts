@@ -7,6 +7,8 @@ export interface FeedItem {
   text: string
   publishedAt: string
   score: number
+  url: string
+  reaction: string // "like" | "dislike" | ""
 }
 
 export interface FeedResponse {
@@ -174,4 +176,11 @@ export function listPosts(params?: {
 
 export function listPostSummaries(postId: string): Promise<SummariesResponse> {
   return apiFetch<SummariesResponse>(`/v1/posts/${postId}/summaries`)
+}
+
+export function reactToPost(postId: string, signal: 'like' | 'dislike'): Promise<unknown> {
+  return apiFetch(`/v1/posts/${postId}/react`, {
+    method: 'POST',
+    body: JSON.stringify({ signal }),
+  })
 }

@@ -13,8 +13,10 @@ import (
 
 // FeedItem is a post paired with its current relevance score (CTR-04).
 type FeedItem struct {
-	Post  Post
-	Score float64
+	Post     Post
+	Score    float64
+	URL      string // best-effort link to the original source material; empty when unavailable
+	Reaction string // "like", "dislike", or "" if no reaction
 }
 
 // FeedQuery filters and paginates the ranked feed (REQ-04).

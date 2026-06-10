@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FeedService_V1ListFeed_FullMethodName = "/feedium.FeedService/V1ListFeed"
+	FeedService_V1ListFeed_FullMethodName    = "/feedium.FeedService/V1ListFeed"
+	FeedService_V1ReactToPost_FullMethodName = "/feedium.FeedService/V1ReactToPost"
 )
 
 // FeedServiceClient is the client API for FeedService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FeedServiceClient interface {
 	V1ListFeed(ctx context.Context, in *V1ListFeedRequest, opts ...grpc.CallOption) (*V1ListFeedResponse, error)
+	V1ReactToPost(ctx context.Context, in *V1ReactToPostRequest, opts ...grpc.CallOption) (*V1ReactToPostResponse, error)
 }
 
 type feedServiceClient struct {
@@ -47,11 +49,22 @@ func (c *feedServiceClient) V1ListFeed(ctx context.Context, in *V1ListFeedReques
 	return out, nil
 }
 
+func (c *feedServiceClient) V1ReactToPost(ctx context.Context, in *V1ReactToPostRequest, opts ...grpc.CallOption) (*V1ReactToPostResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(V1ReactToPostResponse)
+	err := c.cc.Invoke(ctx, FeedService_V1ReactToPost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FeedServiceServer is the server API for FeedService service.
 // All implementations must embed UnimplementedFeedServiceServer
 // for forward compatibility.
 type FeedServiceServer interface {
 	V1ListFeed(context.Context, *V1ListFeedRequest) (*V1ListFeedResponse, error)
+	V1ReactToPost(context.Context, *V1ReactToPostRequest) (*V1ReactToPostResponse, error)
 	mustEmbedUnimplementedFeedServiceServer()
 }
 
@@ -64,6 +77,9 @@ type UnimplementedFeedServiceServer struct{}
 
 func (UnimplementedFeedServiceServer) V1ListFeed(context.Context, *V1ListFeedRequest) (*V1ListFeedResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method V1ListFeed not implemented")
+}
+func (UnimplementedFeedServiceServer) V1ReactToPost(context.Context, *V1ReactToPostRequest) (*V1ReactToPostResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method V1ReactToPost not implemented")
 }
 func (UnimplementedFeedServiceServer) mustEmbedUnimplementedFeedServiceServer() {}
 func (UnimplementedFeedServiceServer) testEmbeddedByValue()                     {}
@@ -104,6 +120,24 @@ func _FeedService_V1ListFeed_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FeedService_V1ReactToPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(V1ReactToPostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FeedServiceServer).V1ReactToPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FeedService_V1ReactToPost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FeedServiceServer).V1ReactToPost(ctx, req.(*V1ReactToPostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FeedService_ServiceDesc is the grpc.ServiceDesc for FeedService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +148,10 @@ var FeedService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "V1ListFeed",
 			Handler:    _FeedService_V1ListFeed_Handler,
+		},
+		{
+			MethodName: "V1ReactToPost",
+			Handler:    _FeedService_V1ReactToPost_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

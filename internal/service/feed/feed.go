@@ -17,18 +17,24 @@ type Usecase interface {
 	RankedFeed(ctx context.Context, query biz.FeedQuery) (biz.FeedResult, error)
 }
 
+// ReactionUsecase defines the reaction business logic consumed by the service.
+type ReactionUsecase interface {
+	React(ctx context.Context, postID, signal string) error
+}
+
 // FeedService implements feedium.FeedServiceServer.
 //
 //nolint:revive // exported type name Feed+Service is not a stutter
 type FeedService struct {
 	feedium.UnimplementedFeedServiceServer
 
-	uc Usecase
+	uc  Usecase
+	ruc ReactionUsecase
 }
 
 // NewFeedService creates a new FeedService.
-func NewFeedService(uc Usecase) *FeedService {
-	return &FeedService{uc: uc}
+func NewFeedService(uc Usecase, ruc ReactionUsecase) *FeedService {
+	return &FeedService{uc: uc, ruc: ruc}
 }
 
 func (s *FeedService) V1ListFeed(
@@ -67,12 +73,27 @@ func (s *FeedService) V1ListFeed(
 			Text:        item.Post.Text,
 			PublishedAt: timestamppb.New(item.Post.PublishedAt),
 			Score:       item.Score,
+			Url:         item.URL,
+			Reaction:    item.Reaction,
 		})
 	}
 	return &feedium.V1ListFeedResponse{
 		Items:         items,
 		NextPageToken: result.NextPageToken,
 	}, nil
+}
+
+func (s *FeedService) V1ReactToPost(
+	ctx context.Context,
+	req *feedium.V1ReactToPostRequest,
+) (*feedium.V1ReactToPostResponse, error) {
+	if err := s.ruc.React(ctx, req.GetPostId(), req.GetSignal()); err != nil {
+		if errors.Is(err, biz.ErrInvalidSignal) {
+			return nil, status.Error(codes.InvalidArgument, "signal must be 'like' or 'dislike'")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &feedium.V1ReactToPostResponse{}, nil
 }
 
 func (s *FeedService) mapDomainErrorToStatus(err error) error {
