@@ -1,5 +1,14 @@
 # syntax=docker/dockerfile:1
 
+# ---------- ui builder ----------
+FROM node:22-alpine AS ui-builder
+WORKDIR /src/ui
+# Install deps in a separate layer for cache efficiency.
+COPY ui/package.json ui/package-lock.json ./
+RUN npm ci
+COPY ui/ ./
+RUN npm run build
+
 # ---------- builder ----------
 FROM golang:1.26-alpine AS builder
 WORKDIR /src
@@ -11,6 +20,8 @@ RUN go mod download
 # Build the server and the migrate helper. lib/pq is pure Go, so CGO stays off
 # and the binaries are fully static (run on a minimal base, no libc needed).
 COPY . .
+# Copy compiled SPA from the ui-builder stage (required by //go:embed ui/dist).
+COPY --from=ui-builder /src/ui/dist ./ui/dist
 ENV CGO_ENABLED=0 GOOS=linux
 RUN go build -trimpath -ldflags="-s -w" -o /out/feedium ./cmd/feedium \
  && go build -trimpath -ldflags="-s -w" -o /out/migrate ./cmd/migrate

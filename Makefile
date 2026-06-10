@@ -1,6 +1,12 @@
-.PHONY: build run lint test test-coverage coverage proto wire generate migrate feediumctl
+.PHONY: build ui-build ui-dev run lint test test-coverage coverage proto wire generate migrate feediumctl
 
-build:
+ui-build:
+	cd ui && npm run build
+
+ui-dev:
+	cd ui && npm run dev
+
+build: ui-build
 	go build -o bin/feedium ./cmd/feedium
 
 feediumctl:

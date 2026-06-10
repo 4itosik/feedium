@@ -112,5 +112,5 @@ Canonical-определения метрик MET-01..MET-05 — в [`../domain/
 | `FT-008` Summarization Prompts Split | Раздельные системные промпты для self-contained и cumulative режимов | done |
 | `FT-009` Content Collectors | Telegram userbot, веб-скрапер, RSS-парсер | done |
 | `FT-010` AI-скоринг и ранжирование | Embeddings + интересы, score для постов | planned (подход не определён, см. OQ-01) |
-| `FT-011` React UI | Лента с саммари, фильтрация по источнику/времени | planned |
+| `FT-011` React UI | Лента с саммари, фильтрация по источнику/времени | done |
 | `FT-012` OpenClaw бот | Telegram-бот: дайджест, управление источниками | planned |

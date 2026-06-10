@@ -13,6 +13,7 @@ import (
 	postservice "github.com/4itosik/feedium/internal/service/post"
 	sourceservice "github.com/4itosik/feedium/internal/service/source"
 	summaryservice "github.com/4itosik/feedium/internal/service/summary"
+	"github.com/4itosik/feedium/ui"
 )
 
 func NewHTTPServer(
@@ -33,11 +34,14 @@ func NewHTTPServer(
 		opts = append(opts, kratoshttp.Timeout(c.GetHttp().GetTimeout().AsDuration()))
 	}
 	srv := kratoshttp.NewServer(opts...)
+	// API routes registered first so SPA handler does not shadow them.
 	srv.Handle("/healthz", healthservice.HTTPHandler(hs))
 	feediumv1.RegisterSourceServiceHTTPServer(srv, ss)
 	feediumv1.RegisterPostServiceHTTPServer(srv, ps)
 	feediumv1.RegisterSummaryServiceHTTPServer(srv, sms)
 	feediumv1.RegisterInterestServiceHTTPServer(srv, is)
 	feediumv1.RegisterFeedServiceHTTPServer(srv, fs)
+	// SPA fallback: serves ui/dist for all non-API paths (gorilla/mux matches in registration order).
+	srv.HandlePrefix("/", NewSPAHandler(ui.Assets()))
 	return srv
 }
