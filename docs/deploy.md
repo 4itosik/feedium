@@ -16,6 +16,46 @@ Artifacts used here:
 | `configs/prod/config.yaml` | **real** mounted config (secrets) | no (gitignored) |
 | `.env.prod` | **real** postgres credentials | no (gitignored) |
 
+## Quick start (scripted)
+
+`scripts/deploy.sh` wraps the whole procedure below — preflight, secret
+scaffolding, build & start, health wait, optional seeding:
+
+```bash
+scripts/deploy.sh            # first run scaffolds .env.prod + configs/prod/config.yaml
+                             # then stops with MANUAL STEPS — fill in the secrets
+scripts/deploy.sh            # re-run: builds, starts, waits until /healthz is green
+scripts/deploy.sh --seed "LLMs, AI agents, ML research"   # also create the interest + seed RSS
+```
+
+The sections below document each step the script performs, for when you need to
+do something by hand.
+
+## Deploy from your laptop (no build on the server)
+
+If you'd rather not build on the VPS, `scripts/deploy-remote.sh` builds the image
+**locally** for the server's platform, streams it over SSH
+(`docker save | gzip | ssh docker load`), and starts it there with
+`docker-compose.remote.yml`. The server needs only Docker + Compose — no source
+tree, no Go, no git. Migrations are baked into the image.
+
+```bash
+# <ssh-host> is an alias from ~/.ssh/config (or user@host).
+scripts/deploy-remote.sh feedium               # first run scaffolds secrets ON the server, then stops
+# ssh in, fill .env.prod + configs/prod/config.yaml, then:
+scripts/deploy-remote.sh feedium               # build → ship image → start → wait for /healthz
+scripts/deploy-remote.sh feedium --seed "LLMs, AI agents, ML research"
+```
+
+Notes:
+- Building on Apple Silicon for an amd64 VPS is handled by `--platform linux/amd64`
+  (the default; override with `PLATFORM=linux/arm64 ...` for an ARM server).
+- Secrets never leave the server — only the `*.example` templates are copied; the
+  real `.env.prod` / `configs/prod/config.yaml` are created and edited on the VPS.
+- Reach the localhost-bound API from your laptop via a tunnel:
+  `ssh -L 8000:127.0.0.1:8000 feedium`, then open `http://127.0.0.1:8000`.
+- `--no-build` reuses the image already on the server (just restarts).
+
 ## Prerequisites
 
 - A Linux VPS with Docker Engine + Compose v2 (`docker compose version`).

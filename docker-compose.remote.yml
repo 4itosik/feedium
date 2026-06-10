@@ -1,0 +1,55 @@
+# Remote deploy: same stack as docker-compose.prod.yml, but the image is built
+# locally on your laptop and copied to the server (docker save | ssh docker load)
+# instead of being built on the server. No `build:` here — the server never needs
+# the source tree, only this file + the secrets. Migrations are baked into the
+# image, so the migrate step uses the same image.
+#
+# Driven by scripts/deploy-remote.sh. See docs/deploy.md ("Deploy from your laptop").
+name: feedium
+
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    container_name: feedium-pg
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - feedium-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    image: feedium:latest
+    pull_policy: never          # use the locally-loaded image, never hit a registry
+    command: ["migrate", "-dir", "/app/migrations", "up"]
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    image: feedium:latest
+    pull_policy: never
+    command: ["feedium", "-conf", "/etc/feedium/config.yaml"]
+    volumes:
+      - ./configs/prod/config.yaml:/etc/feedium/config.yaml:ro
+    ports:
+      - "127.0.0.1:8000:8000"   # HTTP API
+      - "127.0.0.1:9000:9000"   # gRPC (feediumctl)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  feedium-pg-data:

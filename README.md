@@ -155,6 +155,50 @@ curl -s "http://127.0.0.1:8000/v1/sources/$SOURCE_ID/summaries" | jq '.summaries
 
 > Режим обработки (`SELF_CONTAINED` / `CUMULATIVE`) задаётся для источника в конфиге; см. [`domain/glossary.md`](memory-bank/domain/glossary.md) и [`features/FT-005-ai-summarization`](memory-bank/features/FT-005-ai-summarization/brief.md).
 
+## Деплой
+
+Прод-стек — один образ (сервер `feedium` + хелпер `migrate`) + PostgreSQL под
+Docker Compose. Секреты не в образе и не в git: они в `.env.prod` и в
+монтируемом `configs/prod/config.yaml` (оба gitignored). Полная процедура и
+ручные шаги — в [`docs/deploy.md`](docs/deploy.md).
+
+Два готовых скрипта:
+
+```bash
+# A. На самом сервере (репозиторий склонирован туда):
+scripts/deploy.sh                       # 1-й запуск создаёт шаблоны секретов и стопается
+#   заполни .env.prod + configs/prod/config.yaml, затем:
+scripts/deploy.sh                       # build → up → ждёт /healthz
+scripts/deploy.sh --seed "LLMs, AI agents, ML research"   # + интерес и сидинг RSS
+
+# B. С ноутбука на удалённый сервер (образ собирается локально, шлётся по SSH,
+#    на сервере НЕ нужны ни исходники, ни Go, ни git). <host> — алиас из ~/.ssh/config:
+scripts/deploy-remote.sh <host>         # 1-й запуск создаёт шаблоны секретов НА сервере
+#   зайди по ssh, заполни секреты на сервере, затем:
+scripts/deploy-remote.sh <host>         # build (linux/amd64) → docker save|ssh load → up → health
+scripts/deploy-remote.sh <host> --seed "LLMs, AI agents, ML research"
+```
+
+- Apple Silicon → amd64-VPS учтён (`--platform linux/amd64`; для ARM-сервера
+  `PLATFORM=linux/arm64 scripts/deploy-remote.sh <host>`).
+- Порты висят на `127.0.0.1` (нет встроенной авторизации). Доступ с ноута —
+  туннелем: `ssh -L 8000:127.0.0.1:8000 <host>` → `http://127.0.0.1:8000`.
+- Обновление — повторный запуск того же скрипта (`--no-build` переиспользует
+  уже залитый образ).
+
+### openclaw@oc
+
+Сервер использует внешнюю postgres (`db_default` network, контейнер `core_storage_pg`) —
+нужен `docker-compose.server.yml`, а не `docker-compose.remote.yml`. Платформа сервера: `linux/amd64`.
+
+```bash
+# Обновить (пересобрать образ, залить, перезапустить):
+COMPOSE_FILE=docker-compose.server.yml scripts/deploy-remote.sh openclaw@oc feedium
+
+# Перезапустить без пересборки (код не менялся):
+COMPOSE_FILE=docker-compose.server.yml scripts/deploy-remote.sh openclaw@oc feedium --no-build
+```
+
 ## Полезное
 
 ```bash

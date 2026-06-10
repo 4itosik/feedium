@@ -105,9 +105,15 @@ func (r *scoreRepo) ListRanked(ctx context.Context, query biz.FeedQuery) (biz.Fe
 	args = append(args, query.PageSize+1)
 
 	sqlText := `
-SELECT p.id, p.source_id, p.author, p.text, p.published_at, s.value
+SELECT p.id, p.source_id, p.author, COALESCE(sm.text, p.text), p.published_at, s.value
 FROM scores s
 JOIN posts p ON p.id = s.post_id
+LEFT JOIN LATERAL (
+    SELECT text FROM summaries
+    WHERE post_id = p.id
+    ORDER BY created_at DESC
+    LIMIT 1
+) sm ON true
 WHERE ` + strings.Join(conds, " AND ") + `
 ORDER BY s.value DESC, p.id ASC
 LIMIT $` + strconv.Itoa(len(args))

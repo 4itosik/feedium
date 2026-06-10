@@ -1,0 +1,35 @@
+# Server deploy: uses the existing core_storage_pg (pgvector/pgvector:pg16) postgres
+# container on the db_default network. No separate postgres service started here.
+# Driven by scripts/deploy-remote.sh with COMPOSE_FILE=docker-compose.server.yml.
+name: feedium
+
+services:
+  migrate:
+    image: feedium:latest
+    pull_policy: never
+    command: ["migrate", "-dir", "/app/migrations", "up"]
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable"
+    networks:
+      - db_default
+    restart: "no"
+
+  app:
+    image: feedium:latest
+    pull_policy: never
+    command: ["feedium", "-conf", "/etc/feedium/config.yaml"]
+    volumes:
+      - ./configs/prod/config.yaml:/etc/feedium/config.yaml:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:9000:9000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - db_default
+    restart: unless-stopped
+
+networks:
+  db_default:
+    external: true
