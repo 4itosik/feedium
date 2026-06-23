@@ -1,7 +1,8 @@
 # Deploying Feedium on a single VPS
 
-Feedium ships as one container image (the `feedium` server + a `migrate` helper)
-plus a PostgreSQL container, orchestrated with Docker Compose. Secrets are
+Feedium ships as one container image (the `feedium` server + a `migrate` helper +
+a one-shot `tg-login` tool) plus a PostgreSQL container, orchestrated with Docker
+Compose. Secrets are
 provided by a **mounted config file** and an **env file** — nothing secret is
 baked into the image or committed to git.
 
@@ -9,7 +10,7 @@ Artifacts used here:
 
 | File | Purpose | Committed? |
 |---|---|---|
-| `Dockerfile` | builds `feedium` + `migrate` (static, CGO-off) on `alpine` | yes |
+| `Dockerfile` | builds `feedium` + `migrate` + `tg-login` (static, CGO-off) on `alpine` | yes |
 | `docker-compose.prod.yml` | postgres + one-shot migrate + app | yes |
 | `configs/prod.example.yaml` | config template (no secrets) | yes |
 | `.env.prod.example` | postgres credentials template | yes |
@@ -157,7 +158,59 @@ which costs embedding calls proportional to the number of re-scored posts.
 
 ### Telegram collector
 
-Left idle by default (`collectors.telegram.api_id: 0`). Enabling the userbot
-needs `api_id`/`api_hash`/`phone` from my.telegram.org and an interactive login,
-which is gated (AG-02) — out of scope for this baseline deploy. RSS and web
-collectors run without it.
+Left idle by default (`collectors.telegram.api_id: 0`); RSS and web collectors
+run without it. The userbot **never logs in on its own** — first-time phone-code
+authorization is a manual human step (AG-02). The image bundles a one-shot
+`tg-login` tool for exactly this. Enabling it is a one-time provisioning:
+
+1. **Get API credentials.** Sign in to <https://my.telegram.org> with the phone
+   number of the account that will act as the userbot → *API development tools* →
+   create an app → copy `api_id` and `api_hash`.
+
+2. **Fill the config** (`configs/prod/config.yaml`, on the server) under
+   `collectors.telegram`:
+
+   ```yaml
+   collectors:
+     telegram:
+       api_id: 1234567              # from my.telegram.org
+       api_hash: "abcd...ef"        # from my.telegram.org
+       phone: "+15551234567"        # the userbot account, E.164 format
+       session_path: "/var/lib/feedium/tg.session"
+   ```
+
+   Keep `TG_SESSION_KEY` set in `.env.prod` (base64 32 bytes) — the session file
+   is then encrypted at rest. The same key must be present when `tg-login` runs
+   and when the app reads the session back.
+
+3. **Run the interactive login once**, in the same image/volume the app uses, with
+   a TTY attached (`-it`). The login code arrives in that account's Telegram app
+   (or by SMS); if the account has 2FA, you'll also be prompted for the password:
+
+   ```bash
+   # remote deploy (docker-compose.remote.yml)
+   docker compose -f docker-compose.remote.yml --env-file .env.prod \
+     run --rm -it app tg-login -conf /etc/feedium/config.yaml
+
+   # build-on-server deploy uses docker-compose.prod.yml instead
+   ```
+
+   On success it logs `login successful — session saved` and writes the authorized
+   session to `/var/lib/feedium/tg.session` in the `feedium-tg-data` volume. Re-runs
+   are idempotent (an already-authorized session is a no-op).
+
+4. **Restart the app** so the collector reconnects with the now-authorized session:
+
+   ```bash
+   docker compose -f docker-compose.remote.yml --env-file .env.prod up -d app
+   ```
+
+5. **Add sources and join them.** The userbot only receives messages from chats it
+   is a **member** of — join the target channels/groups from that account. Then
+   register each as a source (via `feediumctl source create`, type
+   `telegram_channel` / `telegram_group`, with the chat's `tg_id`). Unknown peers
+   are silently ignored by the collector.
+
+Troubleshooting: `collectors.telegram.api_id is 0 …` means the config wasn't
+filled; `telegram session not authorized` in the app log means step 3 hasn't run
+(or ran with a different `TG_SESSION_KEY`).

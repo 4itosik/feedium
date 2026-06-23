@@ -18,8 +18,11 @@ services:
     image: feedium:latest
     pull_policy: never
     command: ["feedium", "-conf", "/etc/feedium/config.yaml"]
+    environment:
+      TG_SESSION_KEY: ${TG_SESSION_KEY}
     volumes:
       - ./configs/prod/config.yaml:/etc/feedium/config.yaml:ro
+      - feedium-tg-data:/var/lib/feedium
     ports:
       - "127.0.0.1:8000:8000"
       - "127.0.0.1:9000:9000"
@@ -29,6 +32,9 @@ services:
     networks:
       - db_default
     restart: unless-stopped
+
+volumes:
+  feedium-tg-data:
 
 networks:
   db_default:

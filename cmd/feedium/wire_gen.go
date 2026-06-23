@@ -88,7 +88,11 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	rssCollector := task.NewRSSCollector(collectUsecase, rssFetcher, sourceUsecase, collectors, logger)
 	webFetcher := data.NewWebFetcher()
 	webCollector := task.NewWebCollector(collectUsecase, webFetcher, sourceUsecase, collectors, logger)
-	telegramSession := data.NewTelegramSession(collectors)
+	telegramSession, err := data.NewTelegramSession(collectors)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
 	telegramCollector := task.NewTelegramCollector(collectUsecase, telegramSession, sourceUsecase, logger)
 	app := newApp(logger, httpServer, grpcServer, eventWorkerPool, sourceDueScheduler, stuckEventReaper, scoreEventWorkerPool, scoreDueScheduler, stuckScoreEventReaper, rssCollector, webCollector, telegramCollector)
 	return app, func() {

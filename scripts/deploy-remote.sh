@@ -147,6 +147,7 @@ $(bold "MANUAL STEPS — fill in the secrets ON THE SERVER, then re-run this scr
   ssh $HOST
   cd $REMOTE_DIR
   \$EDITOR .env.prod                  # POSTGRES_PASSWORD = strong password
+                                      # TG_SESSION_KEY = \$(openssl rand -base64 32)
   \$EDITOR configs/prod/config.yaml   # data.database.password = same password
                                       # summary.llm...openrouter.api_key   = sk-or-...
                                       # scoring.embedding...openrouter.api_key = sk-or-...
@@ -157,7 +158,7 @@ EOF
 fi
 
 # Reject leftover template placeholders before starting anything.
-PLACEHOLDERS="CHANGE_ME_TO_A_STRONG_PASSWORD|REPLACE_WITH_YOUR_OPENROUTER_API_KEY"
+PLACEHOLDERS="CHANGE_ME_TO_A_STRONG_PASSWORD|REPLACE_WITH_YOUR_OPENROUTER_API_KEY|GENERATE_WITH_OPENSSL_RAND"
 if rdir "grep -Eq '$PLACEHOLDERS' .env.prod configs/prod/config.yaml"; then
   warn "template placeholders still present in the server's secrets:"
   rdir "grep -EnH '$PLACEHOLDERS' .env.prod configs/prod/config.yaml" >&2 || true

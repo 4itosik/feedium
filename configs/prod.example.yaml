@@ -5,6 +5,11 @@
 #   - data.database.host MUST be "postgres" (the compose service name).
 #   - data.database.user/password/database MUST match .env.prod.
 #   - All Duration fields are protojson: seconds only, e.g. "300s" (NOT "5m"/"1h").
+#
+# Telegram session encryption (recommended for production):
+#   Set TG_SESSION_KEY env var to a base64-encoded 32-byte key.
+#   Generate: openssl rand -base64 32
+#   Without this var the session file is stored as plain JSON (dev-only).
 server:
   http:
     addr: 0.0.0.0:8000

@@ -23,14 +23,22 @@ var _ biz.TelegramSession = (*telegramSession)(nil)
 // gotd types live only here; it yields transport-agnostic biz.TelegramMessage.
 // Connecting/authorizing touches a live account — gated by AG-02; never auto-login.
 type telegramSession struct {
-	cfg *conf.TelegramCollector
+	cfg     *conf.TelegramCollector
+	storage session.Storage
 }
 
 // NewTelegramSession constructs the gotd session adapter.
+// When TG_SESSION_KEY is set the session file is encrypted with AES-256-GCM;
+// otherwise a plain FileStorage is used (backward-compatible for local dev).
 //
 //nolint:revive // unexported return type is intentional for Wire injection
-func NewTelegramSession(cfg *conf.Collectors) *telegramSession {
-	return &telegramSession{cfg: cfg.GetTelegram()}
+func NewTelegramSession(cfg *conf.Collectors) (*telegramSession, error) {
+	tgCfg := cfg.GetTelegram()
+	stor, err := sessionStorageFromEnv(tgCfg.GetSessionPath())
+	if err != nil {
+		return nil, err
+	}
+	return &telegramSession{cfg: tgCfg, storage: stor}, nil
 }
 
 // Run opens the userbot connection and streams new channel/group messages to
@@ -81,7 +89,7 @@ func (s *telegramSession) Run(ctx context.Context, handle func(context.Context, 
 	})
 
 	client := telegram.NewClient(int(s.cfg.GetApiId()), s.cfg.GetApiHash(), telegram.Options{
-		SessionStorage: &session.FileStorage{Path: s.cfg.GetSessionPath()},
+		SessionStorage: s.storage,
 		UpdateHandler:  mgr,
 	})
 
