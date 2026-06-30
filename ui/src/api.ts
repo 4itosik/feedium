@@ -94,6 +94,11 @@ export interface SummariesResponse {
   summaries: Summary[]
 }
 
+export interface SourceSummariesResponse {
+  summaries: Summary[]
+  nextPageToken: string
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json', ...init?.headers },
@@ -176,6 +181,15 @@ export function listPosts(params?: {
 
 export function listPostSummaries(postId: string): Promise<SummariesResponse> {
   return apiFetch<SummariesResponse>(`/v1/posts/${postId}/summaries`)
+}
+
+export function listSourceSummaries(
+  sourceId: string,
+  params?: { pageSize?: number; pageToken?: string },
+): Promise<SourceSummariesResponse> {
+  const q = new URLSearchParams({ page_size: String(params?.pageSize ?? 50) })
+  if (params?.pageToken) q.set('page_token', params.pageToken)
+  return apiFetch<SourceSummariesResponse>(`/v1/sources/${sourceId}/summaries?${q}`)
 }
 
 export function reactToPost(postId: string, signal: 'like' | 'dislike'): Promise<unknown> {
