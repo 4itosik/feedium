@@ -7,7 +7,7 @@ derived_from:
   - brief.md
   - ../../prd/PRD-001-mvp.md
 status: active
-delivery_status: in_progress
+delivery_status: done
 ---
 
 # FT-019: Cumulative Telegram Group Posts Missing From Feed

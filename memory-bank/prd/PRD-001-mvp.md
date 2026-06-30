@@ -119,4 +119,4 @@ Canonical-определения метрик MET-01..MET-05 — в [`../domain/
 | `FT-016` Feed stats | Счётчик новых постов и активных источников (пульс системы) | backlog |
 | `FT-017` Open original URL | Ссылка на оригинальный материал в карточке Feed | backlog |
 | `FT-018` Mark as read | Пометить пост прочитанным; при следующем открытии — только новое | backlog |
-| `FT-019` Cumulative Telegram Group Posts Missing From Feed | Посты cumulative-источников (telegram_group) никогда не получают score и не попадают в выборку — дайджест источника пишется, но нигде не читается | planned |
+| `FT-019` Cumulative Telegram Group Posts Missing From Feed | Посты cumulative-источников (telegram_group) никогда не получают score и не попадают в выборку — дайджест источника пишется, но нигде не читается | done |
