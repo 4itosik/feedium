@@ -84,7 +84,12 @@ type InterestUsecase struct {
 }
 
 // NewInterestUsecase creates a new InterestUsecase.
-func NewInterestUsecase(repo InterestRepo, scorer Scorer, outbox ScoreOutboxRepo, tx TxManager) *InterestUsecase {
+func NewInterestUsecase(
+	repo InterestRepo,
+	scorer Scorer,
+	outbox ScoreOutboxRepo,
+	tx TxManager,
+) *InterestUsecase {
 	return &InterestUsecase{repo: repo, scorer: scorer, outbox: outbox, tx: tx}
 }
 
@@ -120,6 +125,9 @@ func (uc *InterestUsecase) Create(ctx context.Context, topic string) (Interest, 
 		}
 		if _, e = uc.outbox.EnqueueScoredPosts(ctx); e != nil {
 			return fmt.Errorf("enqueue rescore: %w", e)
+		}
+		if _, e = uc.outbox.EnqueueScoredDigests(ctx); e != nil {
+			return fmt.Errorf("enqueue digest rescore: %w", e)
 		}
 		return nil
 	})
@@ -161,6 +169,9 @@ func (uc *InterestUsecase) Update(ctx context.Context, id, topic string) (Intere
 		if _, e = uc.outbox.EnqueueScoredPosts(ctx); e != nil {
 			return fmt.Errorf("enqueue rescore: %w", e)
 		}
+		if _, e = uc.outbox.EnqueueScoredDigests(ctx); e != nil {
+			return fmt.Errorf("enqueue digest rescore: %w", e)
+		}
 		return nil
 	})
 	if err != nil {
@@ -180,6 +191,9 @@ func (uc *InterestUsecase) Delete(ctx context.Context, id string) error {
 		if _, err := uc.outbox.EnqueueScoredPosts(ctx); err != nil {
 			return fmt.Errorf("enqueue rescore: %w", err)
 		}
+		if _, err := uc.outbox.EnqueueScoredDigests(ctx); err != nil {
+			return fmt.Errorf("enqueue digest rescore: %w", err)
+		}
 		return nil
 	})
 }
@@ -190,7 +204,10 @@ func (uc *InterestUsecase) Get(ctx context.Context, id string) (Interest, error)
 }
 
 // List retrieves interests with clamped pagination.
-func (uc *InterestUsecase) List(ctx context.Context, filter ListInterestsFilter) (ListInterestsResult, error) {
+func (uc *InterestUsecase) List(
+	ctx context.Context,
+	filter ListInterestsFilter,
+) (ListInterestsResult, error) {
 	if filter.PageSize < minPageSize {
 		filter.PageSize = minPageSize
 	}

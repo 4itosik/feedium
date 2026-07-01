@@ -23,7 +23,61 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// FeedItem is a post paired with its current relevance score (FT-010 CTR-04).
+// FeedItemKind discriminates a ranked-feed item between a post and a cumulative
+// digest (FT-020 CTR-02). Additive: consumers that ignore it keep working.
+type FeedItemKind int32
+
+const (
+	FeedItemKind_FEED_ITEM_KIND_UNSPECIFIED FeedItemKind = 0
+	FeedItemKind_FEED_ITEM_KIND_POST        FeedItemKind = 1
+	FeedItemKind_FEED_ITEM_KIND_DIGEST      FeedItemKind = 2
+)
+
+// Enum value maps for FeedItemKind.
+var (
+	FeedItemKind_name = map[int32]string{
+		0: "FEED_ITEM_KIND_UNSPECIFIED",
+		1: "FEED_ITEM_KIND_POST",
+		2: "FEED_ITEM_KIND_DIGEST",
+	}
+	FeedItemKind_value = map[string]int32{
+		"FEED_ITEM_KIND_UNSPECIFIED": 0,
+		"FEED_ITEM_KIND_POST":        1,
+		"FEED_ITEM_KIND_DIGEST":      2,
+	}
+)
+
+func (x FeedItemKind) Enum() *FeedItemKind {
+	p := new(FeedItemKind)
+	*p = x
+	return p
+}
+
+func (x FeedItemKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FeedItemKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_feedium_feed_proto_enumTypes[0].Descriptor()
+}
+
+func (FeedItemKind) Type() protoreflect.EnumType {
+	return &file_api_feedium_feed_proto_enumTypes[0]
+}
+
+func (x FeedItemKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FeedItemKind.Descriptor instead.
+func (FeedItemKind) EnumDescriptor() ([]byte, []int) {
+	return file_api_feedium_feed_proto_rawDescGZIP(), []int{0}
+}
+
+// FeedItem is a scoreable entity paired with its current relevance score: a post
+// (FT-010 CTR-04) or a cumulative digest (FT-020 CTR-02, CTR-03). For a digest item,
+// post_id carries the summary id (stable identity for pagination/UI key), and
+// author/url/reaction are empty.
 type FeedItem struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	PostId      string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
@@ -35,7 +89,9 @@ type FeedItem struct {
 	// url is a best-effort link to the original source material; empty when unavailable.
 	Url string `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
 	// reaction is the current user reaction: "like", "dislike", or "" if none.
-	Reaction      string `protobuf:"bytes,8,opt,name=reaction,proto3" json:"reaction,omitempty"`
+	Reaction string `protobuf:"bytes,8,opt,name=reaction,proto3" json:"reaction,omitempty"`
+	// kind distinguishes a post from a cumulative digest (FT-020 CTR-02).
+	Kind          FeedItemKind `protobuf:"varint,9,opt,name=kind,proto3,enum=feedium.FeedItemKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -124,6 +180,13 @@ func (x *FeedItem) GetReaction() string {
 		return x.Reaction
 	}
 	return ""
+}
+
+func (x *FeedItem) GetKind() FeedItemKind {
+	if x != nil {
+		return x.Kind
+	}
+	return FeedItemKind_FEED_ITEM_KIND_UNSPECIFIED
 }
 
 type V1ListFeedRequest struct {
@@ -349,7 +412,7 @@ var File_api_feedium_feed_proto protoreflect.FileDescriptor
 
 const file_api_feedium_feed_proto_rawDesc = "" +
 	"\n" +
-	"\x16api/feedium/feed.proto\x12\afeedium\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xef\x01\n" +
+	"\x16api/feedium/feed.proto\x12\afeedium\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9a\x02\n" +
 	"\bFeedItem\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x1b\n" +
 	"\tsource_id\x18\x02 \x01(\tR\bsourceId\x12\x16\n" +
@@ -358,7 +421,8 @@ const file_api_feedium_feed_proto_rawDesc = "" +
 	"\fpublished_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedAt\x12\x14\n" +
 	"\x05score\x18\x06 \x01(\x01R\x05score\x12\x10\n" +
 	"\x03url\x18\a \x01(\tR\x03url\x12\x1a\n" +
-	"\breaction\x18\b \x01(\tR\breaction\"\xc8\x01\n" +
+	"\breaction\x18\b \x01(\tR\breaction\x12)\n" +
+	"\x04kind\x18\t \x01(\x0e2\x15.feedium.FeedItemKindR\x04kind\"\xc8\x01\n" +
 	"\x11V1ListFeedRequest\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1b\n" +
@@ -372,7 +436,11 @@ const file_api_feedium_feed_proto_rawDesc = "" +
 	"\x14V1ReactToPostRequest\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x16\n" +
 	"\x06signal\x18\x02 \x01(\tR\x06signal\"\x17\n" +
-	"\x15V1ReactToPostResponse2\xdc\x01\n" +
+	"\x15V1ReactToPostResponse*b\n" +
+	"\fFeedItemKind\x12\x1e\n" +
+	"\x1aFEED_ITEM_KIND_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13FEED_ITEM_KIND_POST\x10\x01\x12\x19\n" +
+	"\x15FEED_ITEM_KIND_DIGEST\x10\x022\xdc\x01\n" +
 	"\vFeedService\x12W\n" +
 	"\n" +
 	"V1ListFeed\x12\x1a.feedium.V1ListFeedRequest\x1a\x1b.feedium.V1ListFeedResponse\"\x10\x82\xd3\xe4\x93\x02\n" +
@@ -391,29 +459,32 @@ func file_api_feedium_feed_proto_rawDescGZIP() []byte {
 	return file_api_feedium_feed_proto_rawDescData
 }
 
+var file_api_feedium_feed_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_api_feedium_feed_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_feedium_feed_proto_goTypes = []any{
-	(*FeedItem)(nil),              // 0: feedium.FeedItem
-	(*V1ListFeedRequest)(nil),     // 1: feedium.V1ListFeedRequest
-	(*V1ListFeedResponse)(nil),    // 2: feedium.V1ListFeedResponse
-	(*V1ReactToPostRequest)(nil),  // 3: feedium.V1ReactToPostRequest
-	(*V1ReactToPostResponse)(nil), // 4: feedium.V1ReactToPostResponse
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(FeedItemKind)(0),             // 0: feedium.FeedItemKind
+	(*FeedItem)(nil),              // 1: feedium.FeedItem
+	(*V1ListFeedRequest)(nil),     // 2: feedium.V1ListFeedRequest
+	(*V1ListFeedResponse)(nil),    // 3: feedium.V1ListFeedResponse
+	(*V1ReactToPostRequest)(nil),  // 4: feedium.V1ReactToPostRequest
+	(*V1ReactToPostResponse)(nil), // 5: feedium.V1ReactToPostResponse
+	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
 }
 var file_api_feedium_feed_proto_depIdxs = []int32{
-	5, // 0: feedium.FeedItem.published_at:type_name -> google.protobuf.Timestamp
-	5, // 1: feedium.V1ListFeedRequest.from:type_name -> google.protobuf.Timestamp
-	5, // 2: feedium.V1ListFeedRequest.to:type_name -> google.protobuf.Timestamp
-	0, // 3: feedium.V1ListFeedResponse.items:type_name -> feedium.FeedItem
-	1, // 4: feedium.FeedService.V1ListFeed:input_type -> feedium.V1ListFeedRequest
-	3, // 5: feedium.FeedService.V1ReactToPost:input_type -> feedium.V1ReactToPostRequest
-	2, // 6: feedium.FeedService.V1ListFeed:output_type -> feedium.V1ListFeedResponse
-	4, // 7: feedium.FeedService.V1ReactToPost:output_type -> feedium.V1ReactToPostResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	6, // 0: feedium.FeedItem.published_at:type_name -> google.protobuf.Timestamp
+	0, // 1: feedium.FeedItem.kind:type_name -> feedium.FeedItemKind
+	6, // 2: feedium.V1ListFeedRequest.from:type_name -> google.protobuf.Timestamp
+	6, // 3: feedium.V1ListFeedRequest.to:type_name -> google.protobuf.Timestamp
+	1, // 4: feedium.V1ListFeedResponse.items:type_name -> feedium.FeedItem
+	2, // 5: feedium.FeedService.V1ListFeed:input_type -> feedium.V1ListFeedRequest
+	4, // 6: feedium.FeedService.V1ReactToPost:input_type -> feedium.V1ReactToPostRequest
+	3, // 7: feedium.FeedService.V1ListFeed:output_type -> feedium.V1ListFeedResponse
+	5, // 8: feedium.FeedService.V1ReactToPost:output_type -> feedium.V1ReactToPostResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_api_feedium_feed_proto_init() }
@@ -426,13 +497,14 @@ func file_api_feedium_feed_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_feedium_feed_proto_rawDesc), len(file_api_feedium_feed_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_api_feedium_feed_proto_goTypes,
 		DependencyIndexes: file_api_feedium_feed_proto_depIdxs,
+		EnumInfos:         file_api_feedium_feed_proto_enumTypes,
 		MessageInfos:      file_api_feedium_feed_proto_msgTypes,
 	}.Build()
 	File_api_feedium_feed_proto = out.File

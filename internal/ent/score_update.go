@@ -43,6 +43,32 @@ func (_u *ScoreUpdate) SetNillablePostID(v *uuid.UUID) *ScoreUpdate {
 	return _u
 }
 
+// ClearPostID clears the value of the "post_id" field.
+func (_u *ScoreUpdate) ClearPostID() *ScoreUpdate {
+	_u.mutation.ClearPostID()
+	return _u
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (_u *ScoreUpdate) SetSummaryID(v uuid.UUID) *ScoreUpdate {
+	_u.mutation.SetSummaryID(v)
+	return _u
+}
+
+// SetNillableSummaryID sets the "summary_id" field if the given value is not nil.
+func (_u *ScoreUpdate) SetNillableSummaryID(v *uuid.UUID) *ScoreUpdate {
+	if v != nil {
+		_u.SetSummaryID(*v)
+	}
+	return _u
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (_u *ScoreUpdate) ClearSummaryID() *ScoreUpdate {
+	_u.mutation.ClearSummaryID()
+	return _u
+}
+
 // SetValue sets the "value" field.
 func (_u *ScoreUpdate) SetValue(v float64) *ScoreUpdate {
 	_u.mutation.ResetValue()
@@ -150,6 +176,15 @@ func (_u *ScoreUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.PostID(); ok {
 		_spec.SetField(score.FieldPostID, field.TypeUUID, value)
 	}
+	if _u.mutation.PostIDCleared() {
+		_spec.ClearField(score.FieldPostID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.SummaryID(); ok {
+		_spec.SetField(score.FieldSummaryID, field.TypeUUID, value)
+	}
+	if _u.mutation.SummaryIDCleared() {
+		_spec.ClearField(score.FieldSummaryID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(score.FieldValue, field.TypeFloat64, value)
 	}
@@ -193,6 +228,32 @@ func (_u *ScoreUpdateOne) SetNillablePostID(v *uuid.UUID) *ScoreUpdateOne {
 	if v != nil {
 		_u.SetPostID(*v)
 	}
+	return _u
+}
+
+// ClearPostID clears the value of the "post_id" field.
+func (_u *ScoreUpdateOne) ClearPostID() *ScoreUpdateOne {
+	_u.mutation.ClearPostID()
+	return _u
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (_u *ScoreUpdateOne) SetSummaryID(v uuid.UUID) *ScoreUpdateOne {
+	_u.mutation.SetSummaryID(v)
+	return _u
+}
+
+// SetNillableSummaryID sets the "summary_id" field if the given value is not nil.
+func (_u *ScoreUpdateOne) SetNillableSummaryID(v *uuid.UUID) *ScoreUpdateOne {
+	if v != nil {
+		_u.SetSummaryID(*v)
+	}
+	return _u
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (_u *ScoreUpdateOne) ClearSummaryID() *ScoreUpdateOne {
+	_u.mutation.ClearSummaryID()
 	return _u
 }
 
@@ -332,6 +393,15 @@ func (_u *ScoreUpdateOne) sqlSave(ctx context.Context) (_node *Score, err error)
 	}
 	if value, ok := _u.mutation.PostID(); ok {
 		_spec.SetField(score.FieldPostID, field.TypeUUID, value)
+	}
+	if _u.mutation.PostIDCleared() {
+		_spec.ClearField(score.FieldPostID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.SummaryID(); ok {
+		_spec.SetField(score.FieldSummaryID, field.TypeUUID, value)
+	}
+	if _u.mutation.SummaryIDCleared() {
+		_spec.ClearField(score.FieldSummaryID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(score.FieldValue, field.TypeFloat64, value)

@@ -15,9 +15,20 @@ import (
 type FeedItem struct {
 	Post     Post
 	Score    float64
-	URL      string // best-effort link to the original source material; empty when unavailable
-	Reaction string // "like", "dislike", or "" if no reaction
+	URL      string       // best-effort link to the original source material; empty when unavailable
+	Reaction string       // "like", "dislike", or "" if no reaction
+	Kind     FeedItemKind // whether this item is a post or a cumulative digest (FT-020 CTR-02)
 }
+
+// FeedItemKind discriminates a ranked-feed item between a post and a cumulative
+// digest, so consumers (React UI, OpenClaw) handle them differently without guessing
+// from empty fields (FT-020 REQ-05, CTR-02).
+type FeedItemKind string
+
+const (
+	FeedItemKindPost   FeedItemKind = "post"
+	FeedItemKindDigest FeedItemKind = "digest"
+)
 
 // FeedQuery filters and paginates the ranked feed (REQ-04).
 type FeedQuery struct {

@@ -60,6 +60,11 @@ func PostID(v uuid.UUID) predicate.ScoreEvent {
 	return predicate.ScoreEvent(sql.FieldEQ(FieldPostID, v))
 }
 
+// SummaryID applies equality check predicate on the "summary_id" field. It's identical to SummaryIDEQ.
+func SummaryID(v uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldEQ(FieldSummaryID, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.ScoreEvent {
 	return predicate.ScoreEvent(sql.FieldEQ(FieldStatus, v))
@@ -138,6 +143,66 @@ func PostIDLT(v uuid.UUID) predicate.ScoreEvent {
 // PostIDLTE applies the LTE predicate on the "post_id" field.
 func PostIDLTE(v uuid.UUID) predicate.ScoreEvent {
 	return predicate.ScoreEvent(sql.FieldLTE(FieldPostID, v))
+}
+
+// PostIDIsNil applies the IsNil predicate on the "post_id" field.
+func PostIDIsNil() predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldIsNull(FieldPostID))
+}
+
+// PostIDNotNil applies the NotNil predicate on the "post_id" field.
+func PostIDNotNil() predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldNotNull(FieldPostID))
+}
+
+// SummaryIDEQ applies the EQ predicate on the "summary_id" field.
+func SummaryIDEQ(v uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldEQ(FieldSummaryID, v))
+}
+
+// SummaryIDNEQ applies the NEQ predicate on the "summary_id" field.
+func SummaryIDNEQ(v uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldNEQ(FieldSummaryID, v))
+}
+
+// SummaryIDIn applies the In predicate on the "summary_id" field.
+func SummaryIDIn(vs ...uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldIn(FieldSummaryID, vs...))
+}
+
+// SummaryIDNotIn applies the NotIn predicate on the "summary_id" field.
+func SummaryIDNotIn(vs ...uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldNotIn(FieldSummaryID, vs...))
+}
+
+// SummaryIDGT applies the GT predicate on the "summary_id" field.
+func SummaryIDGT(v uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldGT(FieldSummaryID, v))
+}
+
+// SummaryIDGTE applies the GTE predicate on the "summary_id" field.
+func SummaryIDGTE(v uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldGTE(FieldSummaryID, v))
+}
+
+// SummaryIDLT applies the LT predicate on the "summary_id" field.
+func SummaryIDLT(v uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldLT(FieldSummaryID, v))
+}
+
+// SummaryIDLTE applies the LTE predicate on the "summary_id" field.
+func SummaryIDLTE(v uuid.UUID) predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldLTE(FieldSummaryID, v))
+}
+
+// SummaryIDIsNil applies the IsNil predicate on the "summary_id" field.
+func SummaryIDIsNil() predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldIsNull(FieldSummaryID))
+}
+
+// SummaryIDNotNil applies the NotNil predicate on the "summary_id" field.
+func SummaryIDNotNil() predicate.ScoreEvent {
+	return predicate.ScoreEvent(sql.FieldNotNull(FieldSummaryID))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

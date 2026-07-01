@@ -60,6 +60,11 @@ func PostID(v uuid.UUID) predicate.Score {
 	return predicate.Score(sql.FieldEQ(FieldPostID, v))
 }
 
+// SummaryID applies equality check predicate on the "summary_id" field. It's identical to SummaryIDEQ.
+func SummaryID(v uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldEQ(FieldSummaryID, v))
+}
+
 // Value applies equality check predicate on the "value" field. It's identical to ValueEQ.
 func Value(v float64) predicate.Score {
 	return predicate.Score(sql.FieldEQ(FieldValue, v))
@@ -118,6 +123,66 @@ func PostIDLT(v uuid.UUID) predicate.Score {
 // PostIDLTE applies the LTE predicate on the "post_id" field.
 func PostIDLTE(v uuid.UUID) predicate.Score {
 	return predicate.Score(sql.FieldLTE(FieldPostID, v))
+}
+
+// PostIDIsNil applies the IsNil predicate on the "post_id" field.
+func PostIDIsNil() predicate.Score {
+	return predicate.Score(sql.FieldIsNull(FieldPostID))
+}
+
+// PostIDNotNil applies the NotNil predicate on the "post_id" field.
+func PostIDNotNil() predicate.Score {
+	return predicate.Score(sql.FieldNotNull(FieldPostID))
+}
+
+// SummaryIDEQ applies the EQ predicate on the "summary_id" field.
+func SummaryIDEQ(v uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldEQ(FieldSummaryID, v))
+}
+
+// SummaryIDNEQ applies the NEQ predicate on the "summary_id" field.
+func SummaryIDNEQ(v uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldNEQ(FieldSummaryID, v))
+}
+
+// SummaryIDIn applies the In predicate on the "summary_id" field.
+func SummaryIDIn(vs ...uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldIn(FieldSummaryID, vs...))
+}
+
+// SummaryIDNotIn applies the NotIn predicate on the "summary_id" field.
+func SummaryIDNotIn(vs ...uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldNotIn(FieldSummaryID, vs...))
+}
+
+// SummaryIDGT applies the GT predicate on the "summary_id" field.
+func SummaryIDGT(v uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldGT(FieldSummaryID, v))
+}
+
+// SummaryIDGTE applies the GTE predicate on the "summary_id" field.
+func SummaryIDGTE(v uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldGTE(FieldSummaryID, v))
+}
+
+// SummaryIDLT applies the LT predicate on the "summary_id" field.
+func SummaryIDLT(v uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldLT(FieldSummaryID, v))
+}
+
+// SummaryIDLTE applies the LTE predicate on the "summary_id" field.
+func SummaryIDLTE(v uuid.UUID) predicate.Score {
+	return predicate.Score(sql.FieldLTE(FieldSummaryID, v))
+}
+
+// SummaryIDIsNil applies the IsNil predicate on the "summary_id" field.
+func SummaryIDIsNil() predicate.Score {
+	return predicate.Score(sql.FieldIsNull(FieldSummaryID))
+}
+
+// SummaryIDNotNil applies the NotNil predicate on the "summary_id" field.
+func SummaryIDNotNil() predicate.Score {
+	return predicate.Score(sql.FieldNotNull(FieldSummaryID))
 }
 
 // ValueEQ applies the EQ predicate on the "value" field.

@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -71,7 +72,8 @@ var (
 	// PostEmbeddingsColumns holds the columns for the "post_embeddings" table.
 	PostEmbeddingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "post_id", Type: field.TypeUUID},
+		{Name: "post_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "summary_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "vector", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 		{Name: "model", Type: field.TypeString},
 		{Name: "input_hash", Type: field.TypeString},
@@ -88,13 +90,25 @@ var (
 				Name:    "postembedding_post_id",
 				Unique:  true,
 				Columns: []*schema.Column{PostEmbeddingsColumns[1]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "post_id IS NOT NULL",
+				},
+			},
+			{
+				Name:    "postembedding_summary_id",
+				Unique:  true,
+				Columns: []*schema.Column{PostEmbeddingsColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "summary_id IS NOT NULL",
+				},
 			},
 		},
 	}
 	// ScoresColumns holds the columns for the "scores" table.
 	ScoresColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "post_id", Type: field.TypeUUID},
+		{Name: "post_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "summary_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "value", Type: field.TypeFloat64},
 		{Name: "model", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -110,18 +124,30 @@ var (
 				Name:    "score_post_id",
 				Unique:  true,
 				Columns: []*schema.Column{ScoresColumns[1]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "post_id IS NOT NULL",
+				},
+			},
+			{
+				Name:    "score_summary_id",
+				Unique:  true,
+				Columns: []*schema.Column{ScoresColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "summary_id IS NOT NULL",
+				},
 			},
 			{
 				Name:    "score_value",
 				Unique:  false,
-				Columns: []*schema.Column{ScoresColumns[2]},
+				Columns: []*schema.Column{ScoresColumns[3]},
 			},
 		},
 	}
 	// ScoreEventsColumns holds the columns for the "score_events" table.
 	ScoreEventsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "post_id", Type: field.TypeUUID},
+		{Name: "post_id", Type: field.TypeUUID, Nullable: true},
+		{Name: "summary_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "status", Type: field.TypeString, Default: "pending"},
 		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "attempt_count", Type: field.TypeInt, Default: 0},
@@ -140,7 +166,23 @@ var (
 			{
 				Name:    "scoreevent_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{ScoreEventsColumns[2], ScoreEventsColumns[8]},
+				Columns: []*schema.Column{ScoreEventsColumns[3], ScoreEventsColumns[9]},
+			},
+			{
+				Name:    "scoreevent_post_id",
+				Unique:  true,
+				Columns: []*schema.Column{ScoreEventsColumns[1]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "post_id IS NOT NULL AND status IN ('pending', 'processing')",
+				},
+			},
+			{
+				Name:    "scoreevent_summary_id",
+				Unique:  true,
+				Columns: []*schema.Column{ScoreEventsColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "summary_id IS NOT NULL AND status IN ('pending', 'processing')",
+				},
 			},
 		},
 	}

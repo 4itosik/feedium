@@ -7,7 +7,18 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "feedium/api/feedium;feedium";
 
-// FeedItem is a post paired with its current relevance score (FT-010 CTR-04).
+// FeedItemKind discriminates a ranked-feed item between a post and a cumulative
+// digest (FT-020 CTR-02). Additive: consumers that ignore it keep working.
+enum FeedItemKind {
+  FEED_ITEM_KIND_UNSPECIFIED = 0;
+  FEED_ITEM_KIND_POST = 1;
+  FEED_ITEM_KIND_DIGEST = 2;
+}
+
+// FeedItem is a scoreable entity paired with its current relevance score: a post
+// (FT-010 CTR-04) or a cumulative digest (FT-020 CTR-02, CTR-03). For a digest item,
+// post_id carries the summary id (stable identity for pagination/UI key), and
+// author/url/reaction are empty.
 message FeedItem {
   string post_id = 1;
   string source_id = 2;
@@ -19,6 +30,8 @@ message FeedItem {
   string url = 7;
   // reaction is the current user reaction: "like", "dislike", or "" if none.
   string reaction = 8;
+  // kind distinguishes a post from a cumulative digest (FT-020 CTR-02).
+  FeedItemKind kind = 9;
 }
 
 message V1ListFeedRequest {

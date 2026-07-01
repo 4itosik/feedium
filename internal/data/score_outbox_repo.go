@@ -12,24 +12,36 @@ import (
 	"github.com/4itosik/feedium/internal/biz"
 )
 
-// Columns kept in sync with migration 20260602100200_create_score_events_table.sql.
-const scoreEventColumns = `id, post_id, status, error, attempt_count, created_at, processed_at`
+// Columns kept in sync with migrations 20260602100200_create_score_events_table.sql
+// and 20260701120100_score_events_summary_id.sql.
+const scoreEventColumns = `id, post_id, summary_id, status, error, attempt_count, created_at, processed_at`
 
 const scoreEventColumnsQualified = `
-    score_events.id, score_events.post_id, score_events.status, score_events.error,
-    score_events.attempt_count, score_events.created_at, score_events.processed_at
+    score_events.id, score_events.post_id, score_events.summary_id, score_events.status,
+    score_events.error, score_events.attempt_count, score_events.created_at, score_events.processed_at
 `
 
-// enqueueScanLimit bounds how many due posts a single enqueue pass considers.
+// enqueueScanLimit bounds how many due entities a single enqueue pass considers.
 const enqueueScanLimit = 500
 
-// scoreEventInsertQuery inserts a pending score_event, idempotent via ON CONFLICT
-// DO NOTHING on the partial unique index over active statuses (INV-04). Shared by
-// EnqueueDuePosts and EnqueueScoredPosts to prevent drift.
+// scoreEventInsertQuery inserts a pending post score_event, idempotent via ON CONFLICT
+// DO NOTHING on the post partial unique index over active statuses (INV-04). Shared by
+// EnqueueDuePosts and EnqueueScoredPosts to prevent drift. The ON CONFLICT predicate
+// matches idx_score_events_unique_active_post (post_id IS NOT NULL AND status IN ...).
 const scoreEventInsertQuery = `
 INSERT INTO score_events (id, post_id, status, attempt_count, created_at)
 VALUES ($1, $2, 'pending', 0, now())
-ON CONFLICT (post_id) WHERE status IN ('pending', 'processing') DO NOTHING
+ON CONFLICT (post_id) WHERE post_id IS NOT NULL AND status IN ('pending', 'processing') DO NOTHING
+`
+
+// digestEventInsertQuery is the digest partner of scoreEventInsertQuery, keyed by
+// summary_id (FT-020 CTR-04). Idempotent via ON CONFLICT DO NOTHING on
+// idx_score_events_unique_active_summary. Shared by EnqueueDueDigests and
+// EnqueueScoredDigests.
+const digestEventInsertQuery = `
+INSERT INTO score_events (id, summary_id, status, attempt_count, created_at)
+VALUES ($1, $2, 'pending', 0, now())
+ON CONFLICT (summary_id) WHERE summary_id IS NOT NULL AND status IN ('pending', 'processing') DO NOTHING
 `
 
 type scoreOutboxRepo struct {
@@ -98,9 +110,127 @@ func (r *scoreOutboxRepo) EnqueueScoredPosts(ctx context.Context) (int, error) {
 	return enqueued, nil
 }
 
+// EnqueueDueDigests inserts a pending score_event for each cumulative digest
+// (summaries.post_id IS NULL) that has no score and no active event — the digest
+// partner of EnqueueDuePosts (FT-020 CTR-04, REQ-01). Idempotent via ON CONFLICT
+// DO NOTHING. Returns the number of events actually enqueued.
+func (r *scoreOutboxRepo) EnqueueDueDigests(ctx context.Context) (int, error) {
+	ex := sqlExecerFromContext(ctx, r.data.DB)
+
+	summaryIDs, err := r.dueCandidateSummaryIDs(ctx, ex)
+	if err != nil {
+		return 0, err
+	}
+	return r.insertDigestEvents(ctx, ex, summaryIDs)
+}
+
+// EnqueueScoredDigests inserts a pending score_event for each already-scored digest
+// without an active event — the re-scoring path on interest change (FT-020 REQ-06,
+// FM-03), digest partner of EnqueueScoredPosts. Idempotent via ON CONFLICT DO NOTHING.
+// Returns the number of events actually enqueued.
+func (r *scoreOutboxRepo) EnqueueScoredDigests(ctx context.Context) (int, error) {
+	ex := sqlExecerFromContext(ctx, r.data.DB)
+
+	summaryIDs, err := r.scoredCandidateSummaryIDs(ctx, ex)
+	if err != nil {
+		return 0, err
+	}
+	return r.insertDigestEvents(ctx, ex, summaryIDs)
+}
+
+// insertDigestEvents inserts one pending digest score_event per summary id, summing
+// the rows actually enqueued (ON CONFLICT DO NOTHING skips active duplicates).
+func (r *scoreOutboxRepo) insertDigestEvents(
+	ctx context.Context,
+	ex sqlExecer,
+	summaryIDs []uuid.UUID,
+) (int, error) {
+	enqueued := 0
+	for _, sid := range summaryIDs {
+		res, insErr := ex.ExecContext(ctx, digestEventInsertQuery, uuid.Must(uuid.NewV7()), sid)
+		if insErr != nil {
+			return enqueued, fmt.Errorf("insert digest score event: %w", insErr)
+		}
+		affected, affErr := res.RowsAffected()
+		if affErr != nil {
+			return enqueued, fmt.Errorf("digest insert rows affected: %w", affErr)
+		}
+		enqueued += int(affected)
+	}
+	return enqueued, nil
+}
+
+// dueCandidateSummaryIDs returns ids of cumulative summaries (post_id IS NULL) with
+// no score and no active score_event — the digests eligible for enqueue.
+func (r *scoreOutboxRepo) dueCandidateSummaryIDs(
+	ctx context.Context,
+	ex sqlExecer,
+) ([]uuid.UUID, error) {
+	const candidateQuery = `
+SELECT su.id
+FROM summaries su
+WHERE su.post_id IS NULL
+  AND NOT EXISTS (SELECT 1 FROM scores sc WHERE sc.summary_id = su.id)
+  AND NOT EXISTS (
+      SELECT 1 FROM score_events se
+      WHERE se.summary_id = su.id AND se.status IN ('pending', 'processing')
+  )
+LIMIT $1
+`
+	return r.scanSummaryIDs(ctx, ex, candidateQuery, "due digests")
+}
+
+// scoredCandidateSummaryIDs returns ids of cumulative summaries that already have a
+// score and no active score_event — the digests eligible for re-score enqueue.
+func (r *scoreOutboxRepo) scoredCandidateSummaryIDs(
+	ctx context.Context,
+	ex sqlExecer,
+) ([]uuid.UUID, error) {
+	const candidateQuery = `
+SELECT sc.summary_id
+FROM scores sc
+WHERE sc.summary_id IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM score_events se
+      WHERE se.summary_id = sc.summary_id AND se.status IN ('pending', 'processing')
+  )
+LIMIT $1
+`
+	return r.scanSummaryIDs(ctx, ex, candidateQuery, "scored digests")
+}
+
+// scanSummaryIDs runs a single-column summary-id candidate query and collects the ids.
+func (r *scoreOutboxRepo) scanSummaryIDs(
+	ctx context.Context,
+	ex sqlExecer,
+	query, label string,
+) ([]uuid.UUID, error) {
+	rows, err := ex.QueryContext(ctx, query, enqueueScanLimit)
+	if err != nil {
+		return nil, fmt.Errorf("query %s: %w", label, err)
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var sid uuid.UUID
+		if scanErr := rows.Scan(&sid); scanErr != nil {
+			return nil, fmt.Errorf("scan %s: %w", label, scanErr)
+		}
+		ids = append(ids, sid)
+	}
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return nil, fmt.Errorf("rows %s: %w", label, rowsErr)
+	}
+	return ids, nil
+}
+
 // scoredCandidatePostIDs returns post ids that already have a score and no active
 // score_event — the posts eligible for re-score enqueue.
-func (r *scoreOutboxRepo) scoredCandidatePostIDs(ctx context.Context, ex sqlExecer) ([]uuid.UUID, error) {
+func (r *scoreOutboxRepo) scoredCandidatePostIDs(
+	ctx context.Context,
+	ex sqlExecer,
+) ([]uuid.UUID, error) {
 	const candidateQuery = `
 SELECT sc.post_id
 FROM scores sc
@@ -132,7 +262,10 @@ LIMIT $1
 
 // dueCandidatePostIDs returns post ids that have a summary, no score, and no
 // active score_event — the posts eligible for enqueue.
-func (r *scoreOutboxRepo) dueCandidatePostIDs(ctx context.Context, ex sqlExecer) ([]uuid.UUID, error) {
+func (r *scoreOutboxRepo) dueCandidatePostIDs(
+	ctx context.Context,
+	ex sqlExecer,
+) ([]uuid.UUID, error) {
 	const candidateQuery = `
 SELECT DISTINCT su.post_id
 FROM summaries su
@@ -389,23 +522,33 @@ LIMIT $2
 func scanScoreEvent(row rowScanner) (biz.ScoreEvent, error) {
 	var (
 		id           uuid.UUID
-		postID       uuid.UUID
+		postID       uuid.NullUUID
+		summaryID    uuid.NullUUID
 		status       string
 		errText      sql.NullString
 		attemptCount int
 		createdAt    time.Time
 		processedAt  sql.NullTime
 	)
-	if err := row.Scan(&id, &postID, &status, &errText, &attemptCount, &createdAt, &processedAt); err != nil {
+	if err := row.Scan(
+		&id, &postID, &summaryID, &status, &errText, &attemptCount, &createdAt, &processedAt,
+	); err != nil {
 		return biz.ScoreEvent{}, err
 	}
 
 	ev := biz.ScoreEvent{
 		ID:           id.String(),
-		PostID:       postID.String(),
 		Status:       biz.ScoreEventStatus(status),
 		AttemptCount: attemptCount,
 		CreatedAt:    createdAt,
+	}
+	if postID.Valid {
+		s := postID.UUID.String()
+		ev.PostID = &s
+	}
+	if summaryID.Valid {
+		s := summaryID.UUID.String()
+		ev.SummaryID = &s
 	}
 	if errText.Valid {
 		s := errText.String

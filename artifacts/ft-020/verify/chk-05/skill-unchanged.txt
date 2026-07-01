@@ -1,0 +1,5 @@
+CHK-05 / MET-02: OpenClaw skill unchanged by FT-020.
+Command: git status --porcelain artifacts/openclaw-feedium-skill/ && git diff -- artifacts/openclaw-feedium-skill/SKILL.md
+Result: (no output = no changes)
+?? artifacts/openclaw-feedium-skill/
+OpenClaw still reads GET /v1/feed?min_score=0.5 unchanged; kind field is additive.

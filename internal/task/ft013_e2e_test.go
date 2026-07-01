@@ -84,7 +84,8 @@ func TestIntegration_FT013_VectorReuse_And_InterestChangeRescore(t *testing.T) {
 	}
 
 	postEmbeddingRow := func() biz.PostEmbedding {
-		pe, err := data.NewPostEmbeddingRepo(d).Get(ctx, post.ID)
+		pid := post.ID
+		pe, err := data.NewPostEmbeddingRepo(d).Get(ctx, biz.ScoreKey{PostID: &pid})
 		require.NoError(t, err)
 		return pe
 	}

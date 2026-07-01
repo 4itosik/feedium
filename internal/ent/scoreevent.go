@@ -19,7 +19,9 @@ type ScoreEvent struct {
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
 	// PostID holds the value of the "post_id" field.
-	PostID uuid.UUID `json:"post_id,omitempty"`
+	PostID *uuid.UUID `json:"post_id,omitempty"`
+	// SummaryID holds the value of the "summary_id" field.
+	SummaryID *uuid.UUID `json:"summary_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
 	// Error holds the value of the "error" field.
@@ -44,13 +46,15 @@ func (*ScoreEvent) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case scoreevent.FieldPostID, scoreevent.FieldSummaryID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case scoreevent.FieldAttemptCount:
 			values[i] = new(sql.NullInt64)
 		case scoreevent.FieldStatus, scoreevent.FieldError, scoreevent.FieldLockedBy:
 			values[i] = new(sql.NullString)
 		case scoreevent.FieldLockedUntil, scoreevent.FieldNextAttemptAt, scoreevent.FieldCreatedAt, scoreevent.FieldProcessedAt:
 			values[i] = new(sql.NullTime)
-		case scoreevent.FieldID, scoreevent.FieldPostID:
+		case scoreevent.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -74,10 +78,18 @@ func (_m *ScoreEvent) assignValues(columns []string, values []any) error {
 				_m.ID = *value
 			}
 		case scoreevent.FieldPostID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field post_id", values[i])
-			} else if value != nil {
-				_m.PostID = *value
+			} else if value.Valid {
+				_m.PostID = new(uuid.UUID)
+				*_m.PostID = *value.S.(*uuid.UUID)
+			}
+		case scoreevent.FieldSummaryID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field summary_id", values[i])
+			} else if value.Valid {
+				_m.SummaryID = new(uuid.UUID)
+				*_m.SummaryID = *value.S.(*uuid.UUID)
 			}
 		case scoreevent.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -168,8 +180,15 @@ func (_m *ScoreEvent) String() string {
 	var builder strings.Builder
 	builder.WriteString("ScoreEvent(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("post_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PostID))
+	if v := _m.PostID; v != nil {
+		builder.WriteString("post_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SummaryID; v != nil {
+		builder.WriteString("summary_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)

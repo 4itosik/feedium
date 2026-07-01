@@ -1,0 +1,16 @@
+CHK-03 / REQ-01 / CON-02: make test (go test ./...) — full suite green.
+internal/data tests run goose.Up over the full migration set (incl. FT-020's three)
+against a fresh testcontainers postgres:18.3-alpine plus seeded post-scored rows;
+the package passing proves the migration applies and existing rows are unaffected.
+
+Full failure count: 0
+ok  	github.com/4itosik/feedium/internal/biz	(cached)
+ok  	github.com/4itosik/feedium/internal/biz/prompt	(cached)
+ok  	github.com/4itosik/feedium/internal/data	84.530s
+ok  	github.com/4itosik/feedium/internal/service/feed	(cached)
+ok  	github.com/4itosik/feedium/internal/service/health	10.145s
+ok  	github.com/4itosik/feedium/internal/service/interest	0.016s
+ok  	github.com/4itosik/feedium/internal/service/post	0.018s
+ok  	github.com/4itosik/feedium/internal/service/source	0.017s
+ok  	github.com/4itosik/feedium/internal/service/summary	0.018s
+ok  	github.com/4itosik/feedium/internal/task	31.997s

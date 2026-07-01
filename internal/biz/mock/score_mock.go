@@ -42,18 +42,18 @@ func (m *MockPostEmbeddingRepo) EXPECT() *MockPostEmbeddingRepoMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockPostEmbeddingRepo) Get(ctx context.Context, postID string) (biz.PostEmbedding, error) {
+func (m *MockPostEmbeddingRepo) Get(ctx context.Context, key biz.ScoreKey) (biz.PostEmbedding, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, postID)
+	ret := m.ctrl.Call(m, "Get", ctx, key)
 	ret0, _ := ret[0].(biz.PostEmbedding)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockPostEmbeddingRepoMockRecorder) Get(ctx, postID any) *gomock.Call {
+func (mr *MockPostEmbeddingRepoMockRecorder) Get(ctx, key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPostEmbeddingRepo)(nil).Get), ctx, postID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPostEmbeddingRepo)(nil).Get), ctx, key)
 }
 
 // Upsert mocks base method.

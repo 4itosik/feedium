@@ -5,15 +5,18 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
 	"github.com/google/uuid"
 )
 
-// Score is the single current relevance score of a post (FT-010 CTR-10). Exactly
-// one row per post is enforced by a UNIQUE(post_id) index (INV-02); ranking reads
-// the precomputed scalar value ordered descending.
+// Score is the single current relevance score of a scoreable entity. It targets
+// either a post (post_id) or a cumulative digest (summary_id) — exactly one is set
+// (FT-020 CTR-01). Exactly one row per entity is enforced by two partial UNIQUE
+// indexes (INV-02, symmetric); ranking reads the precomputed scalar value descending.
+// DDL authority is goose migrations; this schema mirrors them for the generated model.
 type Score struct {
 	ent.Schema
 }
@@ -25,7 +28,12 @@ func (Score) Fields() []ent.Field {
 				return uuid.Must(uuid.NewV7())
 			}).
 			Immutable(),
-		field.UUID("post_id", uuid.UUID{}),
+		field.UUID("post_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
+		field.UUID("summary_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
 		field.Float("value"),
 		field.String("model").
 			NotEmpty(),
@@ -46,7 +54,10 @@ func (Score) Fields() []ent.Field {
 
 func (Score) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("post_id").Unique(),
+		index.Fields("post_id").Unique().
+			Annotations(entsql.IndexWhere("post_id IS NOT NULL")),
+		index.Fields("summary_id").Unique().
+			Annotations(entsql.IndexWhere("summary_id IS NOT NULL")),
 		index.Fields("value"),
 	}
 }

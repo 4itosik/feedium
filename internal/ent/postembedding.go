@@ -20,7 +20,9 @@ type PostEmbedding struct {
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
 	// PostID holds the value of the "post_id" field.
-	PostID uuid.UUID `json:"post_id,omitempty"`
+	PostID *uuid.UUID `json:"post_id,omitempty"`
+	// SummaryID holds the value of the "summary_id" field.
+	SummaryID *uuid.UUID `json:"summary_id,omitempty"`
 	// Vector holds the value of the "vector" field.
 	Vector []float32 `json:"vector,omitempty"`
 	// Model holds the value of the "model" field.
@@ -39,13 +41,15 @@ func (*PostEmbedding) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case postembedding.FieldPostID, postembedding.FieldSummaryID:
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case postembedding.FieldVector:
 			values[i] = new([]byte)
 		case postembedding.FieldModel, postembedding.FieldInputHash:
 			values[i] = new(sql.NullString)
 		case postembedding.FieldCreatedAt, postembedding.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case postembedding.FieldID, postembedding.FieldPostID:
+		case postembedding.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -69,10 +73,18 @@ func (_m *PostEmbedding) assignValues(columns []string, values []any) error {
 				_m.ID = *value
 			}
 		case postembedding.FieldPostID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field post_id", values[i])
-			} else if value != nil {
-				_m.PostID = *value
+			} else if value.Valid {
+				_m.PostID = new(uuid.UUID)
+				*_m.PostID = *value.S.(*uuid.UUID)
+			}
+		case postembedding.FieldSummaryID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field summary_id", values[i])
+			} else if value.Valid {
+				_m.SummaryID = new(uuid.UUID)
+				*_m.SummaryID = *value.S.(*uuid.UUID)
 			}
 		case postembedding.FieldVector:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -142,8 +154,15 @@ func (_m *PostEmbedding) String() string {
 	var builder strings.Builder
 	builder.WriteString("PostEmbedding(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("post_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.PostID))
+	if v := _m.PostID; v != nil {
+		builder.WriteString("post_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.SummaryID; v != nil {
+		builder.WriteString("summary_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("vector=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Vector))

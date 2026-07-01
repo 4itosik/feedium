@@ -42,6 +42,7 @@ func TestInterestUsecase_Create(t *testing.T) {
 				return in, nil
 			})
 		outbox.EXPECT().EnqueueScoredPosts(gomock.Any()).Return(3, nil).Times(1)
+		outbox.EXPECT().EnqueueScoredDigests(gomock.Any()).Return(0, nil).Times(1)
 		uc := biz.NewInterestUsecase(repo, scorer, outbox, tx)
 
 		// Act
@@ -137,6 +138,7 @@ func TestInterestUsecase_Update(t *testing.T) {
 				return in, nil
 			})
 		outbox.EXPECT().EnqueueScoredPosts(gomock.Any()).Return(2, nil).Times(1)
+		outbox.EXPECT().EnqueueScoredDigests(gomock.Any()).Return(0, nil).Times(1)
 		uc := biz.NewInterestUsecase(repo, scorer, outbox, tx)
 
 		// Act
@@ -257,6 +259,7 @@ func TestInterestUsecase_Delete(t *testing.T) {
 		expectInlineInTx(tx)
 		repo.EXPECT().Delete(gomock.Any(), "id-1").Return(nil)
 		outbox.EXPECT().EnqueueScoredPosts(gomock.Any()).Return(5, nil).Times(1)
+		outbox.EXPECT().EnqueueScoredDigests(gomock.Any()).Return(0, nil).Times(1)
 		uc := biz.NewInterestUsecase(repo, scorer, outbox, tx)
 
 		// Act

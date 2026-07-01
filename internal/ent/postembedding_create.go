@@ -27,6 +27,28 @@ func (_c *PostEmbeddingCreate) SetPostID(v uuid.UUID) *PostEmbeddingCreate {
 	return _c
 }
 
+// SetNillablePostID sets the "post_id" field if the given value is not nil.
+func (_c *PostEmbeddingCreate) SetNillablePostID(v *uuid.UUID) *PostEmbeddingCreate {
+	if v != nil {
+		_c.SetPostID(*v)
+	}
+	return _c
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (_c *PostEmbeddingCreate) SetSummaryID(v uuid.UUID) *PostEmbeddingCreate {
+	_c.mutation.SetSummaryID(v)
+	return _c
+}
+
+// SetNillableSummaryID sets the "summary_id" field if the given value is not nil.
+func (_c *PostEmbeddingCreate) SetNillableSummaryID(v *uuid.UUID) *PostEmbeddingCreate {
+	if v != nil {
+		_c.SetSummaryID(*v)
+	}
+	return _c
+}
+
 // SetVector sets the "vector" field.
 func (_c *PostEmbeddingCreate) SetVector(v []float32) *PostEmbeddingCreate {
 	_c.mutation.SetVector(v)
@@ -138,9 +160,6 @@ func (_c *PostEmbeddingCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *PostEmbeddingCreate) check() error {
-	if _, ok := _c.mutation.PostID(); !ok {
-		return &ValidationError{Name: "post_id", err: errors.New(`ent: missing required field "PostEmbedding.post_id"`)}
-	}
 	if _, ok := _c.mutation.Vector(); !ok {
 		return &ValidationError{Name: "vector", err: errors.New(`ent: missing required field "PostEmbedding.vector"`)}
 	}
@@ -203,7 +222,11 @@ func (_c *PostEmbeddingCreate) createSpec() (*PostEmbedding, *sqlgraph.CreateSpe
 	}
 	if value, ok := _c.mutation.PostID(); ok {
 		_spec.SetField(postembedding.FieldPostID, field.TypeUUID, value)
-		_node.PostID = value
+		_node.PostID = &value
+	}
+	if value, ok := _c.mutation.SummaryID(); ok {
+		_spec.SetField(postembedding.FieldSummaryID, field.TypeUUID, value)
+		_node.SummaryID = &value
 	}
 	if value, ok := _c.mutation.Vector(); ok {
 		_spec.SetField(postembedding.FieldVector, field.TypeJSON, value)

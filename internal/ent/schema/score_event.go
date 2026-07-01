@@ -5,6 +5,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 
@@ -12,9 +13,10 @@ import (
 )
 
 // ScoreEvent is the scoring outbox row (FT-010 CTR-11), a structural copy of
-// SummaryEvent. The score_due_scheduler enqueues one per summarized-unscored post;
-// the score worker pool consumes it under a lease. At most one active event per
-// post is enforced by a partial UNIQUE(post_id) index in the migration (INV-04).
+// SummaryEvent. It targets either a post (post_id) or a cumulative digest
+// (summary_id) — exactly one is set (FT-020 CTR-04). The scheduler enqueues one per
+// unscored entity; the worker pool consumes it under a lease. At most one active
+// event per entity is enforced by two partial UNIQUE indexes in the migration (INV-04).
 type ScoreEvent struct {
 	ent.Schema
 }
@@ -26,7 +28,12 @@ func (ScoreEvent) Fields() []ent.Field {
 				return uuid.Must(uuid.NewV7())
 			}).
 			Immutable(),
-		field.UUID("post_id", uuid.UUID{}),
+		field.UUID("post_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
+		field.UUID("summary_id", uuid.UUID{}).
+			Optional().
+			Nillable(),
 		field.String("status").
 			NotEmpty().
 			Default("pending"),
@@ -68,5 +75,9 @@ func (ScoreEvent) Fields() []ent.Field {
 func (ScoreEvent) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("status", "created_at"),
+		index.Fields("post_id").Unique().
+			Annotations(entsql.IndexWhere("post_id IS NOT NULL AND status IN ('pending', 'processing')")),
+		index.Fields("summary_id").Unique().
+			Annotations(entsql.IndexWhere("summary_id IS NOT NULL AND status IN ('pending', 'processing')")),
 	}
 }

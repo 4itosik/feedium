@@ -1,0 +1,5 @@
+ok  	github.com/4itosik/feedium/internal/biz	2.057s
+?   	github.com/4itosik/feedium/internal/biz/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/biz/prompt	1.032s
+ok  	github.com/4itosik/feedium/internal/data	90.334s
+ok  	github.com/4itosik/feedium/internal/task	36.349s

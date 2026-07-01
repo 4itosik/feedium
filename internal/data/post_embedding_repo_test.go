@@ -26,7 +26,7 @@ func TestIntegration_PostEmbeddingRepo_UpsertGetRoundTrip(t *testing.T) {
 	postID := seedPost(t, d, sourceID, "ext-emb-1", time.Now())
 
 	pe := biz.PostEmbedding{
-		PostID:    postID,
+		PostID:    new(postID),
 		Vector:    []float32{0.1, 0.2, 0.3, -0.4},
 		Model:     "test-embed-model",
 		InputHash: "hash-1",
@@ -35,11 +35,12 @@ func TestIntegration_PostEmbeddingRepo_UpsertGetRoundTrip(t *testing.T) {
 	// Act
 	_, err := repo.Upsert(ctx, pe)
 	require.NoError(t, err)
-	got, err := repo.Get(ctx, postID)
+	got, err := repo.Get(ctx, biz.ScoreKey{PostID: new(postID)})
 
 	// Assert
 	require.NoError(t, err)
-	assert.Equal(t, postID, got.PostID)
+	require.NotNil(t, got.PostID)
+	assert.Equal(t, postID, *got.PostID)
 	assert.Equal(t, pe.Vector, got.Vector)
 	assert.Equal(t, "test-embed-model", got.Model)
 	assert.Equal(t, "hash-1", got.InputHash)
@@ -59,7 +60,7 @@ func TestIntegration_PostEmbeddingRepo_UpsertOverwritesSingleRow(t *testing.T) {
 	postID := seedPost(t, d, sourceID, "ext-emb-2", time.Now())
 
 	first, err := repo.Upsert(ctx, biz.PostEmbedding{
-		PostID:    postID,
+		PostID:    new(postID),
 		Vector:    []float32{1, 2, 3},
 		Model:     "model-a",
 		InputHash: "hash-a",
@@ -68,7 +69,7 @@ func TestIntegration_PostEmbeddingRepo_UpsertOverwritesSingleRow(t *testing.T) {
 
 	// Act: second upsert with different vector/model/input_hash for the same post
 	_, err = repo.Upsert(ctx, biz.PostEmbedding{
-		PostID:    postID,
+		PostID:    new(postID),
 		Vector:    []float32{9, 8, 7, 6},
 		Model:     "model-b",
 		InputHash: "hash-b",
@@ -76,14 +77,19 @@ func TestIntegration_PostEmbeddingRepo_UpsertOverwritesSingleRow(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert: Get returns the new values
-	got, err := repo.Get(ctx, postID)
+	got, err := repo.Get(ctx, biz.ScoreKey{PostID: new(postID)})
 	require.NoError(t, err)
 	assert.Equal(t, []float32{9, 8, 7, 6}, got.Vector)
 	assert.Equal(t, "model-b", got.Model)
 	assert.Equal(t, "hash-b", got.InputHash)
 
 	// Assert: created_at is immutable across upsert, updated_at advances
-	assert.Equal(t, first.CreatedAt.Unix(), got.CreatedAt.Unix(), "created_at must be immutable on upsert")
+	assert.Equal(
+		t,
+		first.CreatedAt.Unix(),
+		got.CreatedAt.Unix(),
+		"created_at must be immutable on upsert",
+	)
 	assert.False(t, got.UpdatedAt.Before(got.CreatedAt))
 
 	// Assert: exactly ONE row exists for that post_id
@@ -104,7 +110,7 @@ func TestIntegration_PostEmbeddingRepo_GetNotFound(t *testing.T) {
 	repo := data.NewPostEmbeddingRepo(d)
 
 	// Act
-	_, err := repo.Get(ctx, uuid.Must(uuid.NewV7()).String())
+	_, err := repo.Get(ctx, biz.ScoreKey{PostID: new(uuid.Must(uuid.NewV7()).String())})
 
 	// Assert
 	require.ErrorIs(t, err, biz.ErrPostEmbeddingNotFound)

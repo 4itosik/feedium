@@ -44,6 +44,32 @@ func (_u *PostEmbeddingUpdate) SetNillablePostID(v *uuid.UUID) *PostEmbeddingUpd
 	return _u
 }
 
+// ClearPostID clears the value of the "post_id" field.
+func (_u *PostEmbeddingUpdate) ClearPostID() *PostEmbeddingUpdate {
+	_u.mutation.ClearPostID()
+	return _u
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (_u *PostEmbeddingUpdate) SetSummaryID(v uuid.UUID) *PostEmbeddingUpdate {
+	_u.mutation.SetSummaryID(v)
+	return _u
+}
+
+// SetNillableSummaryID sets the "summary_id" field if the given value is not nil.
+func (_u *PostEmbeddingUpdate) SetNillableSummaryID(v *uuid.UUID) *PostEmbeddingUpdate {
+	if v != nil {
+		_u.SetSummaryID(*v)
+	}
+	return _u
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (_u *PostEmbeddingUpdate) ClearSummaryID() *PostEmbeddingUpdate {
+	_u.mutation.ClearSummaryID()
+	return _u
+}
+
 // SetVector sets the "vector" field.
 func (_u *PostEmbeddingUpdate) SetVector(v []float32) *PostEmbeddingUpdate {
 	_u.mutation.SetVector(v)
@@ -161,6 +187,15 @@ func (_u *PostEmbeddingUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.PostID(); ok {
 		_spec.SetField(postembedding.FieldPostID, field.TypeUUID, value)
 	}
+	if _u.mutation.PostIDCleared() {
+		_spec.ClearField(postembedding.FieldPostID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.SummaryID(); ok {
+		_spec.SetField(postembedding.FieldSummaryID, field.TypeUUID, value)
+	}
+	if _u.mutation.SummaryIDCleared() {
+		_spec.ClearField(postembedding.FieldSummaryID, field.TypeUUID)
+	}
 	if value, ok := _u.mutation.Vector(); ok {
 		_spec.SetField(postembedding.FieldVector, field.TypeJSON, value)
 	}
@@ -209,6 +244,32 @@ func (_u *PostEmbeddingUpdateOne) SetNillablePostID(v *uuid.UUID) *PostEmbedding
 	if v != nil {
 		_u.SetPostID(*v)
 	}
+	return _u
+}
+
+// ClearPostID clears the value of the "post_id" field.
+func (_u *PostEmbeddingUpdateOne) ClearPostID() *PostEmbeddingUpdateOne {
+	_u.mutation.ClearPostID()
+	return _u
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (_u *PostEmbeddingUpdateOne) SetSummaryID(v uuid.UUID) *PostEmbeddingUpdateOne {
+	_u.mutation.SetSummaryID(v)
+	return _u
+}
+
+// SetNillableSummaryID sets the "summary_id" field if the given value is not nil.
+func (_u *PostEmbeddingUpdateOne) SetNillableSummaryID(v *uuid.UUID) *PostEmbeddingUpdateOne {
+	if v != nil {
+		_u.SetSummaryID(*v)
+	}
+	return _u
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (_u *PostEmbeddingUpdateOne) ClearSummaryID() *PostEmbeddingUpdateOne {
+	_u.mutation.ClearSummaryID()
 	return _u
 }
 
@@ -358,6 +419,15 @@ func (_u *PostEmbeddingUpdateOne) sqlSave(ctx context.Context) (_node *PostEmbed
 	}
 	if value, ok := _u.mutation.PostID(); ok {
 		_spec.SetField(postembedding.FieldPostID, field.TypeUUID, value)
+	}
+	if _u.mutation.PostIDCleared() {
+		_spec.ClearField(postembedding.FieldPostID, field.TypeUUID)
+	}
+	if value, ok := _u.mutation.SummaryID(); ok {
+		_spec.SetField(postembedding.FieldSummaryID, field.TypeUUID, value)
+	}
+	if _u.mutation.SummaryIDCleared() {
+		_spec.ClearField(postembedding.FieldSummaryID, field.TypeUUID)
 	}
 	if value, ok := _u.mutation.Vector(); ok {
 		_spec.SetField(postembedding.FieldVector, field.TypeJSON, value)

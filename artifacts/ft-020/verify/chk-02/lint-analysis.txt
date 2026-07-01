@@ -1,0 +1,16 @@
+CHK-02 / EC-03: golangci-lint — no new issues from FT-020.
+
+All files FT-020 created or modified are lint-clean (verified: grep of the lint
+output for score*/feed*/interest*/post_embedding*/ft020* files returns nothing).
+
+make lint still exits non-zero due to PRE-EXISTING issues in files FT-020 did NOT
+touch, none in the FT-020 change surface:
+  - cmd/tgdialogs/main.go        (untracked exploratory tool, not committed)
+  - internal/data/telegram_session_storage.go(+_test) (FT-009, pre-existing)
+  - internal/server/static.go, ui/ui.go               (pre-existing)
+  - ui/node_modules/flatted/...                        (vendored, gitignored)
+
+Residual issue count: 28 issues:
+
+git status of residual files (none are FT-020 edits; '??'=untracked, blank=committed-unchanged):
+?? cmd/tgdialogs/main.go

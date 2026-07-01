@@ -75,6 +75,7 @@ func (s *FeedService) V1ListFeed(
 			Score:       item.Score,
 			Url:         item.URL,
 			Reaction:    item.Reaction,
+			Kind:        mapFeedItemKind(item.Kind),
 		})
 	}
 	return &feedium.V1ListFeedResponse{
@@ -96,9 +97,24 @@ func (s *FeedService) V1ReactToPost(
 	return &feedium.V1ReactToPostResponse{}, nil
 }
 
+// mapFeedItemKind maps the domain feed-item kind to the proto enum (FT-020 CTR-02).
+func mapFeedItemKind(kind biz.FeedItemKind) feedium.FeedItemKind {
+	switch kind {
+	case biz.FeedItemKindPost:
+		return feedium.FeedItemKind_FEED_ITEM_KIND_POST
+	case biz.FeedItemKindDigest:
+		return feedium.FeedItemKind_FEED_ITEM_KIND_DIGEST
+	default:
+		return feedium.FeedItemKind_FEED_ITEM_KIND_UNSPECIFIED
+	}
+}
+
 func (s *FeedService) mapDomainErrorToStatus(err error) error {
 	if errors.Is(err, biz.ErrInvalidThreshold) {
-		return status.Error(codes.InvalidArgument, feedium.ErrorReason_ERROR_REASON_INVALID_THRESHOLD.String())
+		return status.Error(
+			codes.InvalidArgument,
+			feedium.ErrorReason_ERROR_REASON_INVALID_THRESHOLD.String(),
+		)
 	}
 	return status.Error(codes.Internal, "internal error")
 }

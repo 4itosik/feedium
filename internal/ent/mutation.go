@@ -1484,6 +1484,7 @@ type PostEmbeddingMutation struct {
 	typ           string
 	id            *uuid.UUID
 	post_id       *uuid.UUID
+	summary_id    *uuid.UUID
 	vector        *[]float32
 	appendvector  []float32
 	model         *string
@@ -1617,7 +1618,7 @@ func (m *PostEmbeddingMutation) PostID() (r uuid.UUID, exists bool) {
 // OldPostID returns the old "post_id" field's value of the PostEmbedding entity.
 // If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostEmbeddingMutation) OldPostID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *PostEmbeddingMutation) OldPostID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
 	}
@@ -1631,9 +1632,71 @@ func (m *PostEmbeddingMutation) OldPostID(ctx context.Context) (v uuid.UUID, err
 	return oldValue.PostID, nil
 }
 
+// ClearPostID clears the value of the "post_id" field.
+func (m *PostEmbeddingMutation) ClearPostID() {
+	m.post_id = nil
+	m.clearedFields[postembedding.FieldPostID] = struct{}{}
+}
+
+// PostIDCleared returns if the "post_id" field was cleared in this mutation.
+func (m *PostEmbeddingMutation) PostIDCleared() bool {
+	_, ok := m.clearedFields[postembedding.FieldPostID]
+	return ok
+}
+
 // ResetPostID resets all changes to the "post_id" field.
 func (m *PostEmbeddingMutation) ResetPostID() {
 	m.post_id = nil
+	delete(m.clearedFields, postembedding.FieldPostID)
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (m *PostEmbeddingMutation) SetSummaryID(u uuid.UUID) {
+	m.summary_id = &u
+}
+
+// SummaryID returns the value of the "summary_id" field in the mutation.
+func (m *PostEmbeddingMutation) SummaryID() (r uuid.UUID, exists bool) {
+	v := m.summary_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSummaryID returns the old "summary_id" field's value of the PostEmbedding entity.
+// If the PostEmbedding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostEmbeddingMutation) OldSummaryID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSummaryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSummaryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSummaryID: %w", err)
+	}
+	return oldValue.SummaryID, nil
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (m *PostEmbeddingMutation) ClearSummaryID() {
+	m.summary_id = nil
+	m.clearedFields[postembedding.FieldSummaryID] = struct{}{}
+}
+
+// SummaryIDCleared returns if the "summary_id" field was cleared in this mutation.
+func (m *PostEmbeddingMutation) SummaryIDCleared() bool {
+	_, ok := m.clearedFields[postembedding.FieldSummaryID]
+	return ok
+}
+
+// ResetSummaryID resets all changes to the "summary_id" field.
+func (m *PostEmbeddingMutation) ResetSummaryID() {
+	m.summary_id = nil
+	delete(m.clearedFields, postembedding.FieldSummaryID)
 }
 
 // SetVector sets the "vector" field.
@@ -1865,9 +1928,12 @@ func (m *PostEmbeddingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostEmbeddingMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.post_id != nil {
 		fields = append(fields, postembedding.FieldPostID)
+	}
+	if m.summary_id != nil {
+		fields = append(fields, postembedding.FieldSummaryID)
 	}
 	if m.vector != nil {
 		fields = append(fields, postembedding.FieldVector)
@@ -1894,6 +1960,8 @@ func (m *PostEmbeddingMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case postembedding.FieldPostID:
 		return m.PostID()
+	case postembedding.FieldSummaryID:
+		return m.SummaryID()
 	case postembedding.FieldVector:
 		return m.Vector()
 	case postembedding.FieldModel:
@@ -1915,6 +1983,8 @@ func (m *PostEmbeddingMutation) OldField(ctx context.Context, name string) (ent.
 	switch name {
 	case postembedding.FieldPostID:
 		return m.OldPostID(ctx)
+	case postembedding.FieldSummaryID:
+		return m.OldSummaryID(ctx)
 	case postembedding.FieldVector:
 		return m.OldVector(ctx)
 	case postembedding.FieldModel:
@@ -1940,6 +2010,13 @@ func (m *PostEmbeddingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPostID(v)
+		return nil
+	case postembedding.FieldSummaryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSummaryID(v)
 		return nil
 	case postembedding.FieldVector:
 		v, ok := value.([]float32)
@@ -2005,7 +2082,14 @@ func (m *PostEmbeddingMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PostEmbeddingMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(postembedding.FieldPostID) {
+		fields = append(fields, postembedding.FieldPostID)
+	}
+	if m.FieldCleared(postembedding.FieldSummaryID) {
+		fields = append(fields, postembedding.FieldSummaryID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2018,6 +2102,14 @@ func (m *PostEmbeddingMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PostEmbeddingMutation) ClearField(name string) error {
+	switch name {
+	case postembedding.FieldPostID:
+		m.ClearPostID()
+		return nil
+	case postembedding.FieldSummaryID:
+		m.ClearSummaryID()
+		return nil
+	}
 	return fmt.Errorf("unknown PostEmbedding nullable field %s", name)
 }
 
@@ -2027,6 +2119,9 @@ func (m *PostEmbeddingMutation) ResetField(name string) error {
 	switch name {
 	case postembedding.FieldPostID:
 		m.ResetPostID()
+		return nil
+	case postembedding.FieldSummaryID:
+		m.ResetSummaryID()
 		return nil
 	case postembedding.FieldVector:
 		m.ResetVector()
@@ -2102,6 +2197,7 @@ type ScoreMutation struct {
 	typ           string
 	id            *uuid.UUID
 	post_id       *uuid.UUID
+	summary_id    *uuid.UUID
 	value         *float64
 	addvalue      *float64
 	model         *string
@@ -2234,7 +2330,7 @@ func (m *ScoreMutation) PostID() (r uuid.UUID, exists bool) {
 // OldPostID returns the old "post_id" field's value of the Score entity.
 // If the Score object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ScoreMutation) OldPostID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *ScoreMutation) OldPostID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
 	}
@@ -2248,9 +2344,71 @@ func (m *ScoreMutation) OldPostID(ctx context.Context) (v uuid.UUID, err error) 
 	return oldValue.PostID, nil
 }
 
+// ClearPostID clears the value of the "post_id" field.
+func (m *ScoreMutation) ClearPostID() {
+	m.post_id = nil
+	m.clearedFields[score.FieldPostID] = struct{}{}
+}
+
+// PostIDCleared returns if the "post_id" field was cleared in this mutation.
+func (m *ScoreMutation) PostIDCleared() bool {
+	_, ok := m.clearedFields[score.FieldPostID]
+	return ok
+}
+
 // ResetPostID resets all changes to the "post_id" field.
 func (m *ScoreMutation) ResetPostID() {
 	m.post_id = nil
+	delete(m.clearedFields, score.FieldPostID)
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (m *ScoreMutation) SetSummaryID(u uuid.UUID) {
+	m.summary_id = &u
+}
+
+// SummaryID returns the value of the "summary_id" field in the mutation.
+func (m *ScoreMutation) SummaryID() (r uuid.UUID, exists bool) {
+	v := m.summary_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSummaryID returns the old "summary_id" field's value of the Score entity.
+// If the Score object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScoreMutation) OldSummaryID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSummaryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSummaryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSummaryID: %w", err)
+	}
+	return oldValue.SummaryID, nil
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (m *ScoreMutation) ClearSummaryID() {
+	m.summary_id = nil
+	m.clearedFields[score.FieldSummaryID] = struct{}{}
+}
+
+// SummaryIDCleared returns if the "summary_id" field was cleared in this mutation.
+func (m *ScoreMutation) SummaryIDCleared() bool {
+	_, ok := m.clearedFields[score.FieldSummaryID]
+	return ok
+}
+
+// ResetSummaryID resets all changes to the "summary_id" field.
+func (m *ScoreMutation) ResetSummaryID() {
+	m.summary_id = nil
+	delete(m.clearedFields, score.FieldSummaryID)
 }
 
 // SetValue sets the "value" field.
@@ -2451,9 +2609,12 @@ func (m *ScoreMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ScoreMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.post_id != nil {
 		fields = append(fields, score.FieldPostID)
+	}
+	if m.summary_id != nil {
+		fields = append(fields, score.FieldSummaryID)
 	}
 	if m.value != nil {
 		fields = append(fields, score.FieldValue)
@@ -2477,6 +2638,8 @@ func (m *ScoreMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case score.FieldPostID:
 		return m.PostID()
+	case score.FieldSummaryID:
+		return m.SummaryID()
 	case score.FieldValue:
 		return m.Value()
 	case score.FieldModel:
@@ -2496,6 +2659,8 @@ func (m *ScoreMutation) OldField(ctx context.Context, name string) (ent.Value, e
 	switch name {
 	case score.FieldPostID:
 		return m.OldPostID(ctx)
+	case score.FieldSummaryID:
+		return m.OldSummaryID(ctx)
 	case score.FieldValue:
 		return m.OldValue(ctx)
 	case score.FieldModel:
@@ -2519,6 +2684,13 @@ func (m *ScoreMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPostID(v)
+		return nil
+	case score.FieldSummaryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSummaryID(v)
 		return nil
 	case score.FieldValue:
 		v, ok := value.(float64)
@@ -2592,7 +2764,14 @@ func (m *ScoreMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ScoreMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(score.FieldPostID) {
+		fields = append(fields, score.FieldPostID)
+	}
+	if m.FieldCleared(score.FieldSummaryID) {
+		fields = append(fields, score.FieldSummaryID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2605,6 +2784,14 @@ func (m *ScoreMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ScoreMutation) ClearField(name string) error {
+	switch name {
+	case score.FieldPostID:
+		m.ClearPostID()
+		return nil
+	case score.FieldSummaryID:
+		m.ClearSummaryID()
+		return nil
+	}
 	return fmt.Errorf("unknown Score nullable field %s", name)
 }
 
@@ -2614,6 +2801,9 @@ func (m *ScoreMutation) ResetField(name string) error {
 	switch name {
 	case score.FieldPostID:
 		m.ResetPostID()
+		return nil
+	case score.FieldSummaryID:
+		m.ResetSummaryID()
 		return nil
 	case score.FieldValue:
 		m.ResetValue()
@@ -2686,6 +2876,7 @@ type ScoreEventMutation struct {
 	typ              string
 	id               *uuid.UUID
 	post_id          *uuid.UUID
+	summary_id       *uuid.UUID
 	status           *string
 	error            *string
 	attempt_count    *int
@@ -2822,7 +3013,7 @@ func (m *ScoreEventMutation) PostID() (r uuid.UUID, exists bool) {
 // OldPostID returns the old "post_id" field's value of the ScoreEvent entity.
 // If the ScoreEvent object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ScoreEventMutation) OldPostID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *ScoreEventMutation) OldPostID(ctx context.Context) (v *uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
 	}
@@ -2836,9 +3027,71 @@ func (m *ScoreEventMutation) OldPostID(ctx context.Context) (v uuid.UUID, err er
 	return oldValue.PostID, nil
 }
 
+// ClearPostID clears the value of the "post_id" field.
+func (m *ScoreEventMutation) ClearPostID() {
+	m.post_id = nil
+	m.clearedFields[scoreevent.FieldPostID] = struct{}{}
+}
+
+// PostIDCleared returns if the "post_id" field was cleared in this mutation.
+func (m *ScoreEventMutation) PostIDCleared() bool {
+	_, ok := m.clearedFields[scoreevent.FieldPostID]
+	return ok
+}
+
 // ResetPostID resets all changes to the "post_id" field.
 func (m *ScoreEventMutation) ResetPostID() {
 	m.post_id = nil
+	delete(m.clearedFields, scoreevent.FieldPostID)
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (m *ScoreEventMutation) SetSummaryID(u uuid.UUID) {
+	m.summary_id = &u
+}
+
+// SummaryID returns the value of the "summary_id" field in the mutation.
+func (m *ScoreEventMutation) SummaryID() (r uuid.UUID, exists bool) {
+	v := m.summary_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSummaryID returns the old "summary_id" field's value of the ScoreEvent entity.
+// If the ScoreEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScoreEventMutation) OldSummaryID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSummaryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSummaryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSummaryID: %w", err)
+	}
+	return oldValue.SummaryID, nil
+}
+
+// ClearSummaryID clears the value of the "summary_id" field.
+func (m *ScoreEventMutation) ClearSummaryID() {
+	m.summary_id = nil
+	m.clearedFields[scoreevent.FieldSummaryID] = struct{}{}
+}
+
+// SummaryIDCleared returns if the "summary_id" field was cleared in this mutation.
+func (m *ScoreEventMutation) SummaryIDCleared() bool {
+	_, ok := m.clearedFields[scoreevent.FieldSummaryID]
+	return ok
+}
+
+// ResetSummaryID resets all changes to the "summary_id" field.
+func (m *ScoreEventMutation) ResetSummaryID() {
+	m.summary_id = nil
+	delete(m.clearedFields, scoreevent.FieldSummaryID)
 }
 
 // SetStatus sets the "status" field.
@@ -3248,9 +3501,12 @@ func (m *ScoreEventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ScoreEventMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.post_id != nil {
 		fields = append(fields, scoreevent.FieldPostID)
+	}
+	if m.summary_id != nil {
+		fields = append(fields, scoreevent.FieldSummaryID)
 	}
 	if m.status != nil {
 		fields = append(fields, scoreevent.FieldStatus)
@@ -3286,6 +3542,8 @@ func (m *ScoreEventMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case scoreevent.FieldPostID:
 		return m.PostID()
+	case scoreevent.FieldSummaryID:
+		return m.SummaryID()
 	case scoreevent.FieldStatus:
 		return m.Status()
 	case scoreevent.FieldError:
@@ -3313,6 +3571,8 @@ func (m *ScoreEventMutation) OldField(ctx context.Context, name string) (ent.Val
 	switch name {
 	case scoreevent.FieldPostID:
 		return m.OldPostID(ctx)
+	case scoreevent.FieldSummaryID:
+		return m.OldSummaryID(ctx)
 	case scoreevent.FieldStatus:
 		return m.OldStatus(ctx)
 	case scoreevent.FieldError:
@@ -3344,6 +3604,13 @@ func (m *ScoreEventMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPostID(v)
+		return nil
+	case scoreevent.FieldSummaryID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSummaryID(v)
 		return nil
 	case scoreevent.FieldStatus:
 		v, ok := value.(string)
@@ -3446,6 +3713,12 @@ func (m *ScoreEventMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *ScoreEventMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(scoreevent.FieldPostID) {
+		fields = append(fields, scoreevent.FieldPostID)
+	}
+	if m.FieldCleared(scoreevent.FieldSummaryID) {
+		fields = append(fields, scoreevent.FieldSummaryID)
+	}
 	if m.FieldCleared(scoreevent.FieldError) {
 		fields = append(fields, scoreevent.FieldError)
 	}
@@ -3475,6 +3748,12 @@ func (m *ScoreEventMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ScoreEventMutation) ClearField(name string) error {
 	switch name {
+	case scoreevent.FieldPostID:
+		m.ClearPostID()
+		return nil
+	case scoreevent.FieldSummaryID:
+		m.ClearSummaryID()
+		return nil
 	case scoreevent.FieldError:
 		m.ClearError()
 		return nil
@@ -3500,6 +3779,9 @@ func (m *ScoreEventMutation) ResetField(name string) error {
 	switch name {
 	case scoreevent.FieldPostID:
 		m.ResetPostID()
+		return nil
+	case scoreevent.FieldSummaryID:
+		m.ResetSummaryID()
 		return nil
 	case scoreevent.FieldStatus:
 		m.ResetStatus()

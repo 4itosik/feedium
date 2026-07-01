@@ -16,6 +16,8 @@ const (
 	FieldID = "id"
 	// FieldPostID holds the string denoting the post_id field in the database.
 	FieldPostID = "post_id"
+	// FieldSummaryID holds the string denoting the summary_id field in the database.
+	FieldSummaryID = "summary_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldError holds the string denoting the error field in the database.
@@ -40,6 +42,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldPostID,
+	FieldSummaryID,
 	FieldStatus,
 	FieldError,
 	FieldAttemptCount,
@@ -84,6 +87,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByPostID orders the results by the post_id field.
 func ByPostID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPostID, opts...).ToFunc()
+}
+
+// BySummaryID orders the results by the summary_id field.
+func BySummaryID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSummaryID, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

@@ -61,3 +61,23 @@ func (mr *MockFeedServiceClientMockRecorder) V1ListFeed(ctx, in any, opts ...any
 	varargs := append([]any{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "V1ListFeed", reflect.TypeOf((*MockFeedServiceClient)(nil).V1ListFeed), varargs...)
 }
+
+// V1ReactToPost mocks base method.
+func (m *MockFeedServiceClient) V1ReactToPost(ctx context.Context, in *feedium.V1ReactToPostRequest, opts ...grpc.CallOption) (*feedium.V1ReactToPostResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "V1ReactToPost", varargs...)
+	ret0, _ := ret[0].(*feedium.V1ReactToPostResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// V1ReactToPost indicates an expected call of V1ReactToPost.
+func (mr *MockFeedServiceClientMockRecorder) V1ReactToPost(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "V1ReactToPost", reflect.TypeOf((*MockFeedServiceClient)(nil).V1ReactToPost), varargs...)
+}

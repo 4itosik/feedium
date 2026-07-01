@@ -141,28 +141,33 @@ function FeedCard({ item, sources, isRead, onRead, onReact }: FeedCardProps) {
           <span className="text-xs text-gray-400 truncate">{sourceLabel(sources, item.sourceId)}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => handleReact('like')}
-            title="Нравится"
-            className={`text-sm transition-colors ${
-              item.reaction === 'like'
-                ? 'text-green-600'
-                : 'text-gray-300 hover:text-green-500'
-            }`}
-          >
-            +
-          </button>
-          <button
-            onClick={() => handleReact('dislike')}
-            title="Не интересно — убрать из ленты"
-            className={`text-sm transition-colors ${
-              item.reaction === 'dislike'
-                ? 'text-red-500'
-                : 'text-gray-300 hover:text-red-400'
-            }`}
-          >
-            −
-          </button>
+          {/* Digests have no post to react to (FT-020 NS-01): hide reaction buttons. */}
+          {item.kind !== 'FEED_ITEM_KIND_DIGEST' && (
+            <>
+              <button
+                onClick={() => handleReact('like')}
+                title="Нравится"
+                className={`text-sm transition-colors ${
+                  item.reaction === 'like'
+                    ? 'text-green-600'
+                    : 'text-gray-300 hover:text-green-500'
+                }`}
+              >
+                +
+              </button>
+              <button
+                onClick={() => handleReact('dislike')}
+                title="Не интересно — убрать из ленты"
+                className={`text-sm transition-colors ${
+                  item.reaction === 'dislike'
+                    ? 'text-red-500'
+                    : 'text-gray-300 hover:text-red-400'
+                }`}
+              >
+                −
+              </button>
+            </>
+          )}
           {item.url && (
             <a
               href={item.url}

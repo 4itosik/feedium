@@ -1,5 +1,13 @@
 // Proto JSON transcoding: proto snake_case → JSON camelCase.
 
+// FeedItemKind discriminates a ranked-feed item between a post and a cumulative
+// digest (FT-020 CTR-02). For a digest, postId is the summary id and
+// author/url/reaction are empty.
+export type FeedItemKind =
+  | 'FEED_ITEM_KIND_UNSPECIFIED'
+  | 'FEED_ITEM_KIND_POST'
+  | 'FEED_ITEM_KIND_DIGEST'
+
 export interface FeedItem {
   postId: string
   sourceId: string
@@ -9,6 +17,7 @@ export interface FeedItem {
   score: number
   url: string
   reaction: string // "like" | "dislike" | ""
+  kind: FeedItemKind
 }
 
 export interface FeedResponse {

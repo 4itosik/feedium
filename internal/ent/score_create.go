@@ -27,6 +27,28 @@ func (_c *ScoreCreate) SetPostID(v uuid.UUID) *ScoreCreate {
 	return _c
 }
 
+// SetNillablePostID sets the "post_id" field if the given value is not nil.
+func (_c *ScoreCreate) SetNillablePostID(v *uuid.UUID) *ScoreCreate {
+	if v != nil {
+		_c.SetPostID(*v)
+	}
+	return _c
+}
+
+// SetSummaryID sets the "summary_id" field.
+func (_c *ScoreCreate) SetSummaryID(v uuid.UUID) *ScoreCreate {
+	_c.mutation.SetSummaryID(v)
+	return _c
+}
+
+// SetNillableSummaryID sets the "summary_id" field if the given value is not nil.
+func (_c *ScoreCreate) SetNillableSummaryID(v *uuid.UUID) *ScoreCreate {
+	if v != nil {
+		_c.SetSummaryID(*v)
+	}
+	return _c
+}
+
 // SetValue sets the "value" field.
 func (_c *ScoreCreate) SetValue(v float64) *ScoreCreate {
 	_c.mutation.SetValue(v)
@@ -132,9 +154,6 @@ func (_c *ScoreCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *ScoreCreate) check() error {
-	if _, ok := _c.mutation.PostID(); !ok {
-		return &ValidationError{Name: "post_id", err: errors.New(`ent: missing required field "Score.post_id"`)}
-	}
 	if _, ok := _c.mutation.Value(); !ok {
 		return &ValidationError{Name: "value", err: errors.New(`ent: missing required field "Score.value"`)}
 	}
@@ -189,7 +208,11 @@ func (_c *ScoreCreate) createSpec() (*Score, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.PostID(); ok {
 		_spec.SetField(score.FieldPostID, field.TypeUUID, value)
-		_node.PostID = value
+		_node.PostID = &value
+	}
+	if value, ok := _c.mutation.SummaryID(); ok {
+		_spec.SetField(score.FieldSummaryID, field.TypeUUID, value)
+		_node.SummaryID = &value
 	}
 	if value, ok := _c.mutation.Value(); ok {
 		_spec.SetField(score.FieldValue, field.TypeFloat64, value)

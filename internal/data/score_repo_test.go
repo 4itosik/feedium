@@ -30,7 +30,12 @@ func seedSource(t *testing.T, d *data.Data) string {
 }
 
 // seedPost creates a post for the source and returns its id.
-func seedPost(t *testing.T, d *data.Data, sourceID, externalID string, publishedAt time.Time) string {
+func seedPost(
+	t *testing.T,
+	d *data.Data,
+	sourceID, externalID string,
+	publishedAt time.Time,
+) string {
 	t.Helper()
 	repo := data.NewPostRepo(d)
 	saved, _, err := repo.Save(context.Background(), biz.Post{
@@ -51,7 +56,7 @@ func newScore(postID string, value float64) biz.Score {
 	now := time.Now()
 	return biz.Score{
 		ID:        uuid.Must(uuid.NewV7()).String(),
-		PostID:    postID,
+		PostID:    new(postID),
 		Value:     value,
 		Model:     "test-model",
 		CreatedAt: now,

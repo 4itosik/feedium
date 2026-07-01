@@ -57,6 +57,21 @@ func (mr *MockScoreOutboxRepoMockRecorder) ClaimOne(ctx, workerID, leaseTTL any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimOne", reflect.TypeOf((*MockScoreOutboxRepo)(nil).ClaimOne), ctx, workerID, leaseTTL)
 }
 
+// EnqueueDueDigests mocks base method.
+func (m *MockScoreOutboxRepo) EnqueueDueDigests(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueDueDigests", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnqueueDueDigests indicates an expected call of EnqueueDueDigests.
+func (mr *MockScoreOutboxRepoMockRecorder) EnqueueDueDigests(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueDueDigests", reflect.TypeOf((*MockScoreOutboxRepo)(nil).EnqueueDueDigests), ctx)
+}
+
 // EnqueueDuePosts mocks base method.
 func (m *MockScoreOutboxRepo) EnqueueDuePosts(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
@@ -70,6 +85,21 @@ func (m *MockScoreOutboxRepo) EnqueueDuePosts(ctx context.Context) (int, error) 
 func (mr *MockScoreOutboxRepoMockRecorder) EnqueueDuePosts(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueDuePosts", reflect.TypeOf((*MockScoreOutboxRepo)(nil).EnqueueDuePosts), ctx)
+}
+
+// EnqueueScoredDigests mocks base method.
+func (m *MockScoreOutboxRepo) EnqueueScoredDigests(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueScoredDigests", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnqueueScoredDigests indicates an expected call of EnqueueScoredDigests.
+func (mr *MockScoreOutboxRepoMockRecorder) EnqueueScoredDigests(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueScoredDigests", reflect.TypeOf((*MockScoreOutboxRepo)(nil).EnqueueScoredDigests), ctx)
 }
 
 // EnqueueScoredPosts mocks base method.

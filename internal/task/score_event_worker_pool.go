@@ -178,7 +178,7 @@ func (p *ScoreEventWorkerPool) sleep(ctx context.Context, d time.Duration) bool 
 }
 
 func (p *ScoreEventWorkerPool) processEvent(parent context.Context, workerID string, event biz.ScoreEvent) {
-	logger := p.log.With("worker", workerID, "score_event_id", event.ID, "post_id", event.PostID)
+	logger := p.log.With("worker", workerID, "score_event_id", event.ID, "entity_id", event.EntityID())
 	start := time.Now()
 
 	processCtx, processCancel := context.WithCancel(parent)

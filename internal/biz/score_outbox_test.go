@@ -19,12 +19,14 @@ import (
 func TestScoreUsecase_EnqueueDue(t *testing.T) {
 	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
 
-	t.Run("delegates to the outbox and returns the count", func(t *testing.T) {
+	t.Run("delegates to posts and digests and returns the summed count", func(t *testing.T) {
 		// Arrange
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		outboxRepo := mock.NewMockScoreOutboxRepo(ctrl)
 		outboxRepo.EXPECT().EnqueueDuePosts(gomock.Any()).Return(3, nil)
+		// FT-020 REQ-01: digests are enqueued on the same tick; the count sums both.
+		outboxRepo.EXPECT().EnqueueDueDigests(gomock.Any()).Return(2, nil)
 		uc := biz.NewScoreUsecase(
 			mock.NewMockScoreRepo(ctrl), mock.NewMockInterestRepo(ctrl),
 			mock.NewMockSummaryRepo(ctrl), outboxRepo, mock.NewMockScorer(ctrl),
@@ -36,7 +38,7 @@ func TestScoreUsecase_EnqueueDue(t *testing.T) {
 
 		// Assert
 		require.NoError(t, err)
-		assert.Equal(t, 3, n)
+		assert.Equal(t, 5, n)
 	})
 }
 

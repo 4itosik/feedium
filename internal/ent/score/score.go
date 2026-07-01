@@ -16,6 +16,8 @@ const (
 	FieldID = "id"
 	// FieldPostID holds the string denoting the post_id field in the database.
 	FieldPostID = "post_id"
+	// FieldSummaryID holds the string denoting the summary_id field in the database.
+	FieldSummaryID = "summary_id"
 	// FieldValue holds the string denoting the value field in the database.
 	FieldValue = "value"
 	// FieldModel holds the string denoting the model field in the database.
@@ -32,6 +34,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldPostID,
+	FieldSummaryID,
 	FieldValue,
 	FieldModel,
 	FieldCreatedAt,
@@ -72,6 +75,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByPostID orders the results by the post_id field.
 func ByPostID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPostID, opts...).ToFunc()
+}
+
+// BySummaryID orders the results by the summary_id field.
+func BySummaryID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSummaryID, opts...).ToFunc()
 }
 
 // ByValue orders the results by the value field.

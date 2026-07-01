@@ -65,7 +65,12 @@ func TestRelevance(t *testing.T) {
 		want      float64
 		wantErr   bool
 	}{
-		{name: "empty interest set yields lowest score", post: []float32{1, 0}, interests: nil, want: 0},
+		{
+			name:      "empty interest set yields lowest score",
+			post:      []float32{1, 0},
+			interests: nil,
+			want:      0,
+		},
 		{
 			name:      "max cosine over interests",
 			post:      []float32{1, 0},
@@ -116,7 +121,11 @@ func TestIsTransientScoreError(t *testing.T) {
 		{name: "nil is not transient", err: nil, want: false},
 		{name: "validation is permanent", err: biz.ErrScoreValidation, want: false},
 		{name: "context canceled is permanent", err: context.Canceled, want: false},
-		{name: "provider error is transient", err: errors.New("503 service unavailable"), want: true},
+		{
+			name: "provider error is transient",
+			err:  errors.New("503 service unavailable"),
+			want: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -144,7 +153,13 @@ func newScoreUsecase(
 ) *biz.ScoreUsecase {
 	t.Helper()
 	return biz.NewScoreUsecase(
-		scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, postEmbeddingRepo, &conf.Scoring{},
+		scoreRepo,
+		interestRepo,
+		summaryRepo,
+		outboxRepo,
+		scorer,
+		postEmbeddingRepo,
+		&conf.Scoring{},
 	)
 }
 
@@ -166,7 +181,7 @@ func TestScoreUsecase_ScorePost(t *testing.T) {
 		scorer.EXPECT().Model().Return("model-x")
 		interestRepo.EXPECT().ListInterestVectors(gomock.Any()).
 			Return([]biz.InterestVector{{Embedding: []float32{1, 0}, Model: "model-x"}}, nil)
-		postEmbeddingRepo.EXPECT().Get(gomock.Any(), "post-1").
+		postEmbeddingRepo.EXPECT().Get(gomock.Any(), biz.ScoreKey{PostID: new("post-1")}).
 			Return(biz.PostEmbedding{}, biz.ErrPostEmbeddingNotFound)
 		scorer.EXPECT().Embed(gomock.Any(), "a summary").Return([]float32{1, 0}, nil)
 		postEmbeddingRepo.EXPECT().Upsert(gomock.Any(), gomock.Any()).
@@ -176,14 +191,26 @@ func TestScoreUsecase_ScorePost(t *testing.T) {
 		scoreRepo.EXPECT().Upsert(gomock.Any(), gomock.Any()).
 			DoAndReturn(func(_ context.Context, s biz.Score) (biz.Score, error) {
 				assert.InDelta(t, 1.0, s.Value, 1e-9)
-				assert.Equal(t, "post-1", s.PostID)
+				require.NotNil(t, s.PostID)
+				assert.Equal(t, "post-1", *s.PostID)
 				s.ID = "score-1"
 				return s, nil
 			})
-		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, postEmbeddingRepo)
+		uc := newScoreUsecase(
+			t,
+			scoreRepo,
+			interestRepo,
+			summaryRepo,
+			outboxRepo,
+			scorer,
+			postEmbeddingRepo,
+		)
 
 		// Act
-		id, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+		id, err := uc.ScorePost(
+			context.Background(),
+			biz.ScoreEvent{ID: "e-1", PostID: new("post-1")},
+		)
 
 		// Assert
 		require.NoError(t, err)
@@ -210,10 +237,21 @@ func TestScoreUsecase_ScorePost(t *testing.T) {
 				s.ID = "score-1"
 				return s, nil
 			})
-		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, postEmbeddingRepo)
+		uc := newScoreUsecase(
+			t,
+			scoreRepo,
+			interestRepo,
+			summaryRepo,
+			outboxRepo,
+			scorer,
+			postEmbeddingRepo,
+		)
 
 		// Act
-		id, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+		id, err := uc.ScorePost(
+			context.Background(),
+			biz.ScoreEvent{ID: "e-1", PostID: new("post-1")},
+		)
 
 		// Assert
 		require.NoError(t, err)
@@ -231,10 +269,21 @@ func TestScoreUsecase_ScorePost(t *testing.T) {
 		scorer := mock.NewMockScorer(ctrl)
 		postEmbeddingRepo := mock.NewMockPostEmbeddingRepo(ctrl)
 		summaryRepo.EXPECT().ListByPost(gomock.Any(), "post-1").Return(nil, nil)
-		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, postEmbeddingRepo)
+		uc := newScoreUsecase(
+			t,
+			scoreRepo,
+			interestRepo,
+			summaryRepo,
+			outboxRepo,
+			scorer,
+			postEmbeddingRepo,
+		)
 
 		// Act
-		_, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+		_, err := uc.ScorePost(
+			context.Background(),
+			biz.ScoreEvent{ID: "e-1", PostID: new("post-1")},
+		)
 
 		// Assert
 		require.ErrorIs(t, err, biz.ErrScoreValidation)
@@ -256,13 +305,24 @@ func TestScoreUsecase_ScorePost(t *testing.T) {
 		scorer.EXPECT().Model().Return("model-x")
 		interestRepo.EXPECT().ListInterestVectors(gomock.Any()).
 			Return([]biz.InterestVector{{Embedding: []float32{1, 0}, Model: "model-x"}}, nil)
-		postEmbeddingRepo.EXPECT().Get(gomock.Any(), "post-1").
+		postEmbeddingRepo.EXPECT().Get(gomock.Any(), biz.ScoreKey{PostID: new("post-1")}).
 			Return(biz.PostEmbedding{}, biz.ErrPostEmbeddingNotFound)
 		scorer.EXPECT().Embed(gomock.Any(), "a summary").Return(nil, errors.New("503 provider"))
-		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, postEmbeddingRepo)
+		uc := newScoreUsecase(
+			t,
+			scoreRepo,
+			interestRepo,
+			summaryRepo,
+			outboxRepo,
+			scorer,
+			postEmbeddingRepo,
+		)
 
 		// Act
-		_, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: "post-1"})
+		_, err := uc.ScorePost(
+			context.Background(),
+			biz.ScoreEvent{ID: "e-1", PostID: new("post-1")},
+		)
 
 		// Assert
 		require.Error(t, err)
@@ -295,7 +355,7 @@ func TestScorePost_VectorReuse(t *testing.T) {
 		{
 			name: "reuse on matching hash and model",
 			stored: biz.PostEmbedding{
-				PostID: postID, Vector: []float32{1, 0}, Model: model, InputHash: matchingHash,
+				PostID: new(postID), Vector: []float32{1, 0}, Model: model, InputHash: matchingHash,
 			},
 			embedTimes:    0,
 			upsertTimes:   0,
@@ -304,7 +364,7 @@ func TestScorePost_VectorReuse(t *testing.T) {
 		{
 			name: "recompute on input hash change",
 			stored: biz.PostEmbedding{
-				PostID: postID, Vector: []float32{0, 1}, Model: model, InputHash: "stale-hash",
+				PostID: new(postID), Vector: []float32{0, 1}, Model: model, InputHash: "stale-hash",
 			},
 			embedTimes:    1,
 			upsertTimes:   1,
@@ -313,7 +373,7 @@ func TestScorePost_VectorReuse(t *testing.T) {
 		{
 			name: "recompute on post model change",
 			stored: biz.PostEmbedding{
-				PostID: postID, Vector: []float32{0, 1}, Model: "old", InputHash: matchingHash,
+				PostID: new(postID), Vector: []float32{0, 1}, Model: "old", InputHash: matchingHash,
 			},
 			embedTimes:    1,
 			upsertTimes:   1,
@@ -354,16 +414,20 @@ func TestScorePost_VectorReuse(t *testing.T) {
 				Return([]biz.InterestVector{{Embedding: []float32{1, 0}, Model: tt.interestModel}}, nil)
 
 			if !tt.wantValidErr {
-				postEmbeddingRepo.EXPECT().Get(gomock.Any(), postID).Return(tt.stored, tt.getErr)
+				postEmbeddingRepo.EXPECT().
+					Get(gomock.Any(), biz.ScoreKey{PostID: new(postID)}).
+					Return(tt.stored, tt.getErr)
 				scorer.EXPECT().Embed(gomock.Any(), summaryText).
 					Return([]float32{1, 0}, nil).Times(tt.embedTimes)
 				postEmbeddingRepo.EXPECT().Upsert(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, pe biz.PostEmbedding) (biz.PostEmbedding, error) {
 						assert.Equal(t, matchingHash, pe.InputHash)
 						assert.Equal(t, model, pe.Model)
-						assert.Equal(t, postID, pe.PostID)
+						require.NotNil(t, pe.PostID)
+						assert.Equal(t, postID, *pe.PostID)
 						return pe, nil
-					}).Times(tt.upsertTimes)
+					}).
+					Times(tt.upsertTimes)
 				scoreRepo.EXPECT().Upsert(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ context.Context, s biz.Score) (biz.Score, error) {
 						assert.InDelta(t, 1.0, s.Value, 1e-9)
@@ -372,10 +436,21 @@ func TestScorePost_VectorReuse(t *testing.T) {
 					})
 			}
 
-			uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, postEmbeddingRepo)
+			uc := newScoreUsecase(
+				t,
+				scoreRepo,
+				interestRepo,
+				summaryRepo,
+				outboxRepo,
+				scorer,
+				postEmbeddingRepo,
+			)
 
 			// Act
-			_, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: postID})
+			_, err := uc.ScorePost(
+				context.Background(),
+				biz.ScoreEvent{ID: "e-1", PostID: new(postID)},
+			)
 
 			// Assert
 			if tt.wantValidErr {
@@ -402,19 +477,27 @@ func TestScorePost_VectorReuse(t *testing.T) {
 		scorer.EXPECT().Model().Return(model)
 		interestRepo.EXPECT().ListInterestVectors(gomock.Any()).
 			Return([]biz.InterestVector{{Embedding: []float32{1, 0}, Model: model}}, nil)
-		postEmbeddingRepo.EXPECT().Get(gomock.Any(), postID).
+		postEmbeddingRepo.EXPECT().Get(gomock.Any(), biz.ScoreKey{PostID: new(postID)}).
 			Return(biz.PostEmbedding{}, errors.New("db connection refused"))
 		scorer.EXPECT().Embed(gomock.Any(), gomock.Any()).Times(0)
 		postEmbeddingRepo.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-		uc := newScoreUsecase(t, scoreRepo, interestRepo, summaryRepo, outboxRepo, scorer, postEmbeddingRepo)
+		uc := newScoreUsecase(
+			t,
+			scoreRepo,
+			interestRepo,
+			summaryRepo,
+			outboxRepo,
+			scorer,
+			postEmbeddingRepo,
+		)
 
 		// Act
-		_, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: postID})
+		_, err := uc.ScorePost(context.Background(), biz.ScoreEvent{ID: "e-1", PostID: new(postID)})
 
 		// Assert
 		require.Error(t, err)
-		require.ErrorContains(t, err, "get post embedding")
+		require.ErrorContains(t, err, "get embedding")
 		assert.NotErrorIs(t, err, biz.ErrScoreValidation)
 	})
 }

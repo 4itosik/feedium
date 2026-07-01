@@ -76,19 +76,19 @@ func init() {
 	postembeddingFields := schema.PostEmbedding{}.Fields()
 	_ = postembeddingFields
 	// postembeddingDescModel is the schema descriptor for model field.
-	postembeddingDescModel := postembeddingFields[3].Descriptor()
+	postembeddingDescModel := postembeddingFields[4].Descriptor()
 	// postembedding.ModelValidator is a validator for the "model" field. It is called by the builders before save.
 	postembedding.ModelValidator = postembeddingDescModel.Validators[0].(func(string) error)
 	// postembeddingDescInputHash is the schema descriptor for input_hash field.
-	postembeddingDescInputHash := postembeddingFields[4].Descriptor()
+	postembeddingDescInputHash := postembeddingFields[5].Descriptor()
 	// postembedding.InputHashValidator is a validator for the "input_hash" field. It is called by the builders before save.
 	postembedding.InputHashValidator = postembeddingDescInputHash.Validators[0].(func(string) error)
 	// postembeddingDescCreatedAt is the schema descriptor for created_at field.
-	postembeddingDescCreatedAt := postembeddingFields[5].Descriptor()
+	postembeddingDescCreatedAt := postembeddingFields[6].Descriptor()
 	// postembedding.DefaultCreatedAt holds the default value on creation for the created_at field.
 	postembedding.DefaultCreatedAt = postembeddingDescCreatedAt.Default.(func() time.Time)
 	// postembeddingDescUpdatedAt is the schema descriptor for updated_at field.
-	postembeddingDescUpdatedAt := postembeddingFields[6].Descriptor()
+	postembeddingDescUpdatedAt := postembeddingFields[7].Descriptor()
 	// postembedding.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	postembedding.DefaultUpdatedAt = postembeddingDescUpdatedAt.Default.(func() time.Time)
 	// postembedding.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -100,15 +100,15 @@ func init() {
 	scoreFields := schema.Score{}.Fields()
 	_ = scoreFields
 	// scoreDescModel is the schema descriptor for model field.
-	scoreDescModel := scoreFields[3].Descriptor()
+	scoreDescModel := scoreFields[4].Descriptor()
 	// score.ModelValidator is a validator for the "model" field. It is called by the builders before save.
 	score.ModelValidator = scoreDescModel.Validators[0].(func(string) error)
 	// scoreDescCreatedAt is the schema descriptor for created_at field.
-	scoreDescCreatedAt := scoreFields[4].Descriptor()
+	scoreDescCreatedAt := scoreFields[5].Descriptor()
 	// score.DefaultCreatedAt holds the default value on creation for the created_at field.
 	score.DefaultCreatedAt = scoreDescCreatedAt.Default.(func() time.Time)
 	// scoreDescUpdatedAt is the schema descriptor for updated_at field.
-	scoreDescUpdatedAt := scoreFields[5].Descriptor()
+	scoreDescUpdatedAt := scoreFields[6].Descriptor()
 	// score.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	score.DefaultUpdatedAt = scoreDescUpdatedAt.Default.(func() time.Time)
 	// score.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -120,17 +120,17 @@ func init() {
 	scoreeventFields := schema.ScoreEvent{}.Fields()
 	_ = scoreeventFields
 	// scoreeventDescStatus is the schema descriptor for status field.
-	scoreeventDescStatus := scoreeventFields[2].Descriptor()
+	scoreeventDescStatus := scoreeventFields[3].Descriptor()
 	// scoreevent.DefaultStatus holds the default value on creation for the status field.
 	scoreevent.DefaultStatus = scoreeventDescStatus.Default.(string)
 	// scoreevent.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	scoreevent.StatusValidator = scoreeventDescStatus.Validators[0].(func(string) error)
 	// scoreeventDescAttemptCount is the schema descriptor for attempt_count field.
-	scoreeventDescAttemptCount := scoreeventFields[4].Descriptor()
+	scoreeventDescAttemptCount := scoreeventFields[5].Descriptor()
 	// scoreevent.DefaultAttemptCount holds the default value on creation for the attempt_count field.
 	scoreevent.DefaultAttemptCount = scoreeventDescAttemptCount.Default.(int)
 	// scoreeventDescCreatedAt is the schema descriptor for created_at field.
-	scoreeventDescCreatedAt := scoreeventFields[8].Descriptor()
+	scoreeventDescCreatedAt := scoreeventFields[9].Descriptor()
 	// scoreevent.DefaultCreatedAt holds the default value on creation for the created_at field.
 	scoreevent.DefaultCreatedAt = scoreeventDescCreatedAt.Default.(func() time.Time)
 	// scoreeventDescID is the schema descriptor for id field.

@@ -39,7 +39,7 @@ func seedScore(t *testing.T, d *data.Data, postID string, value float64) {
 	now := time.Now()
 	_, err := repo.Upsert(context.Background(), biz.Score{
 		ID:        uuid.Must(uuid.NewV7()).String(),
-		PostID:    postID,
+		PostID:    new(postID),
 		Value:     value,
 		Model:     "test-model",
 		CreatedAt: now,
@@ -75,9 +75,11 @@ func TestIntegration_ScoreOutbox_EnqueueScoredPostsIdempotent(t *testing.T) {
 	assert.Equal(t, 0, second, "an active event blocks re-enqueue (INV-04)")
 
 	var active int
-	row := d.DB.QueryRowContext(ctx,
+	row := d.DB.QueryRowContext(
+		ctx,
 		`SELECT count(*) FROM score_events WHERE post_id = $1 AND status IN ('pending', 'processing')`,
-		postID)
+		postID,
+	)
 	require.NoError(t, row.Scan(&active))
 	assert.Equal(t, 1, active, "exactly one active re-score event for the scored post")
 
@@ -109,8 +111,12 @@ func TestIntegration_ScoreOutbox_EnqueueScoredPostsReenqueuesAfterCompletion(t *
 
 	claimed, err := repo.ClaimOne(ctx, "worker-1", 5*time.Minute)
 	require.NoError(t, err)
-	require.Equal(t, postID, claimed.PostID)
-	require.NoError(t, repo.FinalizeWithLease(ctx, claimed.ID, "worker-1", biz.ScoreEventStatusCompleted, nil))
+	require.NotNil(t, claimed.PostID)
+	require.Equal(t, postID, *claimed.PostID)
+	require.NoError(
+		t,
+		repo.FinalizeWithLease(ctx, claimed.ID, "worker-1", biz.ScoreEventStatusCompleted, nil),
+	)
 
 	// With no active event remaining, the scored post must be re-enqueueable —
 	// this is the core re-scoring path STEP-07's interest-change trigger relies on.
@@ -121,9 +127,11 @@ func TestIntegration_ScoreOutbox_EnqueueScoredPostsReenqueuesAfterCompletion(t *
 	assert.Equal(t, 1, second, "completed event no longer blocks re-enqueue (INV-04)")
 
 	var active int
-	row := d.DB.QueryRowContext(ctx,
+	row := d.DB.QueryRowContext(
+		ctx,
 		`SELECT count(*) FROM score_events WHERE post_id = $1 AND status IN ('pending', 'processing')`,
-		postID)
+		postID,
+	)
 	require.NoError(t, row.Scan(&active))
 	assert.Equal(t, 1, active, "exactly one active re-score event after completion")
 }
@@ -168,9 +176,16 @@ func TestIntegration_ScoreOutbox_ClaimAndFinalize(t *testing.T) {
 	// Act
 	claimed, err := repo.ClaimOne(ctx, "worker-1", 5*time.Minute)
 	require.NoError(t, err)
-	require.Equal(t, postID, claimed.PostID)
+	require.NotNil(t, claimed.PostID)
+	require.Equal(t, postID, *claimed.PostID)
 	require.Equal(t, 1, claimed.AttemptCount)
-	finErr := repo.FinalizeWithLease(ctx, claimed.ID, "worker-1", biz.ScoreEventStatusCompleted, nil)
+	finErr := repo.FinalizeWithLease(
+		ctx,
+		claimed.ID,
+		"worker-1",
+		biz.ScoreEventStatusCompleted,
+		nil,
+	)
 
 	// Assert
 	require.NoError(t, finErr)
