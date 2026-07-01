@@ -16,8 +16,9 @@ status: active
 
 ## Records
 
-- [`ADR-001`](ADR-001-scoring-method-and-vector-storage.md) — Scoring method & vector storage for AI relevance scoring (FT-010). `decision_status: accepted` (2026-06-02): embeddings + косинус, скаляр `[0,1]` + кэш интересов в JSONB без pgvector, агрегация max. **Частично superseded [`ADR-002`](ADR-002-post-embedding-persistence.md)**: `DEC-02` (хранение post-embedding) и `NS-05` (ретро-пере-скоринг) пересмотрены; остальные решения остаются `accepted`.
+- [`ADR-001`](ADR-001-scoring-method-and-vector-storage.md) — Scoring method & vector storage for AI relevance scoring (FT-010). `decision_status: accepted` (2026-06-02): embeddings + косинус, скаляр `[0,1]` + кэш интересов в JSONB без pgvector, агрегация max. **Частично superseded [`ADR-002`](ADR-002-post-embedding-persistence.md)** (хранение post-embedding, ретро-пере-скоринг) **и [`ADR-003`](ADR-003-cumulative-digest-scoring.md)** (score больше не привязан только к посту); метод/формат/агрегация остаются `accepted`.
 - [`ADR-002`](ADR-002-post-embedding-persistence.md) — Post embedding persistence & interest-change re-scoring (FT-013). `decision_status: accepted` (2026-06-07): пост-вектор персистится в таблице `post_embedding` (JSONB, без pgvector, образ БД неизменен), инвалидация по `(input_hash, model)`, guard против кросс-модельного косинуса, авто-переоценка существующих постов при смене интересов. Частично supersede `ADR-001` (`DEC-02`, `NS-05`).
+- [`ADR-003`](ADR-003-cumulative-digest-scoring.md) — Cumulative digest scoring (FT-020). `decision_status: accepted` (2026-07-01): cumulative source-level дайджесты (`summaries.post_id IS NULL`) получают собственный score/embedding-кэш через новый nullable `summary_id`-ключ на `scores`/`score_events`/`post_embeddings` (партнёр к существующему `post_id`), каждый дайджест скорится и ранжируется независимо. `ListRanked` — `UNION` пост- и digest-веток; `FeedItem` получает `kind` (`POST`/`DIGEST`). OpenClaw не меняется — подхватывает через существующий `/v1/feed`. Частично supersede `ADR-001` (инвариант «score = один пост»).
 
 
 ## Naming
