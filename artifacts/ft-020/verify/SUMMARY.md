@@ -1,13 +1,13 @@
 # FT-020 Verification Summary
 
-Local verification complete. Prod verification (CHK-04) pending operator deploy (AG-01).
+All checks PASS, including prod verification (CHK-04) after deploy on 2026-07-01.
 
 | Check | Covers | Result | Evidence |
 | --- | --- | --- | --- |
 | CHK-01 | EC-01/03, SC-01/02 | PASS — biz+data+task -race all ok | artifacts/ft-020/verify/chk-01/go-test-race.log |
 | CHK-02 | EC-03 | PASS — all FT-020 files lint-clean (residual = pre-existing non-FT-020 files) | artifacts/ft-020/verify/chk-02/{make-lint.log,lint-analysis.txt} |
 | CHK-03 | REQ-01, CON-02 | PASS — make test green; goose applies 3 FT-020 migrations to fresh+seeded PG | artifacts/ft-020/verify/chk-03/{make-test.log,migration-applies.txt} |
-| CHK-04 | EC-02/04, SC-01 | PENDING — requires prod deploy (AG-01) then curl /v1/feed | artifacts/ft-020/verify/chk-04/ (empty) |
+| CHK-04 | EC-02/04, SC-01 | PASS — deployed to prod (COMPOSE_FILE=docker-compose.server.yml); 3 migrations applied to core_storage_pg; /v1/feed returns kind=FEED_ITEM_KIND_DIGEST (score 0.63, empty author/url/reaction) | artifacts/ft-020/verify/chk-04/{v1-feed-raw.json,sample-digest-item.json,prod-migrate.log} |
 | CHK-05 | EC-04, MET-02 | PASS — SKILL.md untouched | artifacts/ft-020/verify/chk-05/skill-unchanged.txt |
 
 ## New FT-020 tests (acceptance)

@@ -9,7 +9,7 @@ derived_from:
   - ../FT-010-ai-scoring/feature.md
   - ../../prd/PRD-001-mvp.md
 status: active
-delivery_status: in_progress
+delivery_status: done
 ---
 
 # FT-020: Cumulative Digest Scoring

@@ -5,7 +5,7 @@ doc_function: derived
 purpose: "Execution-план реализации FT-020: cumulative source-level дайджесты получают собственный score/embedding и попадают в /v1/feed. Фиксирует discovery context, шаги, риски и test strategy без переопределения canonical feature-фактов."
 derived_from:
   - feature.md
-status: active
+status: archived
 ---
 
 # План имплементации
@@ -214,8 +214,8 @@ simplify review (`STEP-17`) выполнен; прод-verify (`STEP-18`) под
 | `STEP-14..15` proto `kind`/service map/UI hide reactions | done — `CP-4` (proto regen, `go build`, `ui` `tsc` build green) |
 | `STEP-16` verify | `CHK-01` PASS, `CHK-02` PASS (FT-020 files clean; residual pre-existing), `CHK-03` PASS, `CHK-05` PASS |
 | `STEP-17` simplify review | done |
-| `STEP-18` prod-verify `CHK-04` | **PENDING `AG-01`** — требует деплоя миграции на прод (`COMPOSE_FILE=docker-compose.server.yml`, `docker restart`), затем `curl /v1/feed` |
-| `STEP-19` close (feature.md→done, plan→archived) | blocked on `STEP-18` |
+| `STEP-18` prod-verify `CHK-04` | done — деплой `openclaw@oc` (`COMPOSE_FILE=docker-compose.server.yml`) 2026-07-01 17:10Z; 3 миграции применены к `core_storage_pg` (v20260701120200); `/v1/feed` отдаёт `kind=FEED_ITEM_KIND_DIGEST` (score 0.63); backlog скорится worker pool'ом (`EnqueueDueDigests`) |
+| `STEP-19` close (feature.md→done, plan→archived) | done |
 
 `OQ-01` resolved: `ScoreEvent.PostID`→`*string`; `task/score_event_worker_pool.go` лог использует
 новый `ScoreEvent.EntityID()` helper (одна строка, поле лога `post_id`→`entity_id`).

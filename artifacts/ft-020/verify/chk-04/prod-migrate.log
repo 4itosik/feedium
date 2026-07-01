@@ -1,0 +1,4 @@
+migrate-1  | 2026/07/01 17:10:22 OK   20260701120000_scores_summary_id.sql (330.73ms)
+migrate-1  | 2026/07/01 17:10:22 OK   20260701120100_score_events_summary_id.sql (270.09ms)
+migrate-1  | 2026/07/01 17:10:22 OK   20260701120200_post_embeddings_summary_id.sql (368.3ms)
+migrate-1  | 2026/07/01 17:10:22 goose: successfully migrated database to version: 20260701120200
