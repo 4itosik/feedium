@@ -1,0 +1,84 @@
+golangci-lint run ./... -c .golangci.yml
+level=warning msg="[runner/exclusion_rules] Skipped 0 issues by rules: [Text: \"package comment should be of the form \\\".+\\\"\", Source: \"// ?(nolint|TODO)\", Linters: \"revive\"]"
+level=warning msg="[runner/exclusion_rules] Skipped 0 issues by rules: [Text: \"comment on exported \\\\S+ \\\\S+ should be of the form \\\".+\\\"\", Source: \"// ?(nolint|TODO)\", Linters: \"revive, staticcheck\"]"
+level=warning msg="[runner/exclusion_rules] Skipped 0 issues by rules: [Source: \"TODO\", Linters: \"godot\"]"
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:1:1: the average complexity for the package flatted is 10.142857, max is 10.000000 (cyclop)
+package flatted
+^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:65:3: missing cases in switch of type reflect.Kind: reflect.Invalid, reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128, reflect.Chan, reflect.Func, reflect.Interface, reflect.Pointer|reflect.Ptr, reflect.String, reflect.UnsafePointer (exhaustive)
+		switch rv.Kind() {
+		^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:16:1: cognitive complexity 75 of func `Stringify` is high (> 20) (gocognit)
+func Stringify(value any, replacer any, space any) (string, error) {
+^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:145:1: cognitive complexity 25 of func `Parse` is high (> 20) (gocognit)
+func Parse(text string, reviver func(key string, value any) any) (any, error) {
+^
+internal/server/static.go:9:1: text "http.FileSystem" should be replaced with "[http.FileSystem]" to link to stdlib type (godoclint)
+// NewSPAHandler wraps an http.FileSystem so that:
+^
+ui/ui.go:13:1: text "http.FileSystem" should be replaced with "[http.FileSystem]" to link to stdlib type (godoclint)
+// Assets returns an http.FileSystem rooted at the dist/ directory.
+^
+internal/server/static.go:23:4: G104: Errors unhandled (gosec)
+			f.Close()
+			^
+internal/data/telegram_session_storage.go:61:8: shadow: declaration of "err" shadows declaration at line 52 (govet)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+	      ^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:128:15: shadow: declaration of "ok" shadows declaration at line 126 (govet)
+	} else if i, ok := space.(int); ok {
+	             ^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:212:15: shadow: declaration of "ok" shadows declaration at line 208 (govet)
+	} else if m, ok := value.(map[string]any); ok {
+	             ^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:228:11: shadow: declaration of "ok" shadows declaration at line 226 (govet)
+			if fi, ok := v.(flattedIndex); ok {
+			       ^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:237:11: shadow: declaration of "ok" shadows declaration at line 235 (govet)
+			if fi, ok := v.(flattedIndex); ok {
+			       ^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:68:4: for loop can be changed to use an integer range (Go 1.22+)
+Because the key is returned by a function or method, take care to consider side effects. (intrange)
+			for i := 0; i < rv.Len(); i++ {
+			^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:100:4: for loop can be changed to use an integer range (Go 1.22+)
+Because the key is returned by a function or method, take care to consider side effects. (intrange)
+			for i := 0; i < rv.NumField(); i++ {
+			^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:119:2: for loop can be changed to use an integer range (Go 1.22+) (intrange)
+	for i := 0; i < len(input); i++ {
+	^
+internal/data/telegram_session_storage.go:103:22: Magic number: 32, in <condition> detected (mnd)
+	if len(keyBytes) != 32 {
+	                    ^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:84:6: slicescontains: Loop can be simplified using slices.Contains (modernize)
+					for _, w := range whitelist {
+					^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:35:1: `if kind == reflect.String || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Ptr` has complex nested blocks (complexity: 6) (nestif)
+		if kind == reflect.String || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Ptr {
+^
+ui/node_modules/flatted/golang/pkg/flatted/flatted.go:186:3: return both a `nil` error and an invalid value: use a sentinel error instead (nilnil)
+		return nil, nil
+		^
+internal/data/telegram_session_storage.go:78:15: error-format: fmt.Errorf can be replaced with errors.New (perfsprint)
+		return nil, fmt.Errorf("session file too short to contain nonce")
+		            ^
+internal/data/telegram_session_storage_test.go:1:9: package should be `data_test` instead of `data` (testpackage)
+package data
+        ^
+21 issues:
+* cyclop: 1
+* exhaustive: 1
+* gocognit: 2
+* godoclint: 2
+* gosec: 1
+* govet: 5
+* intrange: 3
+* mnd: 1
+* modernize: 1
+* nestif: 1
+* nilnil: 1
+* perfsprint: 1
+* testpackage: 1
+make: *** [lint] Error 1

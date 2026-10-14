@@ -714,12 +714,16 @@ func (x *SummaryReaper) GetGrace() *durationpb.Duration {
 	return nil
 }
 
+// SummaryLLM configures the summarization LLM (FT-005, FT-021). `provider` is
+// the default entry of `providers`; `mode_providers` overrides it per
+// ProcessingMode (keys: self_contained, cumulative).
 type SummaryLLM struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
 	Timeout       *durationpb.Duration           `protobuf:"bytes,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	MaxRetries    int32                          `protobuf:"varint,2,opt,name=max_retries,json=maxRetries,proto3" json:"max_retries,omitempty"`
 	Provider      string                         `protobuf:"bytes,3,opt,name=provider,proto3" json:"provider,omitempty"`
 	Providers     map[string]*SummaryLLMProvider `protobuf:"bytes,4,rep,name=providers,proto3" json:"providers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ModeProviders map[string]string              `protobuf:"bytes,5,rep,name=mode_providers,json=modeProviders,proto3" json:"mode_providers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -782,11 +786,25 @@ func (x *SummaryLLM) GetProviders() map[string]*SummaryLLMProvider {
 	return nil
 }
 
+func (x *SummaryLLM) GetModeProviders() map[string]string {
+	if x != nil {
+		return x.ModeProviders
+	}
+	return nil
+}
+
+// SummaryLLMProvider is one named LLM endpoint. `protocol` selects the wire
+// API: "openai" (OpenAI-compatible /chat/completions, e.g. OpenRouter; the
+// default when empty) or "anthropic" (Claude Messages API). max_tokens and
+// effort apply to the anthropic protocol only.
 type SummaryLLMProvider struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ApiKey        string                 `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
 	BaseUrl       string                 `protobuf:"bytes,2,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
 	Model         string                 `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	Protocol      string                 `protobuf:"bytes,4,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	MaxTokens     int32                  `protobuf:"varint,5,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
+	Effort        string                 `protobuf:"bytes,6,opt,name=effort,proto3" json:"effort,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -838,6 +856,27 @@ func (x *SummaryLLMProvider) GetBaseUrl() string {
 func (x *SummaryLLMProvider) GetModel() string {
 	if x != nil {
 		return x.Model
+	}
+	return ""
+}
+
+func (x *SummaryLLMProvider) GetProtocol() string {
+	if x != nil {
+		return x.Protocol
+	}
+	return ""
+}
+
+func (x *SummaryLLMProvider) GetMaxTokens() int32 {
+	if x != nil {
+		return x.MaxTokens
+	}
+	return 0
+}
+
+func (x *SummaryLLMProvider) GetEffort() string {
+	if x != nil {
+		return x.Effort
 	}
 	return ""
 }
@@ -1593,21 +1632,29 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\rpoll_interval\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\fpollInterval\"w\n" +
 	"\rSummaryReaper\x125\n" +
 	"\binterval\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\binterval\x12/\n" +
-	"\x05grace\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x05grace\"\x95\x02\n" +
+	"\x05grace\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x05grace\"\xa3\x03\n" +
 	"\n" +
 	"SummaryLLM\x123\n" +
 	"\atimeout\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12\x1f\n" +
 	"\vmax_retries\x18\x02 \x01(\x05R\n" +
 	"maxRetries\x12\x1a\n" +
 	"\bprovider\x18\x03 \x01(\tR\bprovider\x12=\n" +
-	"\tproviders\x18\x04 \x03(\v2\x1f.conf.SummaryLLM.ProvidersEntryR\tproviders\x1aV\n" +
+	"\tproviders\x18\x04 \x03(\v2\x1f.conf.SummaryLLM.ProvidersEntryR\tproviders\x12J\n" +
+	"\x0emode_providers\x18\x05 \x03(\v2#.conf.SummaryLLM.ModeProvidersEntryR\rmodeProviders\x1aV\n" +
 	"\x0eProvidersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
-	"\x05value\x18\x02 \x01(\v2\x18.conf.SummaryLLMProviderR\x05value:\x028\x01\"^\n" +
+	"\x05value\x18\x02 \x01(\v2\x18.conf.SummaryLLMProviderR\x05value:\x028\x01\x1a@\n" +
+	"\x12ModeProvidersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb1\x01\n" +
 	"\x12SummaryLLMProvider\x12\x17\n" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
 	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12\x14\n" +
-	"\x05model\x18\x03 \x01(\tR\x05model\"u\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\x12\x1a\n" +
+	"\bprotocol\x18\x04 \x01(\tR\bprotocol\x12\x1d\n" +
+	"\n" +
+	"max_tokens\x18\x05 \x01(\x05R\tmaxTokens\x12\x16\n" +
+	"\x06effort\x18\x06 \x01(\tR\x06effort\"u\n" +
 	"\x11SummaryCumulative\x128\n" +
 	"\n" +
 	"max_window\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\tmaxWindow\x12&\n" +
@@ -1674,7 +1721,7 @@ func file_internal_conf_conf_proto_rawDescGZIP() []byte {
 	return file_internal_conf_conf_proto_rawDescData
 }
 
-var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_internal_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_internal_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),                // 0: conf.Bootstrap
 	(*Server)(nil),                   // 1: conf.Server
@@ -1701,8 +1748,9 @@ var file_internal_conf_conf_proto_goTypes = []any{
 	(*CollectorPoll)(nil),            // 22: conf.CollectorPoll
 	(*TelegramCollector)(nil),        // 23: conf.TelegramCollector
 	nil,                              // 24: conf.SummaryLLM.ProvidersEntry
-	nil,                              // 25: conf.ScoringEmbedding.ProvidersEntry
-	(*durationpb.Duration)(nil),      // 26: google.protobuf.Duration
+	nil,                              // 25: conf.SummaryLLM.ModeProvidersEntry
+	nil,                              // 26: conf.ScoringEmbedding.ProvidersEntry
+	(*durationpb.Duration)(nil),      // 27: google.protobuf.Duration
 }
 var file_internal_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: conf.Bootstrap.server:type_name -> conf.Server
@@ -1712,8 +1760,8 @@ var file_internal_conf_conf_proto_depIdxs = []int32{
 	15, // 4: conf.Bootstrap.scoring:type_name -> conf.Scoring
 	2,  // 5: conf.Server.http:type_name -> conf.HTTP
 	3,  // 6: conf.Server.grpc:type_name -> conf.GRPC
-	26, // 7: conf.HTTP.timeout:type_name -> google.protobuf.Duration
-	26, // 8: conf.GRPC.timeout:type_name -> google.protobuf.Duration
+	27, // 7: conf.HTTP.timeout:type_name -> google.protobuf.Duration
+	27, // 8: conf.GRPC.timeout:type_name -> google.protobuf.Duration
 	5,  // 9: conf.Data.database:type_name -> conf.Database
 	7,  // 10: conf.Summary.worker:type_name -> conf.SummaryWorker
 	8,  // 11: conf.Summary.cron:type_name -> conf.SummaryCron
@@ -1722,47 +1770,48 @@ var file_internal_conf_conf_proto_depIdxs = []int32{
 	14, // 14: conf.Summary.outbox:type_name -> conf.SummaryOutbox
 	9,  // 15: conf.Summary.source_scheduler:type_name -> conf.SummarySourceScheduler
 	10, // 16: conf.Summary.reaper:type_name -> conf.SummaryReaper
-	26, // 17: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
-	26, // 18: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
-	26, // 19: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
-	26, // 20: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
-	26, // 21: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
-	26, // 22: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
-	26, // 23: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
-	26, // 24: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
-	26, // 25: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
-	26, // 26: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
-	26, // 27: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
+	27, // 17: conf.SummaryWorker.poll_interval:type_name -> google.protobuf.Duration
+	27, // 18: conf.SummaryWorker.lease_ttl:type_name -> google.protobuf.Duration
+	27, // 19: conf.SummaryWorker.heartbeat_interval:type_name -> google.protobuf.Duration
+	27, // 20: conf.SummaryWorker.graceful_timeout:type_name -> google.protobuf.Duration
+	27, // 21: conf.SummaryWorker.backoff_base:type_name -> google.protobuf.Duration
+	27, // 22: conf.SummaryWorker.backoff_max:type_name -> google.protobuf.Duration
+	27, // 23: conf.SummaryCron.interval:type_name -> google.protobuf.Duration
+	27, // 24: conf.SummarySourceScheduler.poll_interval:type_name -> google.protobuf.Duration
+	27, // 25: conf.SummaryReaper.interval:type_name -> google.protobuf.Duration
+	27, // 26: conf.SummaryReaper.grace:type_name -> google.protobuf.Duration
+	27, // 27: conf.SummaryLLM.timeout:type_name -> google.protobuf.Duration
 	24, // 28: conf.SummaryLLM.providers:type_name -> conf.SummaryLLM.ProvidersEntry
-	26, // 29: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
-	26, // 30: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
-	16, // 31: conf.Scoring.worker:type_name -> conf.ScoringWorker
-	17, // 32: conf.Scoring.scheduler:type_name -> conf.ScoringScheduler
-	18, // 33: conf.Scoring.reaper:type_name -> conf.ScoringReaper
-	19, // 34: conf.Scoring.embedding:type_name -> conf.ScoringEmbedding
-	26, // 35: conf.ScoringWorker.poll_interval:type_name -> google.protobuf.Duration
-	26, // 36: conf.ScoringWorker.lease_ttl:type_name -> google.protobuf.Duration
-	26, // 37: conf.ScoringWorker.heartbeat_interval:type_name -> google.protobuf.Duration
-	26, // 38: conf.ScoringWorker.graceful_timeout:type_name -> google.protobuf.Duration
-	26, // 39: conf.ScoringWorker.backoff_base:type_name -> google.protobuf.Duration
-	26, // 40: conf.ScoringWorker.backoff_max:type_name -> google.protobuf.Duration
-	26, // 41: conf.ScoringWorker.event_ttl:type_name -> google.protobuf.Duration
-	26, // 42: conf.ScoringScheduler.poll_interval:type_name -> google.protobuf.Duration
-	26, // 43: conf.ScoringReaper.interval:type_name -> google.protobuf.Duration
-	26, // 44: conf.ScoringReaper.grace:type_name -> google.protobuf.Duration
-	26, // 45: conf.ScoringEmbedding.timeout:type_name -> google.protobuf.Duration
-	25, // 46: conf.ScoringEmbedding.providers:type_name -> conf.ScoringEmbedding.ProvidersEntry
-	22, // 47: conf.Collectors.rss:type_name -> conf.CollectorPoll
-	22, // 48: conf.Collectors.web:type_name -> conf.CollectorPoll
-	23, // 49: conf.Collectors.telegram:type_name -> conf.TelegramCollector
-	26, // 50: conf.CollectorPoll.poll_interval:type_name -> google.protobuf.Duration
-	12, // 51: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
-	20, // 52: conf.ScoringEmbedding.ProvidersEntry.value:type_name -> conf.ScoringEmbeddingProvider
-	53, // [53:53] is the sub-list for method output_type
-	53, // [53:53] is the sub-list for method input_type
-	53, // [53:53] is the sub-list for extension type_name
-	53, // [53:53] is the sub-list for extension extendee
-	0,  // [0:53] is the sub-list for field type_name
+	25, // 29: conf.SummaryLLM.mode_providers:type_name -> conf.SummaryLLM.ModeProvidersEntry
+	27, // 30: conf.SummaryCumulative.max_window:type_name -> google.protobuf.Duration
+	27, // 31: conf.SummaryOutbox.event_ttl:type_name -> google.protobuf.Duration
+	16, // 32: conf.Scoring.worker:type_name -> conf.ScoringWorker
+	17, // 33: conf.Scoring.scheduler:type_name -> conf.ScoringScheduler
+	18, // 34: conf.Scoring.reaper:type_name -> conf.ScoringReaper
+	19, // 35: conf.Scoring.embedding:type_name -> conf.ScoringEmbedding
+	27, // 36: conf.ScoringWorker.poll_interval:type_name -> google.protobuf.Duration
+	27, // 37: conf.ScoringWorker.lease_ttl:type_name -> google.protobuf.Duration
+	27, // 38: conf.ScoringWorker.heartbeat_interval:type_name -> google.protobuf.Duration
+	27, // 39: conf.ScoringWorker.graceful_timeout:type_name -> google.protobuf.Duration
+	27, // 40: conf.ScoringWorker.backoff_base:type_name -> google.protobuf.Duration
+	27, // 41: conf.ScoringWorker.backoff_max:type_name -> google.protobuf.Duration
+	27, // 42: conf.ScoringWorker.event_ttl:type_name -> google.protobuf.Duration
+	27, // 43: conf.ScoringScheduler.poll_interval:type_name -> google.protobuf.Duration
+	27, // 44: conf.ScoringReaper.interval:type_name -> google.protobuf.Duration
+	27, // 45: conf.ScoringReaper.grace:type_name -> google.protobuf.Duration
+	27, // 46: conf.ScoringEmbedding.timeout:type_name -> google.protobuf.Duration
+	26, // 47: conf.ScoringEmbedding.providers:type_name -> conf.ScoringEmbedding.ProvidersEntry
+	22, // 48: conf.Collectors.rss:type_name -> conf.CollectorPoll
+	22, // 49: conf.Collectors.web:type_name -> conf.CollectorPoll
+	23, // 50: conf.Collectors.telegram:type_name -> conf.TelegramCollector
+	27, // 51: conf.CollectorPoll.poll_interval:type_name -> google.protobuf.Duration
+	12, // 52: conf.SummaryLLM.ProvidersEntry.value:type_name -> conf.SummaryLLMProvider
+	20, // 53: conf.ScoringEmbedding.ProvidersEntry.value:type_name -> conf.ScoringEmbeddingProvider
+	54, // [54:54] is the sub-list for method output_type
+	54, // [54:54] is the sub-list for method input_type
+	54, // [54:54] is the sub-list for extension type_name
+	54, // [54:54] is the sub-list for extension extendee
+	0,  // [0:54] is the sub-list for field type_name
 }
 
 func init() { file_internal_conf_conf_proto_init() }
@@ -1776,7 +1825,7 @@ func file_internal_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_conf_conf_proto_rawDesc), len(file_internal_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

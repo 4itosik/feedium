@@ -43,14 +43,27 @@ summary:
   cron:
     interval: 3600s
   llm:
-    timeout: 30s
+    timeout: 60s
     max_retries: 3
-    provider: openrouter
+    # Default provider for every processing mode without an override.
+    provider: anthropic
+    # Per-mode override (FT-021): self_contained = posts, cumulative = digests.
+    mode_providers:
+      self_contained: anthropic
+      cumulative: anthropic
     providers:
       openrouter:
+        protocol: openai # OpenAI-compatible /chat/completions
         api_key: "REPLACE_WITH_YOUR_OPENROUTER_API_KEY"
         base_url: "https://openrouter.ai/api/v1"
         model: "deepseek/deepseek-v4-flash"
+      anthropic:
+        protocol: anthropic # Claude Messages API
+        api_key: "REPLACE_WITH_YOUR_ANTHROPIC_API_KEY"
+        base_url: "https://api.anthropic.com"
+        model: "claude-haiku-5-5"
+        max_tokens: 16000
+        effort: low # low | medium | high | xhigh | max; empty = model default
   cumulative:
     max_window: 259200s
     max_input_chars: 50000

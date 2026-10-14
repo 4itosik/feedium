@@ -163,6 +163,13 @@ type LLMProvider interface {
 	Summarize(ctx context.Context, systemPrompt, text string) (string, error)
 }
 
+// SummaryLLMResolver returns the LLMProvider configured for a ProcessingMode
+// (FT-021): each mode may be served by a different provider. Routing by mode
+// lives here so that LLMProvider itself stays mode-agnostic.
+type SummaryLLMResolver interface {
+	For(mode ProcessingMode) (LLMProvider, error)
+}
+
 // SummaryPromptResolver returns the system prompt body for a ProcessingMode.
 // The mapping is total over AllProcessingModes(); calls with an unknown mode
 // return ErrUnknownSummaryPromptMode and an empty body.

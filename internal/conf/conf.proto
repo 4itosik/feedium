@@ -76,17 +76,28 @@ message SummaryReaper {
   google.protobuf.Duration grace = 2;
 }
 
+// SummaryLLM configures the summarization LLM (FT-005, FT-021). `provider` is
+// the default entry of `providers`; `mode_providers` overrides it per
+// ProcessingMode (keys: self_contained, cumulative).
 message SummaryLLM {
   google.protobuf.Duration timeout = 1;
   int32 max_retries = 2;
   string provider = 3;
   map<string, SummaryLLMProvider> providers = 4;
+  map<string, string> mode_providers = 5;
 }
 
+// SummaryLLMProvider is one named LLM endpoint. `protocol` selects the wire
+// API: "openai" (OpenAI-compatible /chat/completions, e.g. OpenRouter; the
+// default when empty) or "anthropic" (Claude Messages API). max_tokens and
+// effort apply to the anthropic protocol only.
 message SummaryLLMProvider {
   string api_key = 1;
   string base_url = 2;
   string model = 3;
+  string protocol = 4;
+  int32 max_tokens = 5;
+  string effort = 6;
 }
 
 message SummaryCumulative {

@@ -25,7 +25,7 @@ status: active
 [RSS feeds]         ──┘         task/                  biz/ + data/                service/ + HTTP
 ```
 
-**Внешние сервисы:** Telegram API (userbot), LLM-провайдер (embeddings + scoring), OpenClaw (отдельный репозиторий).
+**Внешние сервисы:** Telegram API (userbot), LLM-провайдеры (суммаризация — Anthropic или OpenRouter, выбор по режиму через конфиг, FT-021; embeddings для скоринга — OpenRouter), OpenClaw (отдельный репозиторий).
 
 ---
 

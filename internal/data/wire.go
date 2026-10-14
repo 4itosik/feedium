@@ -21,7 +21,7 @@ var ProviderSet = wire.NewSet( //nolint:gochecknoglobals // wire dependency inje
 	NewReactionRepo,
 	NewEmbeddingProvider,
 	NewTxManager,
-	NewOpenRouterProvider,
+	NewSummaryLLMRouter,
 	NewRSSFetcher,
 	NewWebFetcher,
 	NewTelegramSession,
@@ -37,7 +37,7 @@ var ProviderSet = wire.NewSet( //nolint:gochecknoglobals // wire dependency inje
 	wire.Bind(new(biz.PostEmbeddingRepo), new(*postEmbeddingRepo)),
 	wire.Bind(new(biz.ReactionRepo), new(*reactionRepo)),
 	wire.Bind(new(biz.TxManager), new(*txManager)),
-	wire.Bind(new(biz.LLMProvider), new(*openRouterProvider)),
+	wire.Bind(new(biz.SummaryLLMResolver), new(*summaryLLMRouter)),
 	wire.Bind(new(biz.Scorer), new(*embeddingProvider)),
 	// Each collector binds to a distinct named Fetcher port (DEC-06): both
 	// fetchers satisfy the bare biz.Fetcher method set, so explicit binds

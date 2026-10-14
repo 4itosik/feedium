@@ -34,7 +34,7 @@ type SummaryUsecase struct {
 	outboxRepo  SummaryOutboxRepo
 	sourceRepo  SourceRepo
 	postRepo    PostRepo
-	llmProvider LLMProvider
+	llms        SummaryLLMResolver
 	prompts     SummaryPromptResolver
 	txManager   TxManager
 	cfg         *conf.Summary
@@ -45,7 +45,7 @@ func NewSummaryUsecase(
 	outboxRepo SummaryOutboxRepo,
 	sourceRepo SourceRepo,
 	postRepo PostRepo,
-	llmProvider LLMProvider,
+	llms SummaryLLMResolver,
 	prompts SummaryPromptResolver,
 	txManager TxManager,
 	cfg *conf.Summary,
@@ -55,7 +55,7 @@ func NewSummaryUsecase(
 		outboxRepo:  outboxRepo,
 		sourceRepo:  sourceRepo,
 		postRepo:    postRepo,
-		llmProvider: llmProvider,
+		llms:        llms,
 		prompts:     prompts,
 		txManager:   txManager,
 		cfg:         cfg,
@@ -429,15 +429,19 @@ func (uc *SummaryUsecase) maybeEnqueueSourceEvent(ctx context.Context, sourceID 
 // llm.max_retries in-call attempts with exponential backoff. The outer FT-007
 // event-level retry only engages if all LLM attempts fail.
 //
-// The system prompt is resolved exactly once per event (outside the retry
-// loop): the body is constant for a given mode, and a resolver error must be
-// permanent — wrapping it in retry-with-backoff would mask FM-02.
+// The system prompt and the LLM provider are resolved exactly once per event
+// (outside the retry loop): both are constant for a given mode, and a resolver
+// error must be permanent — wrapping it in retry-with-backoff would mask FM-02.
 func (uc *SummaryUsecase) summarizeWithLLMRetry(
 	ctx context.Context, mode ProcessingMode, text string,
 ) (string, error) {
 	systemPrompt, err := uc.prompts.For(mode)
 	if err != nil {
 		return "", fmt.Errorf("resolve prompt for mode %q: %w", mode, err)
+	}
+	llm, err := uc.llms.For(mode)
+	if err != nil {
+		return "", fmt.Errorf("resolve llm provider for mode %q: %w", mode, err)
 	}
 
 	maxRetries := int(uc.cfg.GetLlm().GetMaxRetries())
@@ -447,7 +451,7 @@ func (uc *SummaryUsecase) summarizeWithLLMRetry(
 
 	var lastErr error
 	for attempt := range maxRetries {
-		result, llmErr := uc.llmProvider.Summarize(ctx, systemPrompt, text)
+		result, llmErr := llm.Summarize(ctx, systemPrompt, text)
 		if llmErr != nil {
 			lastErr = llmErr
 			backoff := time.Duration(math.Pow(llmRetryBackoffBase, float64(attempt))) * time.Second

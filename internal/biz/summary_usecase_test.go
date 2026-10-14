@@ -169,7 +169,7 @@ func TestSummaryUsecase_PromptByMode_SelfContained(t *testing.T) {
 		outboxRepo,
 		sourceRepo,
 		postRepo,
-		llm,
+		llmFor(llm),
 		prompts,
 		txMgr,
 		shortTimeoutSummaryCfg(),
@@ -235,7 +235,7 @@ func TestSummaryUsecase_PromptByMode_Cumulative(t *testing.T) {
 		outboxRepo,
 		sourceRepo,
 		postRepo,
-		llm,
+		llmFor(llm),
 		prompts,
 		txMgr,
 		shortTimeoutSummaryCfg(),
@@ -300,7 +300,7 @@ func TestSummaryUsecase_PromptByMode_Isolation(t *testing.T) {
 					outboxRepo,
 					sourceRepo,
 					postRepo,
-					llm,
+					llmFor(llm),
 					prompts,
 					txMgr,
 					shortTimeoutSummaryCfg(),
@@ -353,7 +353,7 @@ func TestSummaryUsecase_PromptByMode_Isolation(t *testing.T) {
 					outboxRepo,
 					sourceRepo,
 					postRepo,
-					llm,
+					llmFor(llm),
 					prompts,
 					txMgr,
 					shortTimeoutSummaryCfg(),
@@ -400,7 +400,7 @@ func TestSummaryUsecase_PromptResolveError_IsTerminal_SelfContained(t *testing.T
 		outboxRepo,
 		sourceRepo,
 		postRepo,
-		llm,
+		llmFor(llm),
 		prompts,
 		txMgr,
 		shortTimeoutSummaryCfg(),
@@ -436,8 +436,10 @@ func TestSummaryUsecase_PromptResolvedOncePerEvent(t *testing.T) {
 
 	summaryRepo.EXPECT().ListByPost(gomock.Any(), postID).Return(nil, nil)
 	postRepo.EXPECT().Get(gomock.Any(), postID).Return(biz.Post{ID: postID, Text: "x"}, nil)
-	// EXACTLY ONE resolver call even though the LLM is retried.
+	// EXACTLY ONE call per resolver even though the LLM is retried.
 	prompts.EXPECT().For(biz.ProcessingModeSelfContained).Return("SP", nil).Times(1)
+	llms := mock.NewMockSummaryLLMResolver(ctrl)
+	llms.EXPECT().For(biz.ProcessingModeSelfContained).Return(llm, nil).Times(1)
 
 	// One transient error, then success — exercises the retry loop while
 	// keeping the unit test budget tight (one ~1s sleep).
@@ -457,7 +459,7 @@ func TestSummaryUsecase_PromptResolvedOncePerEvent(t *testing.T) {
 		Llm: &conf.SummaryLLM{MaxRetries: 2, Timeout: durationpb.New(time.Second)},
 	}
 
-	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, postRepo, llm, prompts, txMgr, cfg)
+	uc := biz.NewSummaryUsecase(summaryRepo, outboxRepo, sourceRepo, postRepo, llms, prompts, txMgr, cfg)
 
 	id, err := uc.ProcessPostEvent(context.Background(), biz.SummaryEvent{
 		ID:        "e",

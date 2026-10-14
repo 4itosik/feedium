@@ -1,0 +1,48 @@
+go test ./...
+?   	github.com/4itosik/feedium/api/feedium	[no test files]
+?   	github.com/4itosik/feedium/cmd/feedium	[no test files]
+?   	github.com/4itosik/feedium/cmd/feediumctl	[no test files]
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/app	(cached)
+?   	github.com/4itosik/feedium/cmd/feediumctl/internal/app/mock	[no test files]
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/config	(cached)
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/render	(cached)
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/resolve	(cached)
+ok  	github.com/4itosik/feedium/cmd/feediumctl/internal/sourcetype	(cached)
+?   	github.com/4itosik/feedium/cmd/feediumctl/internal/transport	[no test files]
+?   	github.com/4itosik/feedium/cmd/migrate	[no test files]
+?   	github.com/4itosik/feedium/cmd/tg-login	[no test files]
+ok  	github.com/4itosik/feedium/internal/biz	(cached)
+?   	github.com/4itosik/feedium/internal/biz/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/biz/prompt	(cached)
+ok  	github.com/4itosik/feedium/internal/conf	(cached)
+ok  	github.com/4itosik/feedium/internal/data	116.914s
+?   	github.com/4itosik/feedium/internal/ent	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/enttest	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/hook	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/interest	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/migrate	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/post	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/postembedding	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/predicate	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/runtime	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/schema	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/score	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/scoreevent	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/source	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/summary	[no test files]
+?   	github.com/4itosik/feedium/internal/ent/summaryevent	[no test files]
+?   	github.com/4itosik/feedium/internal/server	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/feed	(cached)
+?   	github.com/4itosik/feedium/internal/service/feed/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/health	11.627s
+ok  	github.com/4itosik/feedium/internal/service/interest	(cached)
+?   	github.com/4itosik/feedium/internal/service/interest/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/post	(cached)
+?   	github.com/4itosik/feedium/internal/service/post/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/source	(cached)
+?   	github.com/4itosik/feedium/internal/service/source/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/service/summary	(cached)
+?   	github.com/4itosik/feedium/internal/service/summary/mock	[no test files]
+ok  	github.com/4itosik/feedium/internal/task	34.263s
+?   	github.com/4itosik/feedium/ui	[no test files]
+?   	github.com/4itosik/feedium/ui/node_modules/flatted/golang/pkg/flatted	[no test files]

@@ -60,7 +60,8 @@ Notes:
 ## Prerequisites
 
 - A Linux VPS with Docker Engine + Compose v2 (`docker compose version`).
-- An OpenRouter API key (used for both summarization and embeddings).
+- An Anthropic API key (summarization, both modes, `claude-haiku-5-5`).
+- An OpenRouter API key (embeddings; also the fallback summarization provider).
 - The repository checked out on the server (or copied over).
 
 ## 1. Create the secrets
@@ -70,15 +71,24 @@ Notes:
 cp .env.prod.example .env.prod
 # edit .env.prod: set a strong POSTGRES_PASSWORD
 
-# App config (DB connection + OpenRouter key, collector intervals, …).
+# App config (DB connection + Anthropic/OpenRouter keys, collector intervals, …).
 mkdir -p configs/prod
 cp configs/prod.example.yaml configs/prod/config.yaml
 # edit configs/prod/config.yaml:
 #   - data.database.password  == POSTGRES_PASSWORD in .env.prod
 #   - data.database.host       == postgres   (already set)
+#   - summary.llm.providers.anthropic.api_key        = sk-ant-...
 #   - summary.llm.providers.openrouter.api_key       = sk-or-...
 #   - scoring.embedding.providers.openrouter.api_key = sk-or-...
 ```
+
+> **Summarization provider per mode (FT-021).** `summary.llm.mode_providers`
+> picks a `providers` entry for `self_contained` (posts) and `cumulative`
+> (digests); a mode without an override uses `summary.llm.provider`. Each entry
+> declares its wire `protocol`: `anthropic` (Claude Messages API) or `openai`
+> (OpenAI-compatible, e.g. OpenRouter). To roll a mode back to OpenRouter, point
+> it at `openrouter` and restart the app. Embeddings always use
+> `scoring.embedding` (Anthropic has no embeddings API).
 
 > ⚠️ **Duration fields are protojson** — seconds only (`300s`, `3600s`), never
 > `5m`/`1h`/`72h`. The templates are already correct; keep that format if you edit.

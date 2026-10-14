@@ -47,14 +47,14 @@ func wireApp(bc *conf.Bootstrap, logger *slog.Logger) (*kratos.App, func(), erro
 	postService := post.NewPostService(postUsecase)
 	summaryRepo := data.NewSummaryRepo(dataData)
 	summaryLLM := newSummaryLLMFromBootstrap(bc)
-	openRouterProvider, err := data.NewOpenRouterProvider(summaryLLM, logger)
+	summaryLLMRouter, err := data.NewSummaryLLMRouter(summaryLLM, logger)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
 	embeddedResolver := prompt.NewResolver()
 	confSummary := newSummaryConfigFromBootstrap(bc)
-	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, postRepo, openRouterProvider, embeddedResolver, txManager, confSummary)
+	summaryUsecase := biz.NewSummaryUsecase(summaryRepo, summaryOutboxRepo, sourceRepo, postRepo, summaryLLMRouter, embeddedResolver, txManager, confSummary)
 	service := summary.NewService(summaryUsecase)
 	interestRepo := data.NewInterestRepo(dataData)
 	scoringEmbedding := newScoringEmbeddingFromBootstrap(bc)

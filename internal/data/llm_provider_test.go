@@ -16,6 +16,7 @@ import (
 	"go.uber.org/goleak"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"github.com/4itosik/feedium/internal/biz"
 	"github.com/4itosik/feedium/internal/conf"
 	"github.com/4itosik/feedium/internal/data"
 )
@@ -37,10 +38,22 @@ func newProvider(t *testing.T, baseURL string) summarizer {
 			},
 		},
 	}
-	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
-	p, err := data.NewOpenRouterProvider(cfg, logger)
+	return newRoutedProvider(t, cfg, biz.ProcessingModeSelfContained)
+}
+
+// newRoutedProvider builds the production router from cfg and returns the
+// provider it resolves for mode.
+func newRoutedProvider(t *testing.T, cfg *conf.SummaryLLM, mode biz.ProcessingMode) summarizer {
+	t.Helper()
+	router, err := data.NewSummaryLLMRouter(cfg, discardLogger())
+	require.NoError(t, err)
+	p, err := router.For(mode)
 	require.NoError(t, err)
 	return p
+}
+
+func discardLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
 }
 
 func TestOpenRouterProvider_Summarize_SendsSystemPrompt(t *testing.T) {

@@ -16,8 +16,8 @@ import (
 	"github.com/4itosik/feedium/internal/conf"
 )
 
-const defaultLLMTimeout = 30 * time.Second
-
+// openRouterProvider speaks the OpenAI-compatible /chat/completions protocol
+// (summary.llm protocol "openai", e.g. OpenRouter).
 type openRouterProvider struct {
 	apiKey     string
 	baseURL    string
@@ -47,32 +47,19 @@ type chatResponse struct {
 	} `json:"choices"`
 }
 
-//nolint:revive // unexported return type for wire DI
-func NewOpenRouterProvider(cfg *conf.SummaryLLM, logger *slog.Logger) (*openRouterProvider, error) {
-	if cfg == nil {
-		return nil, errors.New("summary.llm configuration is required")
-	}
-	providerName := cfg.GetProvider()
-	providerCfg, ok := cfg.GetProviders()[providerName]
-	if !ok {
-		return nil, fmt.Errorf("llm provider %q not found in configuration", providerName)
-	}
-
-	timeout := cfg.GetTimeout().AsDuration()
-	if timeout == 0 {
-		timeout = defaultLLMTimeout
-	}
-
+func newOpenRouterProvider(
+	cfg *conf.SummaryLLMProvider, timeout time.Duration, logger *slog.Logger,
+) *openRouterProvider {
 	return &openRouterProvider{
-		apiKey:  providerCfg.GetApiKey(),
-		baseURL: providerCfg.GetBaseUrl(),
-		model:   providerCfg.GetModel(),
+		apiKey:  cfg.GetApiKey(),
+		baseURL: cfg.GetBaseUrl(),
+		model:   cfg.GetModel(),
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
 		timeout: timeout,
 		log:     logger,
-	}, nil
+	}
 }
 
 func (p *openRouterProvider) Summarize(ctx context.Context, systemPrompt, text string) (string, error) {

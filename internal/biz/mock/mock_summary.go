@@ -365,6 +365,45 @@ func (mr *MockLLMProviderMockRecorder) Summarize(ctx, systemPrompt, text any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockLLMProvider)(nil).Summarize), ctx, systemPrompt, text)
 }
 
+// MockSummaryLLMResolver is a mock of SummaryLLMResolver interface.
+type MockSummaryLLMResolver struct {
+	ctrl     *gomock.Controller
+	recorder *MockSummaryLLMResolverMockRecorder
+	isgomock struct{}
+}
+
+// MockSummaryLLMResolverMockRecorder is the mock recorder for MockSummaryLLMResolver.
+type MockSummaryLLMResolverMockRecorder struct {
+	mock *MockSummaryLLMResolver
+}
+
+// NewMockSummaryLLMResolver creates a new mock instance.
+func NewMockSummaryLLMResolver(ctrl *gomock.Controller) *MockSummaryLLMResolver {
+	mock := &MockSummaryLLMResolver{ctrl: ctrl}
+	mock.recorder = &MockSummaryLLMResolverMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSummaryLLMResolver) EXPECT() *MockSummaryLLMResolverMockRecorder {
+	return m.recorder
+}
+
+// For mocks base method.
+func (m *MockSummaryLLMResolver) For(mode biz.ProcessingMode) (biz.LLMProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "For", mode)
+	ret0, _ := ret[0].(biz.LLMProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// For indicates an expected call of For.
+func (mr *MockSummaryLLMResolverMockRecorder) For(mode any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "For", reflect.TypeOf((*MockSummaryLLMResolver)(nil).For), mode)
+}
+
 // MockSummaryPromptResolver is a mock of SummaryPromptResolver interface.
 type MockSummaryPromptResolver struct {
 	ctrl     *gomock.Controller

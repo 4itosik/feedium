@@ -172,6 +172,11 @@ func (f *fakeLLM) CallCount() int {
 	return f.calls
 }
 
+// staticLLMResolver routes every ProcessingMode to one provider (FT-021).
+type staticLLMResolver struct{ p biz.LLMProvider }
+
+func (r staticLLMResolver) For(biz.ProcessingMode) (biz.LLMProvider, error) { return r.p, nil }
+
 // newTestUsecase wires a real biz.SummaryUsecase against the supplied data stack,
 // so integration tests exercise the same code path as production.
 func newTestUsecase(t *testing.T, d *data.Data, cfg *conf.Summary, llm biz.LLMProvider) *biz.SummaryUsecase {
@@ -181,7 +186,7 @@ func newTestUsecase(t *testing.T, d *data.Data, cfg *conf.Summary, llm biz.LLMPr
 		data.NewSummaryOutboxRepo(d),
 		data.NewSourceRepo(d),
 		data.NewPostRepo(d),
-		llm,
+		staticLLMResolver{p: llm},
 		prompt.NewResolver(),
 		data.NewTxManager(d),
 		cfg,
