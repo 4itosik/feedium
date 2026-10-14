@@ -112,7 +112,9 @@ ok "compose + templates copied"
 bold "3/6 Transfer image → $HOST"
 if [ "$DO_BUILD" = "1" ]; then
   info "docker save $IMAGE | gzip | ssh $HOST docker load  (this can take a minute)"
-  docker save "$IMAGE" | gzip | rsh "gunzip | docker load"
+  # --platform: with the containerd image store a multi-platform save (image +
+  # attestation manifest) can hang forever; saving one platform is instant.
+  docker save --platform "$PLATFORM" "$IMAGE" | gzip | rsh "gunzip | docker load"
   ok "image loaded on the server"
 else
   info "skipped (--no-build) — using image already on the server"

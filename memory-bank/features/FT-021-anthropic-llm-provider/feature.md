@@ -8,7 +8,7 @@ derived_from:
   - ../FT-005-ai-summarization/spec.md
   - ../FT-008/feature.md
 status: active
-delivery_status: in_progress
+delivery_status: done
 ---
 
 # FT-021: Anthropic LLM Provider
