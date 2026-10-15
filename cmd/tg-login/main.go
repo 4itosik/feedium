@@ -13,6 +13,12 @@
 //
 // It prompts for the login code (and the 2FA password, if the account has one),
 // then exits. The phone number and api_id/api_hash come from the config.
+//
+// Read-only inspect modes (never log in; stop the app first so two clients do
+// not write the same session file):
+//
+//	tg-login -conf … -dialogs               # chats the userbot is a member of
+//	tg-login -conf … -resolve user1,user2   # real tg_id + membership per username
 package main
 
 import (
@@ -48,6 +54,9 @@ func main() {
 
 func run(logger *slog.Logger) error {
 	flagconf := flag.String("conf", "/etc/feedium/config.yaml", "config path (file or directory)")
+	flagDialogs := flag.Bool("dialogs", false, "read-only: list chats the userbot is a member of (TSV) and exit")
+	flagResolve := flag.String("resolve", "",
+		"read-only: comma-separated usernames to resolve to tg_id + membership (TSV)")
 	flag.Parse()
 
 	tg, err := loadTelegramConf(*flagconf)
@@ -68,7 +77,14 @@ func run(logger *slog.Logger) error {
 	})
 
 	return client.Run(ctx, func(ctx context.Context) error {
-		return login(ctx, client, tg, logger)
+		switch {
+		case *flagDialogs:
+			return listDialogs(ctx, client, os.Stdout)
+		case *flagResolve != "":
+			return resolveUsernames(ctx, client, strings.Split(*flagResolve, ","), os.Stdout)
+		default:
+			return login(ctx, client, tg, logger)
+		}
 	})
 }
 
