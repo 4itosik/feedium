@@ -224,3 +224,30 @@ authorization is a manual human step (AG-02). The image bundles a one-shot
 Troubleshooting: `collectors.telegram.api_id is 0 …` means the config wasn't
 filled; `telegram session not authorized` in the app log means step 3 hasn't run
 (or ran with a different `TG_SESSION_KEY`).
+
+**A Telegram source never collects.** Check membership and the real `tg_id` with
+the read-only inspect modes of `tg-login`. They never log in. Stop the app first so
+two clients do not write the same session file. Any TG messages that arrive during
+the stop are lost, because there is no backfill:
+
+```bash
+C="docker compose -f docker-compose.server.yml --env-file .env.prod"
+$C stop app
+$C run --rm --no-deps app tg-login -conf /etc/feedium/config.yaml -dialogs            # kind, tg_id, username, title
+$C run --rm --no-deps app tg-login -conf /etc/feedium/config.yaml -resolve user1,user2 # username, kind, tg_id, member, title
+$C start app
+```
+
+A source whose `tg_id` is not in `-dialogs` is a chat the userbot is not in. Join it
+from the account, or fix the `tg_id` with `feediumctl source update`.
+
+## Health monitoring
+
+`scripts/monitor/feedium-healthcheck.sh` runs hourly from the `openclaw` user's
+crontab on the VPS. It reports to the Feedium Telegram topic through OpenClaw.
+It checks `/healthz`, failed summary/score events, collector `ERROR` log lines,
+stuck cumulative digests, sources that went silent, Telegram sources that never
+collected, and the OpenRouter balance. It sends a message only when a new issue
+appears, repeats one every 24h while issues persist, and sends one "resolved"
+message when everything clears. Run it with `--dry-run` to print the
+report without sending it.
