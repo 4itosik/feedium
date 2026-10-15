@@ -7,6 +7,7 @@ import (
 	"math"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 
@@ -178,10 +179,10 @@ func (uc *SummaryUsecase) ProcessPostEvent(ctx context.Context, event SummaryEve
 
 // ProcessSourceEvent executes the summarize_source business logic: event-TTL gate,
 // build cumulative window bounded by the last summary, aggregate posts, summarize
-// via LLM, persist Summary. Terminal domain errors:
+// via LLM, persist Summary. A window larger than cumulative.max_input_chars is
+// trimmed to its newest posts (see collectWindowPosts). Terminal domain errors:
 //   - ErrSummaryEventExpired: event too old.
 //   - ErrSummarySourceNoPosts: no new posts in the window; task finalizes Completed.
-//   - ErrSummaryValidation: aggregated text exceeds cumulative.max_input_chars.
 func (uc *SummaryUsecase) ProcessSourceEvent(ctx context.Context, event SummaryEvent) (string, error) {
 	if err := uc.ensureNotExpired(event); err != nil {
 		return "", err
@@ -340,23 +341,29 @@ func (uc *SummaryUsecase) cronInterval() time.Duration {
 	return cronInterval
 }
 
-// collectWindowPosts aggregates post bodies in the [start, end) window, stopping
-// at maxChars. Empty return means no posts found (ErrSummarySourceNoPosts at caller).
+// collectWindowPosts aggregates post bodies in the [start, end) window in
+// chronological order, keeping only the newest posts that fit in maxChars. Older
+// overflow is dropped rather than failing the event: a failed digest never
+// advances the window, so a source that once overflowed would stay stuck. If even
+// the newest post alone exceeds maxChars, it is cut to fit on a rune boundary.
+// Empty return means no posts found (ErrSummarySourceNoPosts at caller).
 func (uc *SummaryUsecase) collectWindowPosts(
 	ctx context.Context,
 	sourceID string,
 	start, end time.Time,
 	maxChars int,
 ) (string, error) {
-	var sb strings.Builder
+	var newestFirst []string
+	total := 0
 	pageToken := ""
+collect:
 	for {
 		page, err := uc.postRepo.List(ctx, ListPostsFilter{
 			SourceID:      sourceID,
 			PageSize:      defaultListPageSize,
 			PageToken:     pageToken,
 			OrderBy:       SortByCreatedAt,
-			OrderDir:      SortAsc,
+			OrderDir:      SortDesc,
 			CreatedAfter:  &start,
 			CreatedBefore: &end,
 		})
@@ -364,18 +371,39 @@ func (uc *SummaryUsecase) collectWindowPosts(
 			return "", fmt.Errorf("list posts: %w", err)
 		}
 		for _, p := range page.Items {
-			sb.WriteString(p.Text)
-			sb.WriteString("\n\n")
-			if sb.Len() > maxChars {
-				return "", fmt.Errorf("%w: input text exceeds max_input_chars limit", ErrSummaryValidation)
+			piece := p.Text + "\n\n"
+			if total+len(piece) > maxChars {
+				if len(newestFirst) == 0 {
+					newestFirst = append(newestFirst, truncateUTF8(p.Text, maxChars))
+				}
+				break collect
 			}
+			newestFirst = append(newestFirst, piece)
+			total += len(piece)
 		}
 		if page.NextPageToken == "" {
 			break
 		}
 		pageToken = page.NextPageToken
 	}
+
+	var sb strings.Builder
+	sb.Grow(total)
+	for i := len(newestFirst) - 1; i >= 0; i-- {
+		sb.WriteString(newestFirst[i])
+	}
 	return sb.String(), nil
+}
+
+// truncateUTF8 cuts s to at most n bytes without splitting a multi-byte rune. Pure.
+func truncateUTF8(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
 }
 
 // maybeEnqueueSourceEvent creates a summarize_source event only if no active one

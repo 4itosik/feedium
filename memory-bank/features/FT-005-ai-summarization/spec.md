@@ -177,7 +177,7 @@ Summary Worker — реализует `transport.Server` в `task/`. Полли�
 1. Определяет временное окно: от `created_at` последнего саммари этого источника до текущего момента. Максимум — 72 часа (3 суток). Если предыдущего саммари нет — берёт последние 72 часа.
 2. Загружает все посты источника в этом окне через `PostRepo.List` (с фильтром по source_id и временному диапазону).
 3. Если постов 0 — устанавливает `status = completed` без создания Summary.
-4. Конкатенирует тексты постов (в хронологическом порядке). Если суммарная длина превышает `summary.cumulative.max_input_chars` — устанавливает `status = failed`, `error = "input text exceeds max_input_chars limit"`, пропускает обработку.
+4. Конкатенирует тексты постов (в хронологическом порядке). Если суммарная длина превышает `summary.cumulative.max_input_chars` — берёт только самые свежие посты, которые помещаются в лимит; более старые в саммари не попадают. Если не помещается даже самый свежий пост, он обрезается до лимита по границе символа. *(Изменено 2026-10-14: раньше событие переходило в `failed`, но неуспешный дайджест не сдвигает начало окна, и источник, однажды превысивший лимит, оставался без дайджестов навсегда — так neuraldeepchat простоял с 04.09 по 14.10.)*
 5. Передаёт конкатенированный текст в `LLMProvider.Summarize`.
 6. Создаёт `Summary` с `post_id = nil`, `source_id = <ID источника>`.
 7. Обновляет `SummaryEvent`: `status = completed`.
@@ -439,7 +439,7 @@ Structured logging (slog) в `task/` слое:
 - [ ] Cumulative без новых постов в окне — SummaryEvent завершается без создания Summary.
 - [ ] Устаревшие события (TTL) помечаются `expired` и не обрабатываются.
 - [ ] Если пост удалён до обработки воркером — SummaryEvent переходит в `failed` с `error = "post not found"`.
-- [ ] Если конкатенированный текст cumulative-источника превышает `summary.cumulative.max_input_chars` — SummaryEvent переходит в `failed`.
+- [ ] Если конкатенированный текст cumulative-источника превышает `summary.cumulative.max_input_chars` — саммари строится по самым свежим постам в пределах лимита, SummaryEvent переходит в `completed`.
 - [ ] `POST /sources/{source_id}/summarize` при наличии failed-события создаёт новый SummaryEvent (failed не блокирует).
 - [ ] Конфигурация LLM-провайдера (`summary.llm.provider`, `summary.llm.providers`) загружается из config.
 - [ ] Операции суммаризации покрыты автотестами: biz/ (TDD, mocked interfaces), data/ (testcontainers), task/ (worker lifecycle).

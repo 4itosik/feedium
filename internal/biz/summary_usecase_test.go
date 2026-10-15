@@ -471,3 +471,90 @@ func TestSummaryUsecase_PromptResolvedOncePerEvent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "ok-id", id)
 }
+
+// newCumulativeOverflowUsecase wires a SummaryUsecase whose cumulative window is
+// capped at maxChars, capturing the text the LLM receives into *captured.
+func newCumulativeOverflowUsecase(
+	t *testing.T,
+	maxChars int32,
+	newestFirst []biz.Post,
+	captured *string,
+) *biz.SummaryUsecase {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+
+	summaryRepo := mock.NewMockSummaryRepo(ctrl)
+	postRepo := mock.NewMockPostRepo(ctrl)
+	llm := mock.NewMockLLMProvider(ctrl)
+	prompts := mock.NewMockSummaryPromptResolver(ctrl)
+
+	summaryRepo.EXPECT().GetLastBySource(gomock.Any(), gomock.Any()).Return(nil, nil)
+	postRepo.EXPECT().List(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, f biz.ListPostsFilter) (biz.ListPostsResult, error) {
+			assert.Equal(t, biz.SortDesc, f.OrderDir, "window must be read newest-first to keep the latest posts")
+			return biz.ListPostsResult{Items: newestFirst}, nil
+		})
+	prompts.EXPECT().For(biz.ProcessingModeCumulative).Return("prompt", nil)
+	llm.EXPECT().Summarize(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, text string) (string, error) {
+			*captured = text
+			return "summary", nil
+		})
+	summaryRepo.EXPECT().Save(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, s biz.Summary) (biz.Summary, error) {
+			s.ID = "saved-id"
+			return s, nil
+		})
+
+	cfg := shortTimeoutSummaryCfg()
+	cfg.Cumulative.MaxInputChars = maxChars
+	return biz.NewSummaryUsecase(summaryRepo, mock.NewMockSummaryOutboxRepo(ctrl), mock.NewMockSourceRepo(ctrl),
+		postRepo, llmFor(llm), prompts, mock.NewMockTxManager(ctrl), cfg)
+}
+
+// TestSummaryUsecase_ProcessSourceEvent_OverflowKeepsNewestPosts: a window that
+// exceeds max_input_chars is summarized from the newest posts that fit, in
+// chronological order, instead of failing (a failure never advances the window,
+// so the source would stay stuck forever).
+func TestSummaryUsecase_ProcessSourceEvent_OverflowKeepsNewestPosts(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	newestFirst := []biz.Post{
+		{ID: "p4", Text: "dddddddddd"},
+		{ID: "p3", Text: "cccccccccc"},
+		{ID: "p2", Text: "bbbbbbbbbb"},
+		{ID: "p1", Text: "aaaaaaaaaa"},
+	}
+	var captured string
+	// Each post costs 12 chars ("xxxxxxxxxx\n\n"): 30 fits the two newest only.
+	uc := newCumulativeOverflowUsecase(t, 30, newestFirst, &captured)
+
+	id, err := uc.ProcessSourceEvent(context.Background(), biz.SummaryEvent{
+		ID: "evt-overflow", SourceID: "src", EventType: biz.SummaryEventTypeSummarizeSource, CreatedAt: time.Now(),
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "saved-id", id)
+	assert.Equal(t, "cccccccccc\n\ndddddddddd\n\n", captured)
+}
+
+// TestSummaryUsecase_ProcessSourceEvent_NewestPostAloneTooLong: when even the
+// newest post exceeds the limit, it is cut to the limit on a rune boundary so
+// the source still gets a digest and its window advances.
+func TestSummaryUsecase_ProcessSourceEvent_NewestPostAloneTooLong(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
+	newestFirst := []biz.Post{
+		{ID: "p2", Text: "ппппппппппппппппппппппппп"}, // 25 Cyrillic runes = 50 bytes
+		{ID: "p1", Text: "old"},
+	}
+	var captured string
+	uc := newCumulativeOverflowUsecase(t, 21, newestFirst, &captured)
+
+	_, err := uc.ProcessSourceEvent(context.Background(), biz.SummaryEvent{
+		ID: "evt-long", SourceID: "src", EventType: biz.SummaryEventTypeSummarizeSource, CreatedAt: time.Now(),
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "пппппппппп", captured, "cut to ≤21 bytes without splitting a rune")
+}
