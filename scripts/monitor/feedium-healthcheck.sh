@@ -38,7 +38,10 @@ DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
 # Each issue is "key|text": key is stable across runs (dedup), text is for humans.
+# List-type issues also add one subkey per item, so a growing list re-alerts
+# while a shrinking one stays quiet.
 issues=()
+subkeys=()
 add() { issues+=("$1|$2"); }
 
 psql_q() {
@@ -102,8 +105,11 @@ silent=$(psql_q "
                   and p.created_at between now() - interval '30 days' and now() - interval '4 days'
                 having count(*) >= 10)
     and not exists (select 1 from posts p where p.source_id = s.id and p.created_at > now() - interval '4 days')
-  order by 1" | paste -sd ',' - | sed 's/,/, /g')
-[ -n "$silent" ] && add "silent:$silent" "🔇 Источники замолчали (>4 дней без постов): $silent"
+  order by 1")
+if [ -n "$silent" ]; then
+  while IFS= read -r s; do subkeys+=("silent:$s"); done <<<"$silent"
+  add "silent" "🔇 Источники замолчали (>4 дней без постов): $(printf '%s\n' "$silent" | paste -sd ',' - | sed 's/,/, /g')"
+fi
 
 # --- 6. Telegram sources that never collected ---------------------------------
 never=$(psql_q "
@@ -114,7 +120,8 @@ never=$(psql_q "
   order by 1")
 if [ -n "$never" ]; then
   cnt=$(printf '%s\n' "$never" | wc -l | tr -d ' ')
-  add "never:$(printf '%s' "$never" | md5sum | cut -c1-8)" \
+  while IFS= read -r s; do subkeys+=("never:$s"); done <<<"$never"
+  add "never" \
     "📭 $cnt TG-источников ни разу не собрали пост (userbot не подписан или неверный tg_id): $(printf '%s\n' "$never" | head -15 | paste -sd ',' - | sed 's/,/, /g')"
 fi
 
@@ -135,7 +142,8 @@ fi
 # Notify when a new issue key appears, every REPEAT_HOURS while issues persist,
 # and once when everything clears. Issues that merely disappear stay quiet.
 mkdir -p "$STATE_DIR"
-keys=$(printf '%s\n' "${issues[@]+"${issues[@]}"}" | cut -d'|' -f1 | sed '/^$/d' | sort -u)
+keys=$({ printf '%s\n' "${issues[@]+"${issues[@]}"}" | cut -d'|' -f1
+          printf '%s\n' "${subkeys[@]+"${subkeys[@]}"}"; } | sed '/^$/d' | sort -u)
 prev_keys=$(cat "$STATE_DIR/keys" 2>/dev/null || true)
 prev_at=$(cat "$STATE_DIR/sent_at" 2>/dev/null || echo 0)
 now=$(date +%s)
@@ -144,18 +152,22 @@ new_keys=$(comm -23 <(printf '%s\n' "$keys" | sed '/^$/d') <(printf '%s\n' "$pre
 if [ ${#issues[@]} -eq 0 ]; then
   if [ -z "$prev_keys" ]; then echo "$(date -Is) ok"; exit 0; fi
   body="✅ Feedium: все проверки снова в норме."
+  quiet=0
 else
-  if [ -z "$new_keys" ] && [ $((now - prev_at)) -lt $((REPEAT_HOURS * 3600)) ]; then
-    [ "$DRY_RUN" = "1" ] || printf '%s\n' "$keys" >"$STATE_DIR/keys"
-    echo "$(date -Is) no new issues (${#issues[@]} open)"; exit 0
-  fi
   body="🩺 Feedium healthcheck — проблем: ${#issues[@]}"$'\n'
   for i in "${issues[@]}"; do body+=$'\n'"• ${i#*|}"; done
+  quiet=0
+  [ -z "$new_keys" ] && [ $((now - prev_at)) -lt $((REPEAT_HOURS * 3600)) ] && quiet=1
 fi
 
 if [ "$DRY_RUN" = "1" ]; then
+  [ "$quiet" = "1" ] && echo "[dry-run] would stay quiet (no new issues)" || echo "[dry-run] would send"
   printf '%s\n' "$body"
   exit 0
+fi
+if [ "$quiet" = "1" ]; then
+  printf '%s\n' "$keys" >"$STATE_DIR/keys"
+  echo "$(date -Is) no new issues (${#issues[@]} open)"; exit 0
 fi
 
 PATH="$(dirname "$OPENCLAW_NODE"):$PATH" "$OPENCLAW_NODE" "$OPENCLAW_JS" message send \
