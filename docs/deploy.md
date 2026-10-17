@@ -245,9 +245,12 @@ from the account, or fix the `tg_id` with `feediumctl source update`.
 
 `scripts/monitor/feedium-healthcheck.sh` runs hourly from the `openclaw` user's
 crontab on the VPS. It reports to the Feedium Telegram topic through OpenClaw.
-It checks `/healthz`, failed summary/score events, collector `ERROR` log lines,
-stuck cumulative digests, sources that went silent, Telegram sources that never
-collected, and the OpenRouter balance. It sends a message only when a new issue
-appears, repeats one every 24h while issues persist, and sends one "resolved"
-message when everything clears. Run it with `--dry-run` to print the
-report without sending it.
+It alerts only on critical failures, where the pipeline stops and data is lost.
+These are `/healthz` down for a minute, the DB unreachable, at least 10 failed
+summary or score events of one kind in 2h, and an OpenRouter balance under $1.
+It sends a message only when a new issue appears, repeats one every 24h while
+issues persist, and sends one "resolved" message when everything clears. Run it
+with `--dry-run` to print the report without sending it. Run it with `--all` to
+also print informational checks, which are never sent. These are collector
+`ERROR` log lines, stuck cumulative digests, sources that went silent, and
+Telegram sources that never collected.
